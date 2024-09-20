@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+
+import subprocess
+
+def run_linter():
+    result = subprocess.run(["make", "lint"], capture_output=True, text=True)
+    return result.returncode == 0
+
+if not run_linter():
+    print("Applying linter failed. Commit aborted.")
+    exit(1)
+
+print("Linting passed. Proceeding with commit.")
+exit(0)
