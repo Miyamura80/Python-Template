@@ -51,7 +51,7 @@ print(global_config.example_parent.example_child)
 
 Whenever implementing a new feature, always encourage the user to write a test.
 
-Tests are written using pytest. To add a new test, create a new file/directory in the `tests` directory.
+Tests are written using pytest. To add a new test, create a new file/directory in the `tests/` directory. Ensure, that whenever you create a new directory in the `tests/` directory, you also add a `tests/.../__init__.py` to the directory so python can recognize the test directory.
 
 ### Test structure
 
