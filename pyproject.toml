@@ -1,0 +1,26 @@
+[project]
+name = "python-template"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Miyamura80", email = "eitomiyamura@gmail.com" }
+]
+dependencies = [
+    "black>=24.8.0",
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/python_template"]
