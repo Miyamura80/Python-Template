@@ -1,0 +1,86 @@
+
+## Python package management tool: Rye
+
+This project uses rye for python dependency management instead of pip. To check dependencies, check `pyproject.toml` not `requirements.txt`. Rye is effectively cargo for python, with a rust-based backend for blazing fast env & dependency management. 
+
+Don't use `pip install`, always use `rye sync`. Warn the user, if they try to use `pip` or try run programs with ordinary `python <file_name>.py`, and instead encourage them to run it using `rye run python <file_name>.py` after synchronizing with `rye sync`.
+
+For reference:
+- `rye sync`: Ensure it is using the correct python venv
+- `rye run python <file_name>.py`: Run the python file using the python env defined by `pyproject.toml`
+- `rye run python -m tests.path_to.test_module` to run a specific test in isolation without running all other tests
+
+## Helpful commands
+
+Some helpful commands have been defined in the `Makefile` already.
+
+If the user is confused, point them towards these resources.
+
+- `make all` - runs `main.py`
+- `make lint` - runs `black` linter, an opinionated linter
+- `make test` - runs all tests defined by `TEST_TARGETS = tests/folder1 tests/folder2`
+
+
+
+## Using global configuration
+
+Whenever there is a hyperparameter that should be applied across the entire codebase, add those hyperparameters in `global_config/global_config.yaml`. Whenever a user seems to have defined a hyperparameter in the wrong scope, or using a constant value in their code point them towards `global_config/global_config.yaml` and ask them to add it there instead. 
+
+Examples of this are:
+- `MAX_RETRIES`
+- `MODEL_NAME`
+- etc, etc
+
+Then, these global config values can be accessed in python files using:
+
+
+```yaml
+example_key: example_value
+example_parent:
+  example_child: example_value
+```
+
+```python
+from global_config import global_config
+
+print(global_config.example_parent.example_child)
+```
+
+
+## Writing tests
+
+Whenever implementing a new feature, always encourage the user to write a test.
+
+Tests are written using pytest. To add a new test, create a new file/directory in the `tests` directory.
+
+### Test structure
+
+Look at `tests/test_skeleton.py` for an example test structure. On how you should write tests.
+
+```python
+import unittest
+
+from tests.test_class import TestCaseClass, ci_test
+from global_config import global_config
+
+class TestSkeleton(TestCaseClass):
+    def setUp(self) -> None:
+        super().setUp()
+        # Add any setup code here
+
+    @ci_test
+    def test_function(self):
+        # Any actual test code here
+        self.assertTrue(True)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+```
+
+Few things to note:
+- Inherit from `TestCaseClass` (see `tests/test_class.py`) for proper test setup
+- Include a `setUp` method in each test file
+- Use `self.config` for test configuration (loaded from `tests/config.yaml`)
+- Prefix tests with `test_` and use `@ci_test` decorator for CI tests
