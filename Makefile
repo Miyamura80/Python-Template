@@ -41,12 +41,14 @@ update_python_dep: check_rye
 
 view_python_venv_size:
 	@echo "$(YELLOW)🔍Checking python venv size...$(RESET)"
-	@cd .venv/lib/python3.11/site-packages && du -sh . && cd ../../../
+	@PYTHON_VERSION=$$(cat .python-version | cut -d. -f1,2) && \
+	cd .venv/lib/python$$PYTHON_VERSION/site-packages && du -sh . && cd ../../../
 	@echo "$(GREEN)Python venv size check completed.$(RESET)"
 
 view_python_venv_size_by_libraries:
 	@echo "$(YELLOW)🔍Checking python venv size by libraries...$(RESET)"
-	@cd .venv/lib/python3.11/site-packages && du -sh * | sort -h && cd ../../../
+	@PYTHON_VERSION=$$(cat .python-version | cut -d. -f1,2) && \
+	cd .venv/lib/python$$PYTHON_VERSION/site-packages && du -sh * | sort -h && cd ../../../
 	@echo "$(GREEN)Python venv size by libraries check completed.$(RESET)"
 
 ########################################################
