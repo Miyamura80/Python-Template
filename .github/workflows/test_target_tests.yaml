@@ -1,0 +1,48 @@
+name: Run Target Tests
+
+on: 
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '.github/workflows/**'
+  pull_request:
+    types: [opened, synchronize, reopened]  
+  workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Log level'
+        required: false
+        default: 'warning'
+      environment:
+        description: 'Environment to run tests in'
+        required: false
+        default: 'staging'
+
+jobs:
+  target_tests:
+    if: github.event_name == 'pull_request' || github.event.pull_request == null
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Read Python version
+      run: echo "PYTHON_VERSION=$(cat .python-version | tr -d '\n')" >> $GITHUB_ENV
+    - run: |
+        echo "Log Level: ${{ github.event.inputs.log_level }}"
+        echo "Environment: ${{ github.event.inputs.environment }}"
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    - name: Install Rye
+      uses: eifinger/setup-rye@v4
+      with:
+        version: 'latest'
+    - name: Install dependencies
+      run: |
+        rye sync
+    - name: Set OPENAI_API_KEY
+      run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+    - name: Run tests
+      run: |
+        make test
