@@ -14,7 +14,7 @@ PROJECT_ROOT=.
 ########################################################
 
 check_rye:
-	@echo "$(YELLOW)Checking rye version...$(RESET)"
+	@echo "$(YELLOW)🔍Checking rye version...$(RESET)"
 	@if ! command -v rye > /dev/null 2>&1; then \
 		echo "$(RED)rye is not installed. Please install rye before proceeding.$(RESET)"; \
 		exit 1; \
@@ -23,20 +23,29 @@ check_rye:
 	fi
 
 ########################################################
+# Setup githooks for linting
+########################################################
+setup_githooks:
+	@echo "$(YELLOW)🔨Setting up githooks on post-commit...$(RESET)"
+	chmod +x .githooks/post-commit
+	git config core.hooksPath .githooks
+
+
+########################################################
 # Python dependency-related
 ########################################################
 
 update_python_dep: check_rye
-	@echo "$(YELLOW)Updating python dependencies...$(RESET)"
+	@echo "$(YELLOW)🔄Updating python dependencies...$(RESET)"
 	@rye sync
 
 view_python_venv_size:
-	@echo "$(YELLOW)Checking python venv size...$(RESET)"
+	@echo "$(YELLOW)🔍Checking python venv size...$(RESET)"
 	@cd .venv/lib/python3.11/site-packages && du -sh . && cd ../../../
 	@echo "$(GREEN)Python venv size check completed.$(RESET)"
 
 view_python_venv_size_by_libraries:
-	@echo "$(YELLOW)Checking python venv size by libraries...$(RESET)"
+	@echo "$(YELLOW)🔍Checking python venv size by libraries...$(RESET)"
 	@cd .venv/lib/python3.11/site-packages && du -sh * | sort -h && cd ../../../
 	@echo "$(GREEN)Python venv size by libraries check completed.$(RESET)"
 
@@ -44,10 +53,10 @@ view_python_venv_size_by_libraries:
 # Run Main Application
 ########################################################
 
-all: update_python_dep
-	@echo "$(GREEN)Running main application...$(RESET)"
+all: update_python_dep setup_githooks
+	@echo "$(GREEN)🏁Running main application...$(RESET)"
 	@$(PYTHON) main.py
-	@echo "$(GREEN)Main application run completed.$(RESET)"
+	@echo "$(GREEN)✅ Main application run completed.$(RESET)"
 
 
 ########################################################
@@ -58,9 +67,9 @@ TEST_TARGETS = tests/folder1 tests/folder2
 
 # Tests
 test: check_rye
-	@echo "$(GREEN)Running Target Tests...$(RESET)"
+	@echo "$(GREEN)🧪Running Target Tests...$(RESET)"
 	$(TEST) $(TEST_TARGETS)
-	@echo "$(GREEN)Target Tests Passed.$(RESET)"
+	@echo "$(GREEN)✅Target Tests Passed.$(RESET)"
 
 
 ########################################################
@@ -72,7 +81,7 @@ IGNORE_LINT_DIRS = .venv|venv
 LINE_LENGTH = 88
 
 lint: check_rye
-	@echo "$(YELLOW)Linting project with Black...$(RESET)"
+	@echo "$(YELLOW)✨Linting project with Black...$(RESET)"
 	@rye run black --exclude '/($(IGNORE_LINT_DIRS))/' . --line-length $(LINE_LENGTH)
-	@echo "$(GREEN)Linting completed.$(RESET)"
+	@echo "$(GREEN)✅Linting completed.$(RESET)"
 
