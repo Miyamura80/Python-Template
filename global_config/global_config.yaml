@@ -1,2 +1,3 @@
+model-name: gpt-4o
 example_parent:
   example_child: example_value

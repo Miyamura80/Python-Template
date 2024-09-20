@@ -1,7 +1,14 @@
 # Python-Template
-Eito's default python template 
 
+<p align="center">
+  <img src="media/banner.png" alt="2" width="400">
+</p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.12.4-blue?logo=python" alt="Python Version">
+</p>
+
+![Dynamic TOML Badge](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fpyproject.toml&query=%24.project.version&label=version)
 
 ## Environment Variables
 

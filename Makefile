@@ -67,6 +67,7 @@ test: check_rye
 # Linting
 ########################################################
 
+# Linter will ignore these directories
 IGNORE_LINT_DIRS = .venv|venv
 LINE_LENGTH = 88
 
