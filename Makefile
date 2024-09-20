@@ -50,6 +50,18 @@ all: update_python_dep
 	@echo "$(GREEN)Main application run completed.$(RESET)"
 
 
+########################################################
+# Run Tests
+########################################################
+
+TEST_TARGETS = tests/folder1 tests/folder2
+
+# Tests
+test: check_rye
+	@echo "$(GREEN)Running Target Tests...$(RESET)"
+	$(TEST) $(TEST_TARGETS)
+	@echo "$(GREEN)Target Tests Passed.$(RESET)"
+
 
 ########################################################
 # Linting
