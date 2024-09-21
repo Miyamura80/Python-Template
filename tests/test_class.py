@@ -40,6 +40,7 @@ class TestCaseClass(unittest.TestCase):
         # Set the session id to the class name and a random id
         self.session_id = f"{self.__class__.__name__}-@-{generate_id()}"
         config["session_id"] = self.session_id
+        print(f"Session ID: \033[34m{self.session_id}\033[0m")
 
         # Set the session name to "Unit Tests using LLMs"
         self.session_name = f"Unit Tests using LLMs"
