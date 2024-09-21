@@ -22,6 +22,16 @@ check_rye:
 		rye --version; \
 	fi
 
+check_jq:
+	@echo "$(YELLOW)🔍Checking jq version...$(RESET)"
+	@if ! command -v jq > /dev/null 2>&1; then \
+		echo "$(RED)jq is not installed. Please install jq before proceeding.$(RESET)"; \
+		echo "$(RED)brew install jq$(RESET)"; \
+		exit 1; \
+	else \
+		jq --version; \
+	fi
+
 ########################################################
 # Setup githooks for linting
 ########################################################
@@ -82,8 +92,19 @@ test: check_rye
 IGNORE_LINT_DIRS = .venv|venv
 LINE_LENGTH = 88
 
-lint: check_rye
+lint: check_rye check_jq
 	@echo "$(YELLOW)✨Linting project with Black...$(RESET)"
 	@rye run black --exclude '/($(IGNORE_LINT_DIRS))/' . --line-length $(LINE_LENGTH)
-	@echo "$(GREEN)✅Linting completed.$(RESET)"
+	@echo "$(YELLOW)✨Linting and formatting JSONs with jq...$(RESET)"
+	@count=0; \
+	find . \( $(IGNORE_LINT_DIRS:%=-path './%' -prune -o) \) -type f -name '*.json' -print0 | \
+	while IFS= read -r -d '' file; do \
+		if jq . "$$file" > "$$file.tmp" 2>/dev/null && mv "$$file.tmp" "$$file"; then \
+			count=$$((count + 1)); \
+		else \
+			rm -f "$$file.tmp"; \
+		fi; \
+	done; \
+	echo "$(BLUE)$$count JSON file(s)$(RESET) linted and formatted."; \
+	echo "$(GREEN)✅Linting completed.$(RESET)"
 
