@@ -24,7 +24,16 @@ jobs:
     if: github.event_name == 'pull_request' || github.event.pull_request == null
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
+        token: ${{ secrets.GH_PAT }}
+
+    - name: Checkout submodules
+      run: |
+        git submodule init
+        git submodule update
     - name: Read Python version
       run: echo "PYTHON_VERSION=$(cat .python-version | tr -d '\n')" >> $GITHUB_ENV
     - run: |
