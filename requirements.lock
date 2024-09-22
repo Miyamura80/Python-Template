@@ -36,3 +36,5 @@ python-dotenv==1.0.1
     # via python-template
 pyyaml==6.0.2
     # via python-template
+termcolor==2.4.0
+    # via python-template
