@@ -45,6 +45,13 @@
 - Key feature 3
 
 
+## Requirements
+
+- [Rye](https://rye.astral.sh/)
+  ```
+  curl -sSf https://rye.astral.sh/get | bash
+  ```
+
 ## Quick Start
 
 - `make all` - runs `main.py`
