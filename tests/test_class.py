@@ -7,7 +7,7 @@ from global_config import global_config
 
 from dotenv import load_dotenv
 
-with open("tests/config.yaml", "r", encoding="utf-8") as config_file:
+with open("global_config/global_config.yaml", "r", encoding="utf-8") as config_file:
     config = yaml.safe_load(config_file)
 
 
