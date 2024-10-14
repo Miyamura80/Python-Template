@@ -13,7 +13,8 @@ load_dotenv(dotenv_path=root_dir / ".env")
 
 # Check if .env file has been properly loaded
 env_values = dotenv_values(root_dir / ".env")
-if not env_values:
+is_local = os.getenv("GITHUB_ACTIONS") != "true"
+if not env_values and is_local:
     warnings.warn(".env file not found or empty", UserWarning)
 
 
