@@ -1,12 +1,20 @@
 import os
 from typing import Any, Dict
 import yaml
-
-# Optionally load .env file
+from pathlib import Path
 from dotenv import load_dotenv, dotenv_values
+import warnings
 
-load_dotenv()
+# Get the path to the root directory (one level up from global_config)
+root_dir = Path(__file__).parent.parent
 
+# Load .env file from the root directory
+load_dotenv(dotenv_path=root_dir / '.env')
+
+# Check if .env file has been properly loaded
+env_values = dotenv_values(root_dir / '.env')
+if not env_values:
+    warnings.warn(".env file not found or empty", UserWarning)
 
 class DictWrapper:
     def __init__(self, data):
@@ -18,7 +26,7 @@ class DictWrapper:
 
 
 class Config:
-    _env_keys = ["OPENAI_API_KEY", "HELICONE_API_KEY"]
+    _env_keys = ["OPENAI_API_KEY", "HELICONE_API_KEY", "GITHUB_PERSONAL_ACCESS_TOKEN"]
 
     def __init__(self):
         with open("global_config/global_config.yaml", "r") as file:
