@@ -9,12 +9,13 @@ import warnings
 root_dir = Path(__file__).parent.parent
 
 # Load .env file from the root directory
-load_dotenv(dotenv_path=root_dir / '.env')
+load_dotenv(dotenv_path=root_dir / ".env")
 
 # Check if .env file has been properly loaded
-env_values = dotenv_values(root_dir / '.env')
+env_values = dotenv_values(root_dir / ".env")
 if not env_values:
     warnings.warn(".env file not found or empty", UserWarning)
+
 
 class DictWrapper:
     def __init__(self, data):
