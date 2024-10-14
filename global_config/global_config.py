@@ -27,7 +27,7 @@ class DictWrapper:
 
 
 class Config:
-    _env_keys = ["OPENAI_API_KEY", "HELICONE_API_KEY", "GH_PAT"]
+    _env_keys = ["OPENAI_API_KEY", "HELICONE_API_KEY"]
 
     def __init__(self):
         with open("global_config/global_config.yaml", "r") as file:
