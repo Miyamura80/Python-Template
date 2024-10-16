@@ -46,6 +46,10 @@ class Config:
             else:
                 setattr(self, key, os.environ.get(key))
 
+        # Figure out runtime environment
+        self.is_local = os.getenv("GITHUB_ACTIONS") != "true"
+        self.running_on = "🖥️  local" if self.is_local else "☁️  CI"
+
     def __getattr__(self, name):
         raise AttributeError(f"'Config' object has no attribute '{name}'")
 
