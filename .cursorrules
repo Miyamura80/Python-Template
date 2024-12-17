@@ -34,7 +34,7 @@ Examples of this are:
 Then, these global config values can be accessed in python files using:
 
 
-```yaml
+```yaml file="global_config/global_config.yaml"
 example_key: example_value
 example_parent:
   example_child: example_value
