@@ -75,7 +75,7 @@ all: update_python_dep setup_githooks
 # Run Tests
 ########################################################
 
-TEST_TARGETS = tests/folder1 tests/folder2
+TEST_TARGETS = tests/
 
 # Tests
 test: check_rye
