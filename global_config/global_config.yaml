@@ -1,3 +1,5 @@
 model_name: gpt-4o
 example_parent:
   example_child: example_value
+
+dot_global_config_health_check: true
