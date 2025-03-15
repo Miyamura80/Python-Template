@@ -1,5 +1,29 @@
 model_name: gpt-4o
-example_parent:
-  example_child: example_value
 
 dot_global_config_health_check: true
+
+
+########################################################
+# Debugging
+########################################################
+logging:
+  verbose: true
+  format:
+    show_time: false
+    show_session_id: true
+    location:
+      enabled: true
+      show_file: true
+      show_function: true
+      show_line: true
+      # Configure which log levels show location information
+      show_for_info: false
+      show_for_debug: true
+      show_for_warning: true
+      show_for_error: true
+  levels:
+    debug: false  # Suppress all debug logs
+    info: true    # Show info logs
+    warning: true # Show warning logs
+    error: true   # Show error logs
+    critical: true # Show critical logs
