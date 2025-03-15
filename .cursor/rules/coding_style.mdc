@@ -1,0 +1,11 @@
+---
+description: Coding style rules
+globs: 
+---
+## Stylistic preferences
+- Use snake case for all function, file, and directory names
+- Use camel case for class names
+- Use all lowercase for variable names
+- Use all uppercase for constants
+- Use 4 spaces for indentation
+- Use double quotes for strings

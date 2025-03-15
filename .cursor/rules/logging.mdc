@@ -1,0 +1,46 @@
+---
+description: Standards for using logging in the project.
+globs: 
+---
+## Logging Configuration
+
+This project uses a centralized logging configuration with `loguru`. Always use the standardized logging format by importing and calling the setup function from `src/utils/logging_config.py`.
+
+```python
+from loguru import logger as log
+from src.utils.logging_config import setup_logging
+
+# Setup logging at the start of your file
+setup_logging()
+
+# Then use logger as needed
+log.info("Info message")
+log.error("Error message")
+log.debug("Debug message")
+```
+
+The standardized format includes:
+- Log level (INFO, ERROR, etc.)
+- Timestamp (HH:mm:ss)
+- Message
+
+Example output:
+```
+INFO   12:34:56 |  Starting application
+ERROR  12:34:57 |  Failed to connect to database
+```
+
+Never configure logging directly in your files. Always use the centralized configuration to maintain consistent logging format across the entire application.
+
+If for whatever reason some log is not showing up, check the `global_config/global_config.yaml` file to see if the log level is set to true.
+
+```yaml file=global_config/global_config.yaml
+logging:
+  # ... Other logging config ...
+  levels:
+    debug: false
+    info: true
+    warning: true
+    error: true
+    critical: true
+```

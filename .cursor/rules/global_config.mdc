@@ -1,0 +1,43 @@
+---
+description: How to use global config across the project.
+globs: 
+---
+## Using global configuration
+
+Global config is used to store hyperparameters that should be applied across the entire codebase. They handle both environment variables (should not be committed to the repo) and other configuration values (safe to commit to the repo). 
+
+Whenever there is a hyperparameter that should be applied across the entire codebase, add those hyperparameters in `global_config/global_config.yaml`. Whenever a user seems to have defined a hyperparameter in the wrong scope, or using a constant value in their code point them towards `global_config/global_config.yaml` and ask them to add it there instead. 
+
+Examples of this are:
+- `MAX_RETRIES`
+- `MODEL_NAME`
+- etc, etc
+
+Any private or secret keys should be stored in the .env file in the root of the project, which is automatically loaded into global_config.
+
+Examples of this are:
+- `OPENAI_API_KEY`
+- `HELICONE_API_KEY`
+- `GITHUB_PERSONAL_ACCESS_TOKEN`
+- etc, etc
+
+
+And to autoload these from the environment, add the names to the global_config.py class member `_ENV`.
+
+Then, these global config values can be accessed in python files using:
+
+```yaml file=global_config/global_config.yaml
+example_key: example_value
+example_parent:
+  example_child: example_value
+```
+
+```python
+from global_config import global_config
+
+# Handling non-secrets
+print(global_config.example_parent.example_child)
+
+# Handling secrets
+print(global_config.OPENAI_API_KEY)
+```

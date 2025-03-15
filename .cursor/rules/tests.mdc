@@ -1,0 +1,40 @@
+---
+description: On how to write tests
+globs: 
+---
+## Writing tests
+
+Whenever implementing a new feature, always encourage the user to write a test.
+
+Tests are written using pytest. To add a new test, create a new file/directory in the `tests/` directory. Ensure, that whenever you create a new directory in the `tests/` directory, you also add a `tests/.../__init__.py` to the directory so python can recognize the test directory.
+
+
+### Test structure
+
+Look at below example for how you should write tests.
+
+```python
+from tests.test_template import TestTemplate, slow_test, nondeterministic_test
+from global_config import global_config
+
+class TestSkeleton(TestTemplate):
+    # Initialize shared variables here for all tests
+    @pytest.fixture(autouse=True)
+    def setup_shared_variables(self, setup):
+        # Initialize shared attributes here
+        pass
+
+    # Actual test code here
+    # Possibly @slow_test or @nondeterministic_test
+    def test_function(self):
+        # Any actual test code here
+        assert True
+```
+
+
+
+Few things to note:
+- Inherit from `TestTemplate` (see `tests/test_template.py`) for proper test setup
+- Use `self.config` for test configuration (loaded from `tests/config.yaml`)
+- Prefix tests with `test_` and use `@slow_test` or `@nondeterministic_test` decorator for slow and/or nondeterministic tests
+- Never use `unittest`, always use pytest
