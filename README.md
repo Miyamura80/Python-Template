@@ -93,6 +93,3 @@ Coming soon...
 Coming soon...
 
 
-## About the core contributors
-
-- Eito Miyamura is a Co-Founder & CEO of [GatlingX](x.com/gatling_x), formerly CS, AI, RL MSc at University of Oxford. Interested in ML/RL/Robotics/Zero Knowledge, Blockchain networks. [![Follow me on twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/Eito_Miyamura)

@@ -100,3 +100,41 @@ for fork in "$@"; do
 done
 ```
 This ensures that users can run the script multiple times and keep a historical record of all results.
+
+7. Warnings, Errors, Final Success
+Support these messages, to make visible
+
+```bash
+# Function to print error and exit
+function error_exit() {
+    echo -e "${BOLD_RED}❌ ERROR${RESET}: $1" >&2
+    exit 1
+}
+```
+
+```bash
+# Function to print success
+function success() {
+    echo -e "${BOLD_GREEN}✅ SUCCESS${RESET}: $1"
+}
+```
+
+```bash
+# Function to print warning
+function warning() {
+    echo -e "${BOLD_YELLOW}⚠️ WARNING${RESET}: $1"
+}
+```
+
+8. Organization
+Make it easy to read and parse, by seperating out function definitions with:
+
+##########################################################
+# Defining dependencies
+##########################################################
+
+and 
+
+##########################################################
+# Starting main steps
+##########################################################
