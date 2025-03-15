@@ -1,6 +1,7 @@
 ---
 description: On how to write tests
 globs: 
+alwaysApply: true
 ---
 ## Writing tests
 

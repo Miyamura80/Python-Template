@@ -1,6 +1,7 @@
 ---
 description: Coding style rules
 globs: 
+alwaysApply: true
 ---
 ## Stylistic preferences
 - Use snake case for all function, file, and directory names
