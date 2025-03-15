@@ -108,3 +108,11 @@ lint: check_rye check_jq
 	echo "$(BLUE)$$count JSON file(s)$(RESET) linted and formatted."; \
 	echo "$(GREEN)✅Linting completed.$(RESET)"
 
+########################################################
+# Dependencies
+########################################################
+
+requirements:
+	@echo "$(YELLOW)🔍Checking requirements...$(RESET)"
+	@cp requirements-dev.lock requirements.txt
+	@echo "$(GREEN)✅Requirements checked.$(RESET)"
