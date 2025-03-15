@@ -19,6 +19,8 @@ human-id==0.2.0
     # via python-template
 iniconfig==2.0.0
     # via pytest
+loguru==0.7.3
+    # via python-template
 mypy-extensions==1.0.0
     # via black
 packaging==24.1
