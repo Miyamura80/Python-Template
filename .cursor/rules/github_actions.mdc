@@ -7,3 +7,4 @@ GitHub Actions doesn’t provide a default personal access token (PAT). Instead,
 
 Use this in writing Github actions, unless you absolutely need some special privilages. (In which case set some minimal permission `secrets.GH_PAT`)
 
+
