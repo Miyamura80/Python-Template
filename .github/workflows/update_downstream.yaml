@@ -1,0 +1,31 @@
+name: Update Downstream Templates
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-template:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Template A
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Clone SaaS-Template repository (Template B)
+      run: |
+        git clone https://Miyamura80:${{ secrets.GH_PAT }}@github.com/Miyamura80/SaaS-Template.git templateB
+
+    - name: Copy all files to Template B
+      run: |
+        rsync -av --delete --exclude='.git' ./ templateB/
+
+    - name: Commit and push changes to SaaS-Template
+      working-directory: templateB
+      run: |
+        git config user.name "github-actions"
+        git config user.email "actions@github.com"
+        git add .
+        git commit -m "Update SaaS-Template from Python-Template" || echo "No changes to commit"
+        git push origin main
