@@ -19,30 +19,19 @@ jobs:
 
     - name: Copy all files to Template B
       run: |
-        # First ensure we're copying to the correct location
-        # Use --checksum to compare actual file contents instead of timestamps
-        rsync -av --checksum --itemize-changes \
-          --exclude='.git' \
-          --exclude='.github/workflows/update_downstream.yaml' \
-          ./ templateB \
-          --remove-source-files
-
-    - name: Clean up nested directories
-      working-directory: templateB
-      run: |
-        # Check if nested templateB directory exists and move contents up if needed
-        if [ -d "templateB" ]; then
-          mv templateB/* .
-          rm -rf templateB
-        fi
+        # First clean the target directory (except .git)
+        find templateB -mindepth 1 -not -path 'templateB/.git*' -delete
+        
+        # Then copy all files, excluding .git and the workflow file
+        cp -r $(ls -A | grep -v '.git\|.github') templateB/
+        cp -r .github templateB/
+        rm -f templateB/.github/workflows/update_downstream.yaml
 
     - name: Commit and push changes to SaaS-Template
       working-directory: templateB
       run: |
         git config user.name "github-actions"
         git config user.email "actions@github.com"
-        # Stage all changes, including deletions
         git add -A
-        # Only commit if there are actual changes
         git diff --staged --quiet || git commit -m "Update SaaS-Template from Python-Template"
         git push origin main
