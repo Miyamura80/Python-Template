@@ -19,12 +19,22 @@ jobs:
 
     - name: Copy all files to Template B
       run: |
+        # First ensure we're copying to the correct location
         # Use --checksum to compare actual file contents instead of timestamps
-        # Use --itemize-changes to see what's being updated
         rsync -av --checksum --itemize-changes \
           --exclude='.git' \
           --exclude='.github/workflows/update_downstream.yaml' \
-          ./ templateB/
+          ./ templateB \
+          --remove-source-files
+
+    - name: Clean up nested directories
+      working-directory: templateB
+      run: |
+        # Check if nested templateB directory exists and move contents up if needed
+        if [ -d "templateB" ]; then
+          mv templateB/* .
+          rm -rf templateB
+        fi
 
     - name: Commit and push changes to SaaS-Template
       working-directory: templateB
