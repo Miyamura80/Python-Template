@@ -15,7 +15,7 @@ jobs:
 
     - name: Clone SaaS-Template repository (Template B)
       run: |
-        git clone https://Miyamura80:${{ secrets.GH_PAT }}@github.com/Miyamura80/SaaS-Template.git templateB
+        git clone https://Miyamura80:${{ secrets.GITHUB_TOKEN }}@github.com/Miyamura80/SaaS-Template.git templateB
 
     - name: Copy all files to Template B
       run: |
