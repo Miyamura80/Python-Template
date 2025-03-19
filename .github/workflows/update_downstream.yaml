@@ -19,13 +19,15 @@ jobs:
 
     - name: Copy all files to Template B
       run: |
-        rsync -av --delete --exclude='.git' --exclude='.github/workflows/update_downstream.yaml' ./ templateB/
+        # First, copy only the changed files without --delete flag
+        rsync -av --exclude='.git' --exclude='.github/workflows/update_downstream.yaml' ./ templateB/
 
     - name: Commit and push changes to SaaS-Template
       working-directory: templateB
       run: |
         git config user.name "github-actions"
         git config user.email "actions@github.com"
-        git add .
+        # Stage all changes, including deletions
+        git add -A
         git commit -m "Update SaaS-Template from Python-Template" || echo "No changes to commit"
         git push origin main
