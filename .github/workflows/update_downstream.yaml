@@ -19,13 +19,22 @@ jobs:
 
     - name: Copy all files to Template B
       run: |
-        # First clean the target directory (except .git)
+        # Create a temporary directory for the operation
+        mkdir temp_dir
+        
+        # Copy all files to temp directory first, excluding .git and the workflow file
+        cp -r $(ls -A | grep -v '.git\|.github') temp_dir/
+        cp -r .github temp_dir/
+        rm -f temp_dir/.github/workflows/update_downstream.yaml
+        
+        # Clean the target directory (except .git)
         find templateB -mindepth 1 -not -path 'templateB/.git*' -delete
         
-        # Then copy all files, excluding .git and the workflow file
-        cp -r $(ls -A | grep -v '.git\|.github') templateB/
-        cp -r .github templateB/
-        rm -f templateB/.github/workflows/update_downstream.yaml
+        # Move files from temp to target
+        cp -r temp_dir/* temp_dir/.* templateB/ 2>/dev/null || true
+        
+        # Cleanup
+        rm -rf temp_dir
 
     - name: Commit and push changes to SaaS-Template
       working-directory: templateB
