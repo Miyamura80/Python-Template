@@ -5,5 +5,5 @@ alwaysApply: false
 ---
 GitHub Actions doesn’t provide a default personal access token (PAT). Instead, it creates a built-in token called `secrets.GITHUB_TOKEN` for each workflow run. This token is provided by github, and ends with the job or after 24 hrs, and the scope is limited to the current repository.
 
-Use this in writing Github actions, unless you absolutely need some special privilages.
+Use this in writing Github actions, unless you absolutely need some special privilages. (In which case set some minimal permission `secrets.GH_PAT`)
 
