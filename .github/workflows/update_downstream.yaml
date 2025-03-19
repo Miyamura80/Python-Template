@@ -17,19 +17,30 @@ jobs:
       run: |
         git clone https://Miyamura80:${{ secrets.GH_PAT }}@github.com/Miyamura80/SaaS-Template.git templateB
 
-    - name: Copy all files to Template B
+    - name: Copy files to Template B (preserving existing files)
       run: |
-        # First clean the target directory (except .git)
-        find templateB -mindepth 1 -not -path 'templateB/.git*' -delete
-        
-        # Copy files one category at a time
+        # Copy files one category at a time, using cp -n to never overwrite existing files
         for item in $(ls -A | grep -v '.git\|.github\|templateB'); do
-          cp -r "$item" templateB/
+          if [ -e "templateB/$item" ]; then
+            echo "Skipping existing item: $item"
+          else
+            cp -r "$item" templateB/
+            echo "Copied new item: $item"
+          fi
         done
         
         # Handle .github directory separately
         mkdir -p templateB/.github
-        cp -r .github/* templateB/.github/
+        for item in .github/*; do
+          if [ -e "templateB/$item" ]; then
+            echo "Skipping existing item: $item"
+          else
+            cp -r "$item" "templateB/$item"
+            echo "Copied new item: $item"
+          fi
+        done
+        
+        # Always exclude update_downstream.yaml
         rm -f templateB/.github/workflows/update_downstream.yaml
 
     - name: Commit and push changes to SaaS-Template
@@ -38,5 +49,5 @@ jobs:
         git config user.name "github-actions"
         git config user.email "actions@github.com"
         git add -A
-        git diff --staged --quiet || git commit -m "Update SaaS-Template from Python-Template"
+        git diff --staged --quiet || git commit -m "Add new files from Python-Template"
         git push origin main
