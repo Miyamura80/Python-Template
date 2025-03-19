@@ -19,7 +19,7 @@ jobs:
 
     - name: Copy all files to Template B
       run: |
-        rsync -av --delete --exclude='.git' ./ templateB/
+        rsync -av --delete --exclude='.git' --exclude='.github/workflows/update_downstream.yaml' ./ templateB/
 
     - name: Commit and push changes to SaaS-Template
       working-directory: templateB
