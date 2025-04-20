@@ -85,7 +85,7 @@ test: check_rye
 
 
 ########################################################
-# Linting
+# Cleaning
 ########################################################
 
 # Linter will ignore these directories
@@ -107,6 +107,11 @@ lint: check_rye check_jq
 	done; \
 	echo "$(BLUE)$$count JSON file(s)$(RESET) linted and formatted."; \
 	echo "$(GREEN)✅Linting completed.$(RESET)"
+
+vulture: check_rye
+	@echo "$(YELLOW)🔍Running Vulture...$(RESET)"
+	@rye run vulture .
+	@echo "$(GREEN)✅Vulture completed.$(RESET)"
 
 ########################################################
 # Dependencies

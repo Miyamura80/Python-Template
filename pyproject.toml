@@ -33,4 +33,10 @@ allow-direct-references = true
 packages = ["src/python_template"]
 
 [tool.vulture]
-exclude = [".venv/"]
+exclude = [
+    ".venv/",
+    "tests/test_template.py",
+    "global_config/global_config.py",
+    "src/utils/logging_config.py",
+    "tests/conftest.py"
+]

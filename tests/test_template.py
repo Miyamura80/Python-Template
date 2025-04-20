@@ -1,5 +1,4 @@
 import pytest
-import os
 from copy import deepcopy
 from human_id import generate_id
 from global_config import global_config
