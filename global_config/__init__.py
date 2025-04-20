@@ -1,1 +1,1 @@
-from .global_config import *
+from .global_config import global_config as global_config
