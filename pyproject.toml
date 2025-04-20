@@ -13,6 +13,7 @@ dependencies = [
     "pytest>=8.3.3",
     "termcolor>=2.4.0",
     "loguru>=0.7.3",
+    "vulture>=2.14",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -30,3 +31,6 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/python_template"]
+
+[tool.vulture]
+exclude = [".venv/"]
