@@ -1,3 +1,5 @@
+old_scripts/
+
 # Overwrite global config
 .global_config.yaml
 
