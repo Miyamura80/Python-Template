@@ -1,5 +1,4 @@
 import os
-from typing import Any, Dict
 import yaml
 from pathlib import Path
 from dotenv import load_dotenv, dotenv_values
@@ -104,7 +103,6 @@ class Config:
         model_identifier = model_name or self.model_name
         if (
             "gpt" in model_identifier.lower()
-            or "openai" in model_identifier.lower()
             or re.match(OPENAI_O_SERIES_PATTERN, model_identifier.lower())
         ):
             return self.OPENAI_API_KEY
@@ -122,11 +120,10 @@ class Config:
         else:
             raise ValueError(f"No API key configured for model: {model_identifier}")
 
-    def helicone_link(self, model_name: str) -> str:
+    def api_base(self, model_name: str) -> str:
         """Returns the Helicone link for the model."""
         if (
             "gpt" in model_name.lower()
-            or "openai" in model_name.lower()
             or re.match(OPENAI_O_SERIES_PATTERN, model_name.lower())
         ):
             return "https://oai.hconeai.com/v1"
@@ -135,7 +132,7 @@ class Config:
         elif "perplexity" in model_name.lower():
             return "https://perplexity.helicone.ai"
         elif "gemini" in model_name.lower():
-            return "https://oai.helicone.ai/v1"
+            return "https://generativelanguage.googleapis.com/v1beta/openai/"
         else:
             logger.error(f"Helicone link not found for model: {model_name}")
 
