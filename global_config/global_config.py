@@ -101,9 +101,8 @@ class Config:
             raise ValueError("model_name not found in global_config.yaml")
 
         model_identifier = model_name or self.model_name
-        if (
-            "gpt" in model_identifier.lower()
-            or re.match(OPENAI_O_SERIES_PATTERN, model_identifier.lower())
+        if "gpt" in model_identifier.lower() or re.match(
+            OPENAI_O_SERIES_PATTERN, model_identifier.lower()
         ):
             return self.OPENAI_API_KEY
         elif (
@@ -122,9 +121,8 @@ class Config:
 
     def api_base(self, model_name: str) -> str:
         """Returns the Helicone link for the model."""
-        if (
-            "gpt" in model_name.lower()
-            or re.match(OPENAI_O_SERIES_PATTERN, model_name.lower())
+        if "gpt" in model_name.lower() or re.match(
+            OPENAI_O_SERIES_PATTERN, model_name.lower()
         ):
             return "https://oai.hconeai.com/v1"
         elif "groq" in model_name.lower():
