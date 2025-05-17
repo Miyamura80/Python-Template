@@ -33,6 +33,11 @@ class DictWrapper:
 class Config:
     _env_keys = [
         "DEV_ENV",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "GROQ_API_KEY",
+        "PERPLEXITY_API_KEY",
+        "GEMINI_API_KEY",
     ]
 
     def __init__(self):
@@ -97,8 +102,6 @@ class Config:
 
     def llm_api_key(self, model_name: str = None) -> str:
         """Returns the appropriate API key based on the model name."""
-        if not hasattr(self, "model_name"):
-            raise ValueError("model_name not found in global_config.yaml")
 
         model_identifier = model_name or self.model_name
         if "gpt" in model_identifier.lower() or re.match(
