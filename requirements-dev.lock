@@ -25,6 +25,7 @@ anyio==4.9.0
     # via asyncer
     # via dspy
     # via httpx
+    # via langfuse
     # via openai
 asyncer==0.0.8
     # via dspy
@@ -34,6 +35,7 @@ attrs==25.3.0
     # via referencing
 backoff==2.2.1
     # via dspy
+    # via langfuse
 black==24.8.0
     # via python-template
 cachetools==5.5.2
@@ -77,6 +79,7 @@ h11==0.16.0
 httpcore==1.0.9
     # via httpx
 httpx==0.28.1
+    # via langfuse
     # via litellm
     # via openai
 huggingface-hub==0.31.2
@@ -87,6 +90,7 @@ human-id==0.2.0
 idna==3.10
     # via anyio
     # via httpx
+    # via langfuse
     # via requests
     # via yarl
 importlib-metadata==8.7.0
@@ -105,8 +109,11 @@ jsonschema==4.23.0
     # via litellm
 jsonschema-specifications==2025.4.1
     # via jsonschema
-litellm==1.67.5
+langfuse==2.60.5
+    # via python-template
+litellm==1.70.0
     # via dspy
+    # via python-template
 loguru==0.7.3
     # via python-template
 magicattr==0.1.6
@@ -132,7 +139,7 @@ numpy==2.2.5
     # via dspy
     # via optuna
     # via pandas
-openai==1.79.0
+openai==1.75.0
     # via dspy
     # via litellm
 optuna==4.3.0
@@ -141,6 +148,7 @@ packaging==24.1
     # via black
     # via datasets
     # via huggingface-hub
+    # via langfuse
     # via optuna
     # via pytest
 pandas==2.2.3
@@ -159,6 +167,7 @@ pyarrow==20.0.0
     # via datasets
 pydantic==2.11.4
     # via dspy
+    # via langfuse
     # via litellm
     # via openai
 pydantic-core==2.33.2
@@ -189,6 +198,7 @@ requests==2.32.3
     # via datasets
     # via dspy
     # via huggingface-hub
+    # via langfuse
     # via tiktoken
 rich==14.0.0
     # via dspy
@@ -205,6 +215,7 @@ sqlalchemy==2.0.41
     # via optuna
 tenacity==9.1.2
     # via dspy
+    # via python-template
 termcolor==2.4.0
     # via python-template
 tiktoken==0.9.0
@@ -237,6 +248,8 @@ urllib3==2.4.0
     # via requests
 vulture==2.14
     # via python-template
+wrapt==1.17.2
+    # via langfuse
 xxhash==3.5.0
     # via datasets
 yarl==1.20.0
