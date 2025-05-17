@@ -28,7 +28,7 @@ class DSPYInference:
         self.lm = dspy.LM(
             model=model_name,
             api_key=api_key,
-            # cache=global_config.llm_cache_enabled,
+            cache=global_config.llm_config.cache_enabled,
             temperature=temperature,
             max_tokens=max_tokens,
         )
