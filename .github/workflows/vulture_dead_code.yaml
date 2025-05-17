@@ -39,4 +39,5 @@ jobs:
         version: 'latest'
     - name: Run Vulture
       run: |
+        rye sync
         make vulture
