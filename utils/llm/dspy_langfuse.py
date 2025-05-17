@@ -22,14 +22,19 @@ class LangFuseDSPYCallback(BaseCallback):
         self.current_prompt = contextvars.ContextVar("current_prompt")
         self.current_completion = contextvars.ContextVar("current_completion")
         self.current_span = contextvars.ContextVar("current_span")
-        self.model_name_at_span_creation = contextvars.ContextVar("model_name_at_span_creation")
+        self.model_name_at_span_creation = contextvars.ContextVar(
+            "model_name_at_span_creation"
+        )
         self.input_field_values = contextvars.ContextVar("input_field_values")
         # Initialize Langfuse client
         self.langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
         for input_field_name, input_field in signature.input_fields.items():
-            if input_field.annotation == Optional[dspy.Image] or input_field.annotation == dspy.Image:
-                pass # TODO: We need to handle media.
+            if (
+                input_field.annotation == Optional[dspy.Image]
+                or input_field.annotation == dspy.Image
+            ):
+                pass  # TODO: We need to handle media.
 
     def on_module_start(self, call_id, *args, **kwargs):
         inputs = kwargs.get("inputs")
@@ -45,7 +50,7 @@ class LangFuseDSPYCallback(BaseCallback):
             "existing_trace_id": langfuse_context.get_current_trace_id(),
             "parent_observation_id": langfuse_context.get_current_observation_id(),
         }
-        outputs_extracted = {} # Default to empty dict
+        outputs_extracted = {}  # Default to empty dict
         if outputs is not None:
             try:
                 outputs_extracted = {k: v for k, v in outputs.items()}
@@ -56,7 +61,7 @@ class LangFuseDSPYCallback(BaseCallback):
         langfuse_context.update_current_observation(
             input=self.input_field_values.get({}),
             output=outputs_extracted,
-            metadata=metadata
+            metadata=metadata,
         )
 
     def on_lm_start(self, call_id, *args, **kwargs):
@@ -111,7 +116,9 @@ class LangFuseDSPYCallback(BaseCallback):
             status_message = str(exception)
         elif outputs is None:
             level = "ERROR"
-            status_message = "LM call returned None outputs without an explicit exception."
+            status_message = (
+                "LM call returned None outputs without an explicit exception."
+            )
         elif isinstance(outputs, list):
             if outputs:
                 completion_content = outputs[0]
@@ -167,8 +174,16 @@ class LangFuseDSPYCallback(BaseCallback):
                             "total": total_tokens,
                         },
                         cost_details={
-                            "input": total_cost * (prompt_tokens / total_tokens) if total_tokens else 0,
-                            "output": total_cost * (completion_tokens / total_tokens) if total_tokens else 0,
+                            "input": (
+                                total_cost * (prompt_tokens / total_tokens)
+                                if total_tokens
+                                else 0
+                            ),
+                            "output": (
+                                total_cost * (completion_tokens / total_tokens)
+                                if total_tokens
+                                else 0
+                            ),
                             "cache_read_input_tokens": 0.0,
                             "total": total_cost,
                         },
