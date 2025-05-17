@@ -6,6 +6,7 @@ from langfuse.media import LangfuseMedia
 from typing import Optional
 import dspy
 
+from loguru import logger
 
 # 1. Define a custom callback class that extends BaseCallback class
 class LangFuseDSPYCallback(BaseCallback):
@@ -112,7 +113,6 @@ class LangFuseDSPYCallback(BaseCallback):
         completion_content = None
         model_name_for_span = None
         usage_for_span = None
-        cost_for_span = None
         level = "DEFAULT"
         status_message = None
 
@@ -123,32 +123,21 @@ class LangFuseDSPYCallback(BaseCallback):
         if exception:
             level = "ERROR"
             status_message = str(exception)
-            # model_name_for_span remains as set from model_name_at_span_creation
         elif outputs is None:
             level = "ERROR"
             status_message = (
                 "LM call returned None outputs without an explicit exception."
             )
-            # model_name_for_span remains as set from model_name_at_span_creation
         elif isinstance(outputs, list):
             if outputs:
-                completion_content = outputs[
-                    0
-                ]  # Assuming the first element is the completion
-                # For list outputs, model_name_for_span (from creation) is used.
+                completion_content = outputs[0]
             else:
                 level = "WARNING"
                 status_message = "LM call returned an empty list as outputs."
-            # model_name_for_span remains as set from model_name_at_span_creation
         else:
-            # This is for single, non-list, non-None, non-exception outputs
             try:
-                # Attempt to get a more definitive model name from the LM output if available
                 if hasattr(outputs, "model") and outputs.model is not None:
-                    model_name_for_span = (
-                        outputs.model
-                    )  # Override if available and not None
-                # If outputs.model is None or not present, model_name_for_span (from creation) is used.
+                    model_name_for_span = outputs.model
 
                 if (
                     outputs.choices
@@ -160,45 +149,81 @@ class LangFuseDSPYCallback(BaseCallback):
                     level = "WARNING"
                     status_message = "LM output structure did not contain expected choices or message."
 
-                if (
-                    completion_content
-                    and self.current_system_prompt is not None
-                    and self.current_prompt is not None
-                ):
-                    try:
-                        total_cost = completion_cost(
-                            model=model_name_for_span,
-                            prompt=self.current_system_prompt + self.current_prompt,
-                            completion=completion_content,
-                        )
-                        cost_for_span = {"total": total_cost}
-
-                        prompt_len = len(
-                            self.current_system_prompt + self.current_prompt
-                        )
-                        completion_len = len(completion_content)
-                        usage_for_span = {
-                            "prompt_tokens": prompt_len,
-                            "completion_tokens": completion_len,
-                            "total_tokens": prompt_len + completion_len,
-                        }
-                    except Exception as e:
-                        # Silently ignore cost/usage calculation errors for now, or log as warning
-                        pass  # Or log.warning(f"Could not calculate cost/usage: {e}")
-                else:
-                    if not completion_content:
-                        status_message = (
-                            status_message
-                            or "Completion content was empty or not found."
-                        )
-                    # Not enough info for cost/usage if prompts or completion are None
-
             except AttributeError as e:
                 level = "ERROR"
                 status_message = f"Error processing LM output structure: {e}. Output: {str(outputs)[:200]}"
-            except Exception as e:  # Catch any other unexpected error
+            except Exception as e:
                 level = "ERROR"
                 status_message = f"Unexpected error processing LM output: {e}. Output: {str(outputs)[:200]}"
+
+        # Calculate usage if we have the necessary information
+        if (
+            completion_content
+            and self.current_system_prompt is not None
+            and self.current_prompt is not None
+            and model_name_for_span
+        ):
+            try:
+                # Get usage from litellm if available
+                if hasattr(outputs, "usage"):
+                    prompt_tokens = outputs.usage.prompt_tokens
+                    completion_tokens = outputs.usage.completion_tokens
+                    total_tokens = outputs.usage.total_tokens
+                else:
+                    # Fallback to simple length-based estimation if usage not available
+                    prompt_tokens = len(
+                        self.current_system_prompt + self.current_prompt
+                    )
+                    completion_tokens = len(completion_content)
+                    total_tokens = prompt_tokens + completion_tokens
+
+                # Calculate cost using litellm
+                total_cost = completion_cost(
+                    model=model_name_for_span,
+                    prompt=self.current_system_prompt + self.current_prompt,
+                    completion=completion_content,
+                )
+
+                # Update the span with cost and usage in the correct format
+                if self.current_span:
+                    self.current_span.update(
+                        usage_details={
+                            "input": prompt_tokens,
+                            "output": completion_tokens,
+                            "cache_read_input_tokens": 0,  # We don't have cache info
+                            "total": total_tokens,
+                        },
+                        cost_details={
+                            "input": total_cost
+                            * (
+                                prompt_tokens / total_tokens
+                            ),  # Proportional cost for input
+                            "output": total_cost
+                            * (
+                                completion_tokens / total_tokens
+                            ),  # Proportional cost for output
+                            "cache_read_input_tokens": 0.0,  # No cache cost
+                            "total": total_cost,
+                        },
+                    )
+
+            except Exception as e:
+                logger.warning(f"Failed to calculate usage/cost: {str(e)}")
+                level = "WARNING"
+                status_message = f"Usage/cost calculation failed: {str(e)}"
+        else:
+            missing_info = []
+            if not completion_content:
+                missing_info.append("completion content")
+            if not self.current_system_prompt:
+                missing_info.append("system prompt")
+            if not self.current_prompt:
+                missing_info.append("user prompt")
+            if not model_name_for_span:
+                missing_info.append("model name")
+            logger.warning(
+                f"Missing required information for usage/cost calculation: {', '.join(missing_info)}"
+            )
 
         # End the generation span
         if self.current_span:
@@ -208,10 +233,6 @@ class LangFuseDSPYCallback(BaseCallback):
                 "level": level,
                 "status_message": status_message,
             }
-            if usage_for_span:
-                end_args["usage"] = usage_for_span
-            if cost_for_span:
-                end_args["cost"] = cost_for_span
 
             final_end_args = {
                 k: v
