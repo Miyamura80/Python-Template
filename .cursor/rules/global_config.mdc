@@ -18,7 +18,6 @@ Any private or secret keys should be stored in the .env file in the root of the 
 
 Examples of this are:
 - `OPENAI_API_KEY`
-- `HELICONE_API_KEY`
 - `GITHUB_PERSONAL_ACCESS_TOKEN`
 - etc, etc
 
