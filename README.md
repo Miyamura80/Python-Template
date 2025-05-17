@@ -35,7 +35,7 @@
 --- 
 
 <p align="center">
-  <img src="media/creating_banner.gif" alt="2" width="400">
+  <img src="media/creating_banner.gif" alt="2" width="600">
 </p>
 
 
