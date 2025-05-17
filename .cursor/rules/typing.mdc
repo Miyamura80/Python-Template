@@ -4,3 +4,8 @@ globs: *.py
 alwaysApply: false
 ---
 In Python 3.9 and later (which we're on), built-in collection types like list and tuple support direct type annotations. Therefore, instead of importing `List` and `Tuple` from the `typing` module, you can annotate types directly using the built-in types with bracket notation. For example, instead of writing from typing import List, Tuple, you can now write: `list` and `tuple`
+
+DO NOT try to do 
+```python
+from typing import list
+```
