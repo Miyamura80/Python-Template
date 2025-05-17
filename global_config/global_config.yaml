@@ -1,4 +1,4 @@
-
+model_name: gemini/gemini-2.0-flash
 dot_global_config_health_check: true
 
 ########################################################

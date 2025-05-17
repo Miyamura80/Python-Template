@@ -11,6 +11,7 @@
 <p align="center">
 <p align="center">
   <a href="#key-features">Key Features</a> •
+  <a href="#requirements">Requirements</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#configuration-options">Configuration</a> •
   <a href="#credits">Credits</a>
@@ -34,16 +35,16 @@
 --- 
 
 <p align="center">
-  <img src="media/example_gif.gif" alt="2" width="400">
+  <img src="media/creating_banner.gif" alt="2" width="400">
 </p>
 
 
-## Key features
+## Key Features
 
-- Built-in [cursor](cursor.com) native integration, with [`.cursorrules`](.cursorrules). Chat in `CTRL+L` or edit `CTRL+K` will automatically use `.cursorrules` to code in the native coding style of the repo / be a helpful guide to guide you in this repository
-- Key feature 2
-- Key feature 3
-
+- Super opinionated python stack to enable super fast development on new projects without getting the usual tooling available
+- CI/Linters built-in
+- LLM Inference/Observability built-in
+- (Optional) `saas` branch contains default template for building SaaS apps
 
 ## Requirements
 
@@ -55,7 +56,8 @@
 ## Quick Start
 
 - `make all` - runs `main.py`
-- `make lint` - runs `black` linter, an opinionated linter
+- `make fmt` - runs `black` linter, an opinionated linter
+- `make banner` - create a new banner that makes the README nice 😊
 - `make test` - runs all tests defined by `TEST_TARGETS = tests/folder1 tests/folder2`
 
 
@@ -63,8 +65,7 @@
 ## Configuration Options
 
 1. Global config: [`global_config/global_config.yaml`](global_config/global_config.yaml)
-2. Test config: [`tests/config.yaml`](tests/config.yaml) - these are configurations specific to the tests.
-3. Environment Variables: Store environmnent variables in `.env` (Create this if not exists) and `global_config/global_config.py`  will read those out automatically. Then, you can import them as follows:
+2. Environment Variables: Store environmnent variables in `.env` (Create this if not exists) and `global_config/global_config.py`  will read those out automatically. Then, you can import them as follows:
 
     `.env` file:
     ```env
@@ -79,10 +80,11 @@
 
 ## Credits
 
-This software uses the following open source packages:
+This software uses the following tools:
 - [Cursor: The AI Code Editor](cursor.com)
 - [Rye: a Hassle-Free Python Experience](https://rye.astral.sh/)
-
+- [DSPY: Pytorch for LLM Inference](https://dspy.ai/)
+- [LangFuse: LLM Observability Tool](https://langfuse.com/)
 
 ## Related
 
