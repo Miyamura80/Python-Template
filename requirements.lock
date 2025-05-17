@@ -10,35 +10,236 @@
 #   universal: false
 
 -e file:.
+aiohappyeyeballs==2.6.1
+    # via aiohttp
+aiohttp==3.11.18
+    # via fsspec
+    # via litellm
+aiosignal==1.3.2
+    # via aiohttp
+alembic==1.15.2
+    # via optuna
+annotated-types==0.7.0
+    # via pydantic
+anyio==4.9.0
+    # via asyncer
+    # via dspy
+    # via httpx
+    # via openai
+asyncer==0.0.8
+    # via dspy
+attrs==25.3.0
+    # via aiohttp
+    # via jsonschema
+    # via referencing
+backoff==2.2.1
+    # via dspy
 black==24.8.0
     # via python-template
+cachetools==5.5.2
+    # via dspy
+certifi==2025.4.26
+    # via httpcore
+    # via httpx
+    # via requests
+charset-normalizer==3.4.2
+    # via requests
 click==8.1.7
     # via black
     # via human-id
+    # via litellm
+cloudpickle==3.1.1
+    # via dspy
+colorlog==6.9.0
+    # via optuna
+datasets==3.6.0
+    # via dspy
+dill==0.3.8
+    # via datasets
+    # via multiprocess
+diskcache==5.6.3
+    # via dspy
+distro==1.9.0
+    # via openai
+dspy==2.6.24
+    # via python-template
+filelock==3.18.0
+    # via datasets
+    # via huggingface-hub
+frozenlist==1.6.0
+    # via aiohttp
+    # via aiosignal
+fsspec==2025.3.0
+    # via datasets
+    # via huggingface-hub
+h11==0.16.0
+    # via httpcore
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via litellm
+    # via openai
+huggingface-hub==0.31.2
+    # via datasets
+    # via tokenizers
 human-id==0.2.0
     # via python-template
+idna==3.10
+    # via anyio
+    # via httpx
+    # via requests
+    # via yarl
+importlib-metadata==8.7.0
+    # via litellm
 iniconfig==2.0.0
     # via pytest
+jinja2==3.1.6
+    # via litellm
+jiter==0.9.0
+    # via openai
+joblib==1.5.0
+    # via dspy
+json-repair==0.44.1
+    # via dspy
+jsonschema==4.23.0
+    # via litellm
+jsonschema-specifications==2025.4.1
+    # via jsonschema
+litellm==1.67.5
+    # via dspy
 loguru==0.7.3
     # via python-template
+magicattr==0.1.6
+    # via dspy
+mako==1.3.10
+    # via alembic
+markdown-it-py==3.0.0
+    # via rich
+markupsafe==3.0.2
+    # via jinja2
+    # via mako
+mdurl==0.1.2
+    # via markdown-it-py
+multidict==6.4.3
+    # via aiohttp
+    # via yarl
+multiprocess==0.70.16
+    # via datasets
 mypy-extensions==1.0.0
     # via black
+numpy==2.2.5
+    # via datasets
+    # via dspy
+    # via optuna
+    # via pandas
+openai==1.79.0
+    # via dspy
+    # via litellm
+optuna==4.3.0
+    # via dspy
 packaging==24.1
     # via black
+    # via datasets
+    # via huggingface-hub
+    # via optuna
     # via pytest
+pandas==2.2.3
+    # via datasets
+    # via dspy
 pathspec==0.12.1
     # via black
 platformdirs==4.3.6
     # via black
 pluggy==1.5.0
     # via pytest
+propcache==0.3.1
+    # via aiohttp
+    # via yarl
+pyarrow==20.0.0
+    # via datasets
+pydantic==2.11.4
+    # via dspy
+    # via litellm
+    # via openai
+pydantic-core==2.33.2
+    # via pydantic
+pygments==2.19.1
+    # via rich
 pytest==8.3.3
     # via python-template
+python-dateutil==2.9.0.post0
+    # via pandas
 python-dotenv==1.0.1
+    # via litellm
     # via python-template
+pytz==2025.2
+    # via pandas
 pyyaml==6.0.2
+    # via datasets
+    # via huggingface-hub
+    # via optuna
     # via python-template
+referencing==0.36.2
+    # via jsonschema
+    # via jsonschema-specifications
+regex==2024.11.6
+    # via dspy
+    # via tiktoken
+requests==2.32.3
+    # via datasets
+    # via dspy
+    # via huggingface-hub
+    # via tiktoken
+rich==14.0.0
+    # via dspy
+rpds-py==0.25.0
+    # via jsonschema
+    # via referencing
+six==1.17.0
+    # via python-dateutil
+sniffio==1.3.1
+    # via anyio
+    # via openai
+sqlalchemy==2.0.41
+    # via alembic
+    # via optuna
+tenacity==9.1.2
+    # via dspy
 termcolor==2.4.0
     # via python-template
+tiktoken==0.9.0
+    # via litellm
+tokenizers==0.21.1
+    # via litellm
+tqdm==4.67.1
+    # via datasets
+    # via dspy
+    # via huggingface-hub
+    # via openai
+    # via optuna
+typing-extensions==4.13.2
+    # via alembic
+    # via anyio
+    # via huggingface-hub
+    # via openai
+    # via pydantic
+    # via pydantic-core
+    # via referencing
+    # via sqlalchemy
+    # via typing-inspection
+typing-inspection==0.4.0
+    # via pydantic
+tzdata==2025.2
+    # via pandas
+ujson==5.10.0
+    # via dspy
+urllib3==2.4.0
+    # via requests
 vulture==2.14
     # via python-template
+xxhash==3.5.0
+    # via datasets
+yarl==1.20.0
+    # via aiohttp
+zipp==3.21.0
+    # via importlib-metadata

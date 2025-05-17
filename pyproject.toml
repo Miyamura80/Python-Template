@@ -14,6 +14,7 @@ dependencies = [
     "termcolor>=2.4.0",
     "loguru>=0.7.3",
     "vulture>=2.14",
+    "dspy>=2.6.24",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -35,6 +36,7 @@ packages = ["src/python_template"]
 [tool.vulture]
 exclude = [
     ".venv/",
+    "tests/**/test_*.py",
     "tests/test_template.py",
     "global_config/global_config.py",
     "src/utils/logging_config.py",
