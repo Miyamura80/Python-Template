@@ -10,6 +10,16 @@ TEST=rye run pytest
 PROJECT_ROOT=.
 
 ########################################################
+# Initialization: Delete later
+########################################################
+
+banner: check_rye
+	@echo "$(YELLOW)🔍Generating banner...$(RESET)"
+	@rye run python -m init.generate_banner
+	@echo "$(GREEN)✅Banner generated.$(RESET)"
+
+
+########################################################
 # Check dependencies
 ########################################################
 
