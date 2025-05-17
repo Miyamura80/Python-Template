@@ -41,6 +41,7 @@ exclude = [
     ".venv/",
     "tests/**/test_*.py",
     "tests/test_template.py",
+    "utils/llm/dspy_langfuse.py",
     "global_config/global_config.py",
     "src/utils/logging_config.py",
     "tests/conftest.py"
