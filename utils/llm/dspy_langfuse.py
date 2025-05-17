@@ -6,12 +6,12 @@ from langfuse.media import LangfuseMedia
 from typing import Optional
 import dspy
 import contextvars
+from loguru import logger
 
 """
 NOTE: We use contextvars to store the current state of the callback, so it is thread-safe.
 """
 
-from loguru import logger
 
 # 1. Define a custom callback class that extends BaseCallback class
 class LangFuseDSPYCallback(BaseCallback):
