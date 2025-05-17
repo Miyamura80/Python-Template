@@ -18,6 +18,8 @@ dependencies = [
     "langfuse>=2.60.5",
     "litellm>=1.70.0",
     "tenacity>=9.1.2",
+    "pillow>=11.2.1",
+    "google-genai>=1.15.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"

@@ -13,3 +13,5 @@ all:
 	@echo "Updated project name to: $(name)"
 	@echo "Updated project description to: $(description)"
 
+banner:
+	rye run python -m generate_banner
