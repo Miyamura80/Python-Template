@@ -6,6 +6,8 @@ alwaysApply: false
 
 For LLM inference in the codebase, you should use dspy inference module, like below. This is already supported with native observability.
 
+If you pass tools, it will figure out how to use the tools, otherwise, will run normal LLM inference.
+
 ```python
 from utils.llm.dspy_inference import DSPYInference
 import dspy
@@ -22,10 +24,24 @@ class ExtractInfo(dspy.Signature):
     )
 
 
+def web_search_tool(query: str) -> str:
+    """Search the web for information."""
+    return "example search term"
+
+
+# Inference without tool-use
 inf_module = DSPYInference(
     pred_signature=ExtractInfo,
-    observe=False, # Set to True by default, enable langfuse observability
+    # implicitly, tools=[]
 )
+
+
+# Inference with tool-use
+inf_module_with_tool_use = DSPYInference(
+    pred_signature=ExtractInfo,
+    tools=[web_search],
+)
+
 
 result = asyncio.run(inf_module.run(
     text="Apple Inc. announced its latest iPhone 14 today."
