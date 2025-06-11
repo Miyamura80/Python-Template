@@ -24,7 +24,7 @@ class BannerDescription(dspy.Signature):
 client = genai.Client(api_key=global_config.GEMINI_API_KEY)
 
 
-async def generate_banner(title: str, suggestion: str = None) -> Image:
+async def generate_banner(title: str, suggestion: str | None = None) -> Image.Image:
     # First, use LLM to generate a creative banner description
     inf_module = DSPYInference(
         pred_signature=BannerDescription,
@@ -48,7 +48,18 @@ async def generate_banner(title: str, suggestion: str = None) -> Image:
         config=types.GenerateImagesConfig(number_of_images=1, aspect_ratio="16:9"),
     )
 
-    img = Image.open(BytesIO(resp.generated_images[0].image.image_bytes))
+    # Extract image data with proper error handling
+    try:
+        if not resp.generated_images:
+            raise ValueError("No images generated")
+        
+        generated_image = resp.generated_images[0]  # type: ignore
+        if not generated_image.image or not generated_image.image.image_bytes:  # type: ignore
+            raise ValueError("Invalid image data")
+            
+        img = Image.open(BytesIO(generated_image.image.image_bytes))  # type: ignore
+    except (IndexError, AttributeError, TypeError) as e:
+        raise ValueError(f"Failed to extract image from response: {e}") from e
 
     # Create media directory if it doesn't exist
     os.makedirs("media", exist_ok=True)

@@ -123,6 +123,11 @@ vulture: check_rye
 	@rye run vulture .
 	@echo "$(GREEN)✅Vulture completed.$(RESET)"
 
+ty: check_rye
+	@echo "$(YELLOW)🔍Running Typer...$(RESET)"
+	@rye run ty check
+	@echo "$(GREEN)✅Typer completed.$(RESET)"
+
 ########################################################
 # Dependencies
 ########################################################

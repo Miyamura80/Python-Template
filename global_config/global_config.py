@@ -100,7 +100,7 @@ class Config:
 
         return {k: unwrap(v) for k, v in self.__dict__.items()}
 
-    def llm_api_key(self, model_name: str = None) -> str:
+    def llm_api_key(self, model_name: str | None = None) -> str:
         """Returns the appropriate API key based on the model name."""
 
         model_identifier = model_name or self.model_name
@@ -136,6 +136,7 @@ class Config:
             return "https://generativelanguage.googleapis.com/v1beta/openai/"
         else:
             logger.error(f"Helicone link not found for model: {model_name}")
+            return ""
 
 
 # Create a singleton instance

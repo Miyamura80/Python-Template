@@ -246,6 +246,8 @@ tqdm==4.67.1
     # via huggingface-hub
     # via openai
     # via optuna
+ty==0.0.1a9
+    # via python-template
 typing-extensions==4.13.2
     # via alembic
     # via anyio
