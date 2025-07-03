@@ -1,0 +1,56 @@
+---
+description: 
+globs: *.py
+alwaysApply: false
+---
+
+For LLM inference in the codebase, you should use dspy inference module, like below. This is already supported with native observability.
+
+If you pass tools, it will figure out how to use the tools, otherwise, will run normal LLM inference.
+
+```python
+from utils.llm.dspy_inference import DSPYInference
+import dspy
+import asyncio
+
+class ExtractInfo(dspy.Signature):
+    """Extract structured information from text."""
+
+    text: str = dspy.InputField()
+    title: str = dspy.OutputField()
+    headings: list[str] = dspy.OutputField()
+    entities: list[dict[str, str]] = dspy.OutputField(
+        desc="a list of entities and their metadata"
+    )
+
+
+def web_search_tool(query: str) -> str:
+    """Search the web for information."""
+    return "example search term"
+
+
+# Inference without tool-use
+inf_module = DSPYInference(
+    pred_signature=ExtractInfo,
+    # implicitly, tools=[]
+)
+
+
+# Inference with tool-use
+inf_module_with_tool_use = DSPYInference(
+    pred_signature=ExtractInfo,
+    tools=[web_search],
+)
+
+
+result = asyncio.run(inf_module.run(
+    text="Apple Inc. announced its latest iPhone 14 today."
+    "The CEO, Tim Cook, highlighted its new features in a press release."
+))
+
+print(result.title)
+print(result.headings)
+print(result.entities)
+```
+
+

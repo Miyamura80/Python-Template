@@ -1,4 +1,3 @@
-import pytest
 from tests.test_template import TestTemplate
 from global_config import global_config
 

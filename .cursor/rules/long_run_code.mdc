@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+This pattern should apply for all long-running code.
+
+Unbundle run() into:
+
+- init() 
+- continue(id)
+- cleanup(id)
+
+Never assume you will call these in order.
+
+Always checkpoint and resume from id's. 
+
+Pass nothing else.
+
+This forces you to keep things serializable and therefore loggable, reproducible, parallelizable.
+
+by the way try not to name them 'id' if you can add extra detail like 'runId', 'taskId', 'subTask2Id'.
+
+Any time you cross a system boundary*:
+
+RATE LIMITS, TIMEOUTS, RETRIES, LOG TRACE.
+
+NO EXCEPTIONS.
+
+*eg call microservice or external api. yes, this includes llm APIs, meaning every ai project needs this
+
+DO NOT DO ANY OUTPUT FORMATTING UNTIL THE END
+
+"its so easy to fstring/template string"
+
+DOESNT MEAN YOU SHOULD
+
+keep things in structured format all the way basically until the point of reading
+
+debugging output formatting its own form of hell

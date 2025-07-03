@@ -1,0 +1,19 @@
+---
+description: 
+globs: *.py
+alwaysApply: false
+---
+LangFuse is an LLM observability tool, to see how LLMs are behaving in our application. It uses callbacks to reord LLM inference. You should always use it when using LLM applications, to track if the LLM is behaving as we want it to.
+
+Below is the most typical usage.
+
+```python
+from langfuse.decorators import observe, langfuse_context
+
+@observe
+def function_name(...):
+
+    # If we don't want the name of the span to be "function_name", and want to give a more descriptive name like with email, we should use the following
+    langfuse_context.update_current_observation(name=f"{email}")
+```
+

@@ -10,6 +10,16 @@ TEST=rye run pytest
 PROJECT_ROOT=.
 
 ########################################################
+# Initialization: Delete later
+########################################################
+
+banner: check_rye
+	@echo "$(YELLOW)🔍Generating banner...$(RESET)"
+	@rye run python -m init.generate_banner
+	@echo "$(GREEN)✅Banner generated.$(RESET)"
+
+
+########################################################
 # Check dependencies
 ########################################################
 
@@ -85,17 +95,17 @@ test: check_rye
 
 
 ########################################################
-# Linting
+# Cleaning
 ########################################################
 
 # Linter will ignore these directories
 IGNORE_LINT_DIRS = .venv|venv
 LINE_LENGTH = 88
 
-lint: check_rye check_jq
-	@echo "$(YELLOW)✨Linting project with Black...$(RESET)"
+fmt: check_rye check_jq
+	@echo "$(YELLOW)✨Formatting project with Black...$(RESET)"
 	@rye run black --exclude '/($(IGNORE_LINT_DIRS))/' . --line-length $(LINE_LENGTH)
-	@echo "$(YELLOW)✨Linting and formatting JSONs with jq...$(RESET)"
+	@echo "$(YELLOW)✨Formatting JSONs with jq...$(RESET)"
 	@count=0; \
 	find . \( $(IGNORE_LINT_DIRS:%=-path './%' -prune -o) \) -type f -name '*.json' -print0 | \
 	while IFS= read -r -d '' file; do \
@@ -105,8 +115,18 @@ lint: check_rye check_jq
 			rm -f "$$file.tmp"; \
 		fi; \
 	done; \
-	echo "$(BLUE)$$count JSON file(s)$(RESET) linted and formatted."; \
-	echo "$(GREEN)✅Linting completed.$(RESET)"
+	echo "$(BLUE)$$count JSON file(s)$(RESET) formatted."; \
+	echo "$(GREEN)✅Formatting completed.$(RESET)"
+
+vulture: check_rye
+	@echo "$(YELLOW)🔍Running Vulture...$(RESET)"
+	@rye run vulture .
+	@echo "$(GREEN)✅Vulture completed.$(RESET)"
+
+ty: check_rye
+	@echo "$(YELLOW)🔍Running Typer...$(RESET)"
+	@rye run ty check
+	@echo "$(GREEN)✅Typer completed.$(RESET)"
 
 ########################################################
 # Dependencies

@@ -1,5 +1,4 @@
 import pytest
-import os
 from copy import deepcopy
 from human_id import generate_id
 from global_config import global_config
@@ -13,7 +12,6 @@ slow_and_nondeterministic_test = pytest.mark.slow_and_nondeterministic
 class TestTemplate:
     @pytest.fixture(autouse=True)
     def setup(self, test_config=None):
-        is_local = global_config.is_local
         running_on = global_config.running_on
 
         setup_message = (

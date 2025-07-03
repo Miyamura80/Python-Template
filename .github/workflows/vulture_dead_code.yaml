@@ -1,0 +1,43 @@
+name: Vulture - Clean Dead Code
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '.github/workflows/**'
+
+jobs:
+  vulture:
+    if: github.event_name == 'pull_request' || github.event.pull_request == null
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Checkout submodules
+      run: |
+        git submodule init
+        git submodule update
+  
+    - name: Read Python version
+      run: echo "PYTHON_VERSION=$(cat .python-version | tr -d '\n')" >> $GITHUB_ENV
+    - run: |
+        echo "Log Level: ${{ github.event.inputs.log_level }}"
+        echo "Environment: ${{ github.event.inputs.environment }}"
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    - name: Install Rye
+      uses: eifinger/setup-rye@v4
+      with:
+        version: 'latest'
+    - name: Run Vulture
+      run: |
+        rye sync
+        make vulture
