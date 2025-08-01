@@ -5,7 +5,7 @@ RED=\033[0;31m
 BLUE=\033[0;34m
 RESET=\033[0m
 
-PYTHON=uv run python
+PYTHON=uv run
 TEST=uv run pytest
 PROJECT_ROOT=.
 
@@ -64,17 +64,17 @@ setup: check_uv
 		echo "$(GREEN)✅.venv is detected.$(RESET)"; \
 	fi
 	@echo "$(YELLOW)🔄Updating python dependencies...$(RESET)"
-	@uv pip sync requirements.lock
+	@uv sync
 
 view_python_venv_size:
 	@echo "$(YELLOW)🔍Checking python venv size...$(RESET)"
-	@PYTHON_VERSION=$$(grep 'requires-python' pyproject.toml | sed 's/.*= ">=\(.*\)"/\1/' | cut -d'.' -f1,2) && \
+	@PYTHON_VERSION=$$(cat .python-version | cut -d. -f1,2) && \
 	cd .venv/lib/python$$PYTHON_VERSION/site-packages && du -sh . && cd ../../../
 	@echo "$(GREEN)Python venv size check completed.$(RESET)"
 
 view_python_venv_size_by_libraries:
 	@echo "$(YELLOW)🔍Checking python venv size by libraries...$(RESET)"
-	@PYTHON_VERSION=$$(grep 'requires-python' pyproject.toml | sed 's/.*= ">=\(.*\)"/\1/' | cut -d'.' -f1,2) && \
+	@PYTHON_VERSION=$$(cat .python-version | cut -d. -f1,2) && \
 	cd .venv/lib/python$$PYTHON_VERSION/site-packages && du -sh * | sort -h && cd ../../../
 	@echo "$(GREEN)Python venv size by libraries check completed.$(RESET)"
 
@@ -132,5 +132,14 @@ vulture: check_uv
 
 ty: check_uv
 	@echo "$(YELLOW)🔍Running Typer...$(RESET)"
-	@uv run ty check
+	@uv run --python .venv/bin/python ty check
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
+
+########################################################
+# Dependencies
+########################################################
+
+requirements:
+	@echo "$(YELLOW)🔍Checking requirements...$(RESET)"
+	@cp requirements-dev.lock requirements.txt
+	@echo "$(GREEN)✅Requirements checked.$(RESET)"

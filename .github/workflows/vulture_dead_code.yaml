@@ -25,7 +25,7 @@ jobs:
         git submodule update
   
     - name: Read Python version
-      run: echo "PYTHON_VERSION=$(grep 'requires-python' pyproject.toml | sed 's/.*= ">=\(.*\)"/\1/')" >> $GITHUB_ENV
+      run: echo "PYTHON_VERSION=$(cat .python-version | tr -d '\n')" >> $GITHUB_ENV
     - run: |
         echo "Log Level: ${{ github.event.inputs.log_level }}"
         echo "Environment: ${{ github.event.inputs.environment }}"
@@ -37,5 +37,5 @@ jobs:
       run: curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: Run Vulture
       run: |
-        uv pip sync requirements.lock
+        uv sync
         make vulture
