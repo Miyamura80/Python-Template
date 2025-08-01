@@ -15,7 +15,7 @@ PROJECT_ROOT=.
 
 banner: check_uv
 	@echo "$(YELLOW)🔍Generating banner...$(RESET)"
-	@uv run python -m init.generate_banner
+	@. .venv/bin/activate && python -m init.generate_banner
 	@echo "$(GREEN)✅Banner generated.$(RESET)"
 
 
@@ -64,7 +64,7 @@ setup: check_uv
 		echo "$(GREEN)✅.venv is detected.$(RESET)"; \
 	fi
 	@echo "$(YELLOW)🔄Updating python dependencies...$(RESET)"
-	@uv sync
+	@uv pip sync requirements.lock
 
 view_python_venv_size:
 	@echo "$(YELLOW)🔍Checking python venv size...$(RESET)"
