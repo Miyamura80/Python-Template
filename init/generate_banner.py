@@ -52,11 +52,11 @@ async def generate_banner(title: str, suggestion: str | None = None) -> Image.Im
     try:
         if not resp.generated_images:
             raise ValueError("No images generated")
-        
+
         generated_image = resp.generated_images[0]  # type: ignore
         if not generated_image.image or not generated_image.image.image_bytes:  # type: ignore
             raise ValueError("Invalid image data")
-            
+
         img = Image.open(BytesIO(generated_image.image.image_bytes))  # type: ignore
     except (IndexError, AttributeError, TypeError) as e:
         raise ValueError(f"Failed to extract image from response: {e}") from e

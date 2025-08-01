@@ -49,7 +49,9 @@ class DSPYInference:
             )
         else:
             self.inference_module = dspy.Predict(pred_signature)
-        self.inference_module_async: Callable[..., Any] = dspy.asyncify(self.inference_module)
+        self.inference_module_async: Callable[..., Any] = dspy.asyncify(
+            self.inference_module
+        )
 
     @observe()
     @retry(

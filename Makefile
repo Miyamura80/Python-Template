@@ -109,9 +109,16 @@ test: check_uv
 IGNORE_LINT_DIRS = .venv|venv
 LINE_LENGTH = 88
 
-fmt: check_uv check_jq
+install_tools: check_uv
+	@echo "$(YELLOW)🔧Installing tools...$(RESET)"
+	@uv tool install black --force
+	@uv tool install ty --force
+	@uv tool install vulture --force
+	@echo "$(GREEN)✅Tools installed.$(RESET)"
+
+fmt: install_tools check_jq
 	@echo "$(YELLOW)✨Formatting project with Black...$(RESET)"
-	@uv run black --exclude '/($(IGNORE_LINT_DIRS))/' . --line-length $(LINE_LENGTH)
+	@uv tool run black --exclude '/($(IGNORE_LINT_DIRS))/' . --line-length $(LINE_LENGTH)
 	@echo "$(YELLOW)✨Formatting JSONs with jq...$(RESET)"
 	@count=0; \
 	find . \( $(IGNORE_LINT_DIRS:%=-path './%' -prune -o) \) -type f -name '*.json' -print0 | \
@@ -125,14 +132,14 @@ fmt: check_uv check_jq
 	echo "$(BLUE)$$count JSON file(s)$(RESET) formatted."; \
 	echo "$(GREEN)✅Formatting completed.$(RESET)"
 
-vulture: check_uv
+vulture: install_tools
 	@echo "$(YELLOW)🔍Running Vulture...$(RESET)"
-	@uv run vulture .
+	@uv tool run vulture .
 	@echo "$(GREEN)✅Vulture completed.$(RESET)"
 
-ty: check_uv
+ty: install_tools
 	@echo "$(YELLOW)🔍Running Typer...$(RESET)"
-	@uv run --python .venv/bin/python ty check
+	@. .venv/bin/activate && ty check
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
 
 ########################################################
