@@ -43,13 +43,11 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-    - name: Install Rye
-      uses: eifinger/setup-rye@v4
-      with:
-        version: 'latest'
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: Install dependencies
       run: |
-        rye sync
+        uv sync
     - name: Set environment variables
       run: |
         echo "DEV_ENV=${{ secrets.DEV_ENV }}" >> $GITHUB_ENV
