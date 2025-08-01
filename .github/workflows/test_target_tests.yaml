@@ -35,7 +35,7 @@ jobs:
         git submodule init
         git submodule update
     - name: Read Python version
-      run: echo "PYTHON_VERSION=$(cat .python-version | tr -d '\n')" >> $GITHUB_ENV
+      run: echo "PYTHON_VERSION=$(grep 'requires-python' pyproject.toml | sed 's/.*= ">=\(.*\)"/\1/')" >> $GITHUB_ENV
     - run: |
         echo "Log Level: ${{ github.event.inputs.log_level }}"
         echo "Environment: ${{ github.event.inputs.environment }}"
@@ -43,13 +43,11 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-    - name: Install Rye
-      uses: eifinger/setup-rye@v4
-      with:
-        version: 'latest'
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: Install dependencies
       run: |
-        rye sync
+        uv pip sync requirements.lock
     - name: Set environment variables
       run: |
         echo "DEV_ENV=${{ secrets.DEV_ENV }}" >> $GITHUB_ENV
