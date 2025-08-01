@@ -15,7 +15,7 @@ PROJECT_ROOT=.
 
 banner: check_uv
 	@echo "$(YELLOW)🔍Generating banner...$(RESET)"
-	@. .venv/bin/activate && python -m init.generate_banner
+	@uv run python -m init.generate_banner
 	@echo "$(GREEN)✅Banner generated.$(RESET)"
 
 
@@ -64,7 +64,7 @@ setup: check_uv
 		echo "$(GREEN)✅.venv is detected.$(RESET)"; \
 	fi
 	@echo "$(YELLOW)🔄Updating python dependencies...$(RESET)"
-	@uv pip sync requirements.lock
+	@uv sync
 
 view_python_venv_size:
 	@echo "$(YELLOW)🔍Checking python venv size...$(RESET)"
@@ -139,7 +139,7 @@ vulture: install_tools
 
 ty: install_tools
 	@echo "$(YELLOW)🔍Running Typer...$(RESET)"
-	@. .venv/bin/activate && ty check
+	@uv tool run ty check
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
 
 ########################################################
