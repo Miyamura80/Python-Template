@@ -21,21 +21,16 @@ def test_env_var_loading_precedence(monkeypatch):
     # This one is not in the .env file, so it should be loaded from the system env
     monkeypatch.setenv("OPENAI_API_KEY", "system_openai_key")
 
-
     # 2. Create a temporary .env file
-    dot_env_content = (
-        "DEV_ENV=dotenv\n"
-        "OPENAI_API_KEY=dotenv_openai_key\n"
-    )
+    dot_env_content = "DEV_ENV=dotenv\n" "OPENAI_API_KEY=dotenv_openai_key\n"
     dot_env_path = root_dir / ".env"
     with open(dot_env_path, "w") as f:
         f.write(dot_env_content)
 
     # 3. Reload the global_config module to pick up the new .env file
-    global_config_module = sys.modules['global_config.global_config']
+    global_config_module = sys.modules["global_config.global_config"]
     importlib.reload(global_config_module)
     reloaded_config = global_config_module.global_config
-
 
     # 4. Assert that the variables are loaded with the correct precedence
     assert reloaded_config.DEV_ENV == "dotenv", "Should load from .env first"
