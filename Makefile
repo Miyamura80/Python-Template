@@ -143,6 +143,22 @@ ty: install_tools
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
 
 ########################################################
+# Publishing
+########################################################
+
+build:
+	@echo "$(YELLOW)🔨Building package...$(RESET)"
+	@uv build
+
+publish-test: build
+	@echo "$(YELLOW)🚀Publishing to TestPyPI...$(RESET)"
+	@uv run twine upload --repository testpypi dist/*
+
+publish: build
+	@echo "$(YELLOW)🚀Publishing to PyPI...$(RESET)"
+	@uv run twine upload dist/*
+
+########################################################
 # Dependencies
 ########################################################
 
