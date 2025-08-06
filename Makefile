@@ -111,9 +111,10 @@ LINE_LENGTH = 88
 
 install_tools: check_uv
 	@echo "$(YELLOW)🔧Installing tools...$(RESET)"
-	@uv tool install black
-	@uv tool install ty
-	@uv tool install vulture
+	@uv tool install black --force
+	@uv tool install ruff --force
+	@uv tool install ty --force
+	@uv tool install vulture --force
 	@echo "$(GREEN)✅Tools installed.$(RESET)"
 
 fmt: install_tools check_jq
@@ -131,6 +132,11 @@ fmt: install_tools check_jq
 	done; \
 	echo "$(BLUE)$$count JSON file(s)$(RESET) formatted."; \
 	echo "$(GREEN)✅Formatting completed.$(RESET)"
+
+ruff: install_tools
+	@echo "$(YELLOW)🔍Running ruff...$(RESET)"
+	@uv tool run ruff check
+	@echo "$(GREEN)✅Ruff completed.$(RESET)"
 
 vulture: install_tools
 	@echo "$(YELLOW)🔍Running Vulture...$(RESET)"

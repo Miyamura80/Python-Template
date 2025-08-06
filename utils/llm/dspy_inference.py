@@ -1,4 +1,4 @@
-from typing import Callable, Any, Awaitable
+from typing import Callable, Any
 import dspy
 from global_config import global_config
 
