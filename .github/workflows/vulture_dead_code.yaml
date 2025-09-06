@@ -33,11 +33,9 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-    - name: Install Rye
-      uses: eifinger/setup-rye@v4
-      with:
-        version: 'latest'
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: Run Vulture
       run: |
-        rye sync
+        uv sync
         make vulture

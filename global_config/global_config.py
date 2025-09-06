@@ -9,8 +9,8 @@ import re
 # Get the path to the root directory (one level up from global_config)
 root_dir = Path(__file__).parent.parent
 
-# Load .env file from the root directory
-load_dotenv(dotenv_path=root_dir / ".env")
+# Load .env file from the root directory, overriding existing system environment variables
+load_dotenv(dotenv_path=root_dir / ".env", override=True)
 
 # Check if .env file has been properly loaded
 env_values = dotenv_values(root_dir / ".env")

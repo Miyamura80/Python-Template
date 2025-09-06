@@ -46,7 +46,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
     def __init__(self, signature: type[dspy_Signature]) -> None:
         super().__init__()
         # Use contextvars for per-call state
-        self.current_system_prompt = contextvars.ContextVar[str]("current_system_prompt")
+        self.current_system_prompt = contextvars.ContextVar[str](
+            "current_system_prompt"
+        )
         self.current_prompt = contextvars.ContextVar[str]("current_prompt")
         self.current_completion = contextvars.ContextVar[str]("current_completion")
         self.current_span = contextvars.ContextVar[Optional[StatefulGenerationClient]](
@@ -55,7 +57,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.model_name_at_span_creation = contextvars.ContextVar[Optional[str]](
             "model_name_at_span_creation"
         )
-        self.input_field_values = contextvars.ContextVar[dict[str, Any]]("input_field_values")
+        self.input_field_values = contextvars.ContextVar[dict[str, Any]](
+            "input_field_values"
+        )
         # Initialize Langfuse client
         self.langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
@@ -168,10 +172,16 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
             status_message = str(exception)
         elif outputs is None:
             level = "ERROR"
-            status_message = "LM call returned None outputs without an explicit exception."
+            status_message = (
+                "LM call returned None outputs without an explicit exception."
+            )
         elif isinstance(outputs, list):
             # Ensure it's a list of strings as expected for completion content from a list
-            if outputs and all(isinstance(item, str) for item in outputs) and outputs[0]:
+            if (
+                outputs
+                and all(isinstance(item, str) for item in outputs)
+                and outputs[0]
+            ):
                 completion_content = outputs[0]  # Taking the first string completion
             elif not outputs:
                 level = "WARNING"
@@ -188,11 +198,15 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 )  # outputs is now known to be a dict
 
                 if parsed_output.model:
-                    model_name = parsed_output.model  # Override model_name if present in output
+                    model_name = (
+                        parsed_output.model
+                    )  # Override model_name if present in output
 
                 # Extract completion content from choices
                 if parsed_output.choices:
-                    first_choice = parsed_output.choices[0] if parsed_output.choices else None
+                    first_choice = (
+                        parsed_output.choices[0] if parsed_output.choices else None
+                    )
                     if first_choice and first_choice.message:
                         completion_content = first_choice.message.content
 
@@ -211,7 +225,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
             except ValidationError as e:
                 level = "ERROR"
                 status_message = f"Error validating LM output structure (dict using Pydantic): {e}. Output: {str(outputs)[:200]}"
-            except Exception as e:  # Catch any other unexpected errors during dict processing
+            except (
+                Exception
+            ) as e:  # Catch any other unexpected errors during dict processing
                 level = "ERROR"
                 status_message = f"Unexpected error processing LM output (dict): {e}. Output: {str(outputs)[:200]}"
 
@@ -225,7 +241,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
 
         if can_calculate_usage:
             # Ensure types are concrete for calculations, falling back to empty strings if None (should not happen due to can_calculate_usage check)
-            current_system_prompt: str = system_prompt if system_prompt is not None else ""
+            current_system_prompt: str = (
+                system_prompt if system_prompt is not None else ""
+            )
             current_prompt: str = prompt if prompt is not None else ""
             current_completion_content: str = (
                 completion_content if completion_content is not None else ""
@@ -284,7 +302,10 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                             else 0.0
                         ),
                         "output": (
-                            (total_cost * (final_completion_tokens / final_total_tokens))
+                            (
+                                total_cost
+                                * (final_completion_tokens / final_total_tokens)
+                            )
                             if final_total_tokens
                             else 0.0
                         ),
@@ -304,7 +325,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                     status_message + "; " if status_message else ""
                 ) + f"Usage/cost processing error: {str(e)}"
 
-        elif level == "DEFAULT":  # Only log missing info if no other error/warning occurred
+        elif (
+            level == "DEFAULT"
+        ):  # Only log missing info if no other error/warning occurred
             missing_info_elements: list[str] = []
             if completion_content is None:
                 missing_info_elements.append("completion content")
