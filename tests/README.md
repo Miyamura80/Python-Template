@@ -18,8 +18,8 @@ To run the tests, you can use the following commands:
 
 
 
-These commands use `rye run pytest` to execute the tests. Make sure you have `rye` installed and your Python dependencies are up to date. You can update dependencies by running:
+These commands use `uv` to execute the tests. Make sure you have `uv` installed and your Python dependencies are up to date. You can update dependencies by running:
 
 ```bash
-rye sync
+uv sync
 ```

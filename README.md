@@ -48,9 +48,9 @@
 
 ## Requirements
 
-- [Rye](https://rye.astral.sh/)
+- [uv](https://docs.astral.sh/uv/)
   ```
-  curl -sSf https://rye.astral.sh/get | bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
 
 ## Quick Start
@@ -82,7 +82,7 @@
 
 This software uses the following tools:
 - [Cursor: The AI Code Editor](cursor.com)
-- [Rye: a Hassle-Free Python Experience](https://rye.astral.sh/)
+- [uv](https://docs.astral.sh/uv/)
 - [DSPY: Pytorch for LLM Inference](https://dspy.ai/)
 - [LangFuse: LLM Observability Tool](https://langfuse.com/)
 
