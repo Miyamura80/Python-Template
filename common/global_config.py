@@ -9,16 +9,20 @@ import re
 # Get the path to the root directory (one level up from common)
 root_dir = Path(__file__).parent.parent
 
-# Load .env file based on environment
-env_name = os.getenv("DEV_ENV", "dev")
-env_file = ".prod.env" if env_name == "prod" else ".env"
-load_dotenv(dotenv_path=root_dir / env_file, override=True)
+# Load .env file first, to get DEV_ENV if it's defined there
+load_dotenv(dotenv_path=root_dir / ".env", override=True)
+
+# Now, check DEV_ENV and load .prod.env if it's 'prod', overriding .env
+if os.getenv("DEV_ENV") == "prod":
+    load_dotenv(dotenv_path=root_dir / ".prod.env", override=True)
 
 # Check if .env file has been properly loaded
-env_values = dotenv_values(root_dir / env_file)
 is_local = os.getenv("GITHUB_ACTIONS") != "true"
-if not env_values and is_local:
-    warnings.warn(f"{env_file} file not found or empty", UserWarning)
+if is_local:
+    env_file_to_check = ".prod.env" if os.getenv("DEV_ENV") == "prod" else ".env"
+    env_values = dotenv_values(root_dir / env_file_to_check)
+    if not env_values:
+        warnings.warn(f"{env_file_to_check} file not found or empty", UserWarning)
 
 OPENAI_O_SERIES_PATTERN = r"o(\d+)(-mini)?"
 
