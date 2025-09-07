@@ -148,6 +148,9 @@ ty: install_tools
 	@uv tool run ty check
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
 
+ci: ruff vulture ty ## Run all CI checks (ruff, vulture, ty)
+	@echo "$(GREEN)✅CI checks completed.$(RESET)"
+
 ########################################################
 # Dependencies
 ########################################################
@@ -166,11 +169,11 @@ db_test: check_uv ## Test database connection and validate it's remote
 	@uv run python -c "from common import global_config; db_uri = str(global_config.BACKEND_DB_URI); \
 	assert db_uri, f'Invalid database: {db_uri}'; \
 	print(f'✅ Remote database configured: {db_uri.split(\"@\")[1] if \"@\" in db_uri else \"Unknown\"}')"
-	@uv tool run alembic current >/dev/null 2>&1 && echo "$(GREEN)✅Database connection successful$(RESET)" || echo "$(RED)❌Database connection failed$(RESET)"
+	@uv run alembic current >/dev/null 2>&1 && echo "$(GREEN)✅Database connection successful$(RESET)" || echo "$(RED)❌Database connection failed$(RESET)"
 
 db_migrate: check_uv ## Run pending database migrations
 	@echo "$(YELLOW)🔄Running database migrations...$(RESET)"
-	@uv tool run alembic upgrade head
+	@uv run alembic upgrade head
 	@echo "$(GREEN)✅Database migrations completed.$(RESET)"
 
 db_validate: check_uv ## Validate database models and dependencies before migration
@@ -184,23 +187,23 @@ db_migration: check_uv db_validate ## Create new database migration (requires ms
 		echo "$(RED)❌ Please provide a message: make db_migration msg='your migration message'$(RESET)"; \
 		exit 1; \
 	fi
-	@uv tool run alembic revision --autogenerate -m '$(msg)'
+	@uv run alembic revision --autogenerate -m '$(msg)'
 	@echo "$(GREEN)✅Migration created successfully.$(RESET)"
 
 db_downgrade: check_uv ## Downgrade database by one revision
 	@echo "$(YELLOW)⬇️ Downgrading database by 1 revision...$(RESET)"
-	@uv tool run alembic downgrade -1
+	@uv run alembic downgrade -1
 	@echo "$(GREEN)✅Database downgraded.$(RESET)"
 
 db_status: check_uv ## Show database migration status
 	@echo "$(YELLOW)📊Checking database migration status...$(RESET)"
-	@uv tool run alembic current
-	@uv tool run alembic history --verbose
+	@uv run alembic current
+	@uv run alembic history --verbose
 	@echo "$(GREEN)✅Database status check completed.$(RESET)"
 
 db_reset: check_uv ## Reset database (WARNING: destructive operation)
 	@echo "$(RED)🗑️ WARNING: This will drop all database tables!$(RESET)"
 	@read -p "Are you sure? (y/N): " confirm && [ "$$confirm" = "y" ] || exit 1
-	@uv tool run alembic downgrade base
-	@uv tool run alembic upgrade head
+	@uv run alembic downgrade base
+	@uv run alembic upgrade head
 	@echo "$(GREEN)✅Database reset completed.$(RESET)"
