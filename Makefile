@@ -148,6 +148,9 @@ ty: install_tools
 	@uv tool run ty check
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
 
+ci: ruff vulture ty ## Run all CI checks (ruff, vulture, ty)
+	@echo "$(GREEN)✅CI checks completed.$(RESET)"
+
 ########################################################
 # Dependencies
 ########################################################
