@@ -2,7 +2,7 @@ from io import BytesIO
 from PIL import Image
 from google import genai
 from google.genai import types
-from global_config import global_config
+from common import global_config
 from utils.llm.dspy_inference import DSPYInference
 import dspy
 import asyncio

@@ -1,7 +1,7 @@
 from loguru import logger
 import sys
 from src.utils.context import session_id
-from global_config import global_config
+from common import global_config
 from human_id import generate_id
 import asyncio
 import os

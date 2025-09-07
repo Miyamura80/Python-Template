@@ -27,10 +27,10 @@ def test_env_var_loading_precedence(monkeypatch):
     with open(dot_env_path, "w") as f:
         f.write(dot_env_content)
 
-    # 3. Reload the global_config module to pick up the new .env file
-    global_config_module = sys.modules["global_config.global_config"]
-    importlib.reload(global_config_module)
-    reloaded_config = global_config_module.global_config
+    # 3. Reload the common module to pick up the new .env file
+    common_module = sys.modules["common.global_config"]
+    importlib.reload(common_module)
+    reloaded_config = common_module.global_config
 
     # 4. Assert that the variables are loaded with the correct precedence
     assert reloaded_config.DEV_ENV == "dotenv", "Should load from .env first"
@@ -45,4 +45,4 @@ def test_env_var_loading_precedence(monkeypatch):
     os.remove(dot_env_path)
 
     # Reload the original config to avoid side effects on other tests
-    importlib.reload(global_config_module)
+    importlib.reload(common_module)

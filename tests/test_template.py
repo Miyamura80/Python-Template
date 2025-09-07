@@ -1,7 +1,7 @@
 import pytest
 from copy import deepcopy
 from human_id import generate_id
-from global_config import global_config
+from common import global_config
 
 # Markers for slow, and nondeterministic tests
 slow_test = pytest.mark.slow
@@ -21,7 +21,7 @@ class TestTemplate:
         )
         print(setup_message)
 
-        # Use global_config if no test_config is provided
+        # Use common if no test_config is provided
         config = deepcopy(
             test_config if test_config is not None else global_config.to_dict()
         )

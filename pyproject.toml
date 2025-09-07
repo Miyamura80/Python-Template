@@ -21,6 +21,7 @@ dependencies = [
     "pillow>=11.2.1",
     "google-genai>=1.15.0",
     "ty>=0.0.1a9",
+    "pytest-env>=1.1.5",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -41,7 +42,7 @@ exclude = [
     "tests/**/test_*.py",
     "tests/test_template.py",
     "utils/llm/",
-    "global_config/global_config.py",
+    "common/global_config.py",
     "src/utils/logging_config.py",
     "src/utils/context.py",
     "tests/conftest.py"
