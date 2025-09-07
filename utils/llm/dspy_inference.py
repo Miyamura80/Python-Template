@@ -11,7 +11,7 @@ from tenacity import (
 )
 from utils.llm.dspy_langfuse import LangFuseDSPYCallback
 from litellm.exceptions import ServiceUnavailableError
-from langfuse.decorators import observe
+from langfuse.decorators import observe  # type: ignore
 
 
 class DSPYInference:

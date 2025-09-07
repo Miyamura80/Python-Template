@@ -1,6 +1,5 @@
 import os
 import importlib
-import sys
 from pathlib import Path
 
 # Get the path to the root directory
@@ -45,4 +44,4 @@ def test_env_var_loading_precedence(monkeypatch):
     os.remove(dot_env_path)
 
     # Reload the original config to avoid side effects on other tests
-    importlib.reload(common_module)
+    importlib.reload(common.global_config)

@@ -1,5 +1,4 @@
 import os
-import sys
 import importlib
 from tests.test_template import TestTemplate
 

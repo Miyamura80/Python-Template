@@ -16,7 +16,7 @@ from common.global_config import global_config  # type: ignore
 from src.db.models import Base
 
 # Import RLS support to enable automatic RLS policy detection
-import rls_support  # noqa: F401
+import rls_support  # noqa: F401 # type: ignore
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
