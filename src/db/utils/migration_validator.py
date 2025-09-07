@@ -226,7 +226,7 @@ def validate_database_connection() -> bool:
     log.info("🔌 Validating database connection...")
 
     try:
-        from global_config import global_config
+        from common.global_config import global_config
 
         # Check if database URI is configured
         if not global_config.BACKEND_DB_URI:

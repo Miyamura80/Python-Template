@@ -18,9 +18,9 @@ class TestProdConfig(TestTemplate):
 
 
         # Reload the common.global_config module to pick up the new .env file
-        common_module = sys.modules["common.global_config"]
-        importlib.reload(common_module)
-        reloaded_config = common_module.global_config
+        import common.global_config
+        importlib.reload(common.global_config)
+        reloaded_config = common.global_config.global_config
 
         # Assert that the variables are loaded from .prod.env
         assert reloaded_config.DEV_ENV == "prod", "Should load from .prod.env"
@@ -42,8 +42,8 @@ class TestProdConfig(TestTemplate):
 
 
         # Reload the common.global_config module again
-        importlib.reload(common_module)
-        reloaded_config = common_module.global_config
+        importlib.reload(common.global_config)
+        reloaded_config = common.global_config.global_config
 
         # Assert that the variables are loaded from .env
         assert reloaded_config.DEV_ENV == "dev", "Should load from .env"
