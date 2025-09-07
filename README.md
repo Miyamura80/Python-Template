@@ -26,7 +26,7 @@
   <img alt="Project Version" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fpyproject.toml&query=%24.project.version&label=version&color=blue">
   <img alt="Python Version" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fpyproject.toml&query=%24.project['requires-python']&label=python&logo=python&color=blue">
   <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
-  <img alt="Dynamic YAML Badge" src="https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fglobal_config%2Fglobal_config.yaml&query=%24%5B%27model_name%27%5D&label=Model in Use&color=yellow">
+  <img alt="Dynamic YAML Badge" src="https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fcommon%2Fglobal_config.yaml&query=%24%5B%27model_name%27%5D&label=Model in Use&color=yellow">
   <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/Miyamura80/Python-Template">
   <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Miyamura80/Python-Template/test_target_tests.yaml?branch=main">
 
@@ -64,8 +64,8 @@
 
 ## Configuration Options
 
-1. Global config: [`global_config/global_config.yaml`](global_config/global_config.yaml)
-2. Environment Variables: Store environmnent variables in `.env` (Create this if not exists) and `global_config/global_config.py`  will read those out automatically. Then, you can import them as follows:
+1. Global config: [`common/global_config.yaml`](common/global_config.yaml)
+2. Environment Variables: Store environmnent variables in `.env` (Create this if not exists) and `common/global_config.py`  will read those out automatically. Then, you can import them as follows:
 
     `.env` file:
     ```env
@@ -73,7 +73,7 @@
     ```
     python file:
     ```python
-    from global_config import global_config
+    from common import global_config
 
     print(global_config.OPENAI_API_KEY)
     ```

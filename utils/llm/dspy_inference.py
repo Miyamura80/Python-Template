@@ -1,6 +1,6 @@
 from typing import Callable, Any
 import dspy
-from global_config import global_config
+from common import global_config
 
 from loguru import logger as log
 from tenacity import (

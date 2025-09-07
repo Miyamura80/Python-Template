@@ -16,7 +16,7 @@ Look at below example for how you should write tests.
 
 ```python
 from tests.test_template import TestTemplate, slow_test, nondeterministic_test
-from global_config import global_config
+from common import global_config
 
 class TestSkeleton(TestTemplate):
     # Initialize shared variables here for all tests

@@ -33,9 +33,9 @@ ERROR  12:34:57 |  Failed to connect to database
 
 Never configure logging directly in your files. Always use the centralized configuration to maintain consistent logging format across the entire application.
 
-If for whatever reason some log is not showing up, check the `global_config/global_config.yaml` file to see if the log level is set to true.
+If for whatever reason some log is not showing up, check the `common/global_config.yaml` file to see if the log level is set to true.
 
-```yaml file=global_config/global_config.yaml
+```yaml file=common/global_config.yaml
 logging:
   # ... Other logging config ...
   levels:

@@ -6,17 +6,19 @@ import warnings
 from loguru import logger
 import re
 
-# Get the path to the root directory (one level up from global_config)
+# Get the path to the root directory (one level up from common)
 root_dir = Path(__file__).parent.parent
 
-# Load .env file from the root directory, overriding existing system environment variables
-load_dotenv(dotenv_path=root_dir / ".env", override=True)
+# Load .env file based on environment
+env_name = os.getenv("DEV_ENV", "dev")
+env_file = ".prod.env" if env_name == "prod" else ".env"
+load_dotenv(dotenv_path=root_dir / env_file, override=True)
 
 # Check if .env file has been properly loaded
-env_values = dotenv_values(root_dir / ".env")
+env_values = dotenv_values(root_dir / env_file)
 is_local = os.getenv("GITHUB_ACTIONS") != "true"
 if not env_values and is_local:
-    warnings.warn(".env file not found or empty", UserWarning)
+    warnings.warn(f"{env_file} file not found or empty", UserWarning)
 
 OPENAI_O_SERIES_PATTERN = r"o(\d+)(-mini)?"
 
@@ -49,8 +51,19 @@ class Config:
                     default[key] = value
             return default
 
-        with open("global_config/global_config.yaml", "r") as file:
+        with open("common/global_config.yaml", "r") as file:
             config_data = yaml.safe_load(file)
+
+        # Load production config and override if in prod environment
+        if os.getenv("DEV_ENV") == "prod":
+            prod_config_path = root_dir / "common/production_config.yaml"
+            if prod_config_path.exists():
+                with open(prod_config_path, "r") as file:
+                    prod_config_data = yaml.safe_load(file)
+                if prod_config_data:
+                    config_data = recursive_update(config_data, prod_config_data)
+                    logger.warning("\033[33m❗️ Overwriting common/global_config.yaml with common/production_config.yaml\033[0m")
+
 
             # Load the local .gitignored custom global config if it exists
         custom_config_path = root_dir / ".global_config.yaml"
@@ -64,7 +77,7 @@ class Config:
                 config_data = recursive_update(config_data, custom_config_data)
 
                 # Warning message
-                warning_msg = "\033[33m❗️ Overwriting default global_config.yaml with .global_config.yaml\033[0m"
+                warning_msg = "\033[33m❗️ Overwriting default common/global_config.yaml with .global_config.yaml\033[0m"
                 if config_data["logging"]["verbose"]:
                     warning_msg += f"\033[33mCustom .global_config.yaml values:\n---\n{yaml.dump(custom_config_data, default_flow_style=False)}\033[0m"
                 logger.warning(warning_msg)

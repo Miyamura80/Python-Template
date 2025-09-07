@@ -1,9 +1,9 @@
 from tests.test_template import TestTemplate
-from global_config import global_config
+from common import global_config
 
 
-class TestGlobalConfigHealthCheck(TestTemplate):
-    """Test that the global config health check flag is enabled."""
+class TestCommonHealthCheck(TestTemplate):
+    """Test that the common health check flag is enabled."""
 
     def test_dot_global_config_health_check_enabled(self):
         """
