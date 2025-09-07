@@ -12,7 +12,7 @@ from typing import Type, Set
 from sqlalchemy.orm import DeclarativeBase
 
 from loguru import logger as log
-from src.utils.logging import setup_logging
+from src.utils.logging_config import setup_logging
 
 # Setup logging
 setup_logging()

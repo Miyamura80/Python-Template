@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from collections import defaultdict, deque
 
 from loguru import logger as log
-from src.utils.logging import setup_logging
+from src.utils.logging_config import setup_logging
 from .model_discovery import get_all_models, get_model_dependencies
 
 # Setup logging

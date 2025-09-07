@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from loguru import logger as log
-from src.utils.logging import setup_logging
+from src.utils.logging_config import setup_logging
 from .model_discovery import validate_import_completeness, get_missing_imports
 from .dependency_validator import (
     validate_model_dependencies,
