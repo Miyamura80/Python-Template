@@ -1,8 +1,8 @@
 # Agent Instructions
 
-Before running the project, you need to set the required environment variables. These are defined in `global_config/global_config.py`.
+Before running the project, you need to set the required environment variables. These are defined in `common/global_config.py`.
 
-Create a `.env` file in the root of the project and add the environment variables defined in `global_config.py`. You can find the required keys in the `REQUIRED_ENV_VARS` list within the `Config` class.
+Create a `.env` file in the root of the project and add the environment variables defined in `common/global_config.py`. You can find the required keys in the `REQUIRED_ENV_VARS` list within the `Config` class.
 
 Before submitting, please run `make ruff` and ensure that all linting issues are fixed.
 
@@ -20,13 +20,17 @@ This document provides instructions for you, the AI agent, on how to work with t
 
 This project uses a centralized system for managing global configuration, including hyperparameters and secrets.
 
--   **Hyperparameters:** Add any hyperparameters that apply across the entire codebase to `global_config/global_config.yaml`. Do not define them as constants in the code. Examples include `MAX_RETRIES` and `MODEL_NAME`.
--   **Secrets:** Store private keys and other secrets in a `.env` file in the root of the project. These will be loaded automatically. Examples include `OPENAI_API_KEY` and `GITHUB_PERSONAL_ACCESS_TOKEN`. To autoload environment variables, add their names to the `_ENV` class member in `global_config/global_config.py`.
+## Dependency Management
+
+Never use `uv pip`. Instead, run `uv --help` to see the available commands for dependency management.
+
+-   **Hyperparameters:** Add any hyperparameters that apply across the entire codebase to `common/global_config.yaml`. Do not define them as constants in the code. Examples include `MAX_RETRIES` and `MODEL_NAME`.
+-   **Secrets:** Store private keys and other secrets in a `.env` file in the root of the project. These will be loaded automatically. Examples include `OPENAI_API_KEY` and `GITHUB_PERSONAL_ACCESS_TOKEN`. To autoload environment variables, add their names to the `_ENV` class member in `common/global_config.py`.
 
 You can access configuration values in your Python code like this:
 
 ```python
-from global_config import global_config
+from common import global_config
 
 # Access non-secret values
 print(global_config.example_parent.example_child)
@@ -55,7 +59,7 @@ log.error("This is an error message.")
 log.debug("This is a debug message.")
 ```
 
--   **Configuration:** Never configure logging directly in your files. The log levels are controlled by `global_config/global_config.yaml`.
+-   **Configuration:** Never configure logging directly in your files. The log levels are controlled by `common/global_config.yaml`.
 
 ## LLM Inference with DSPY
 
