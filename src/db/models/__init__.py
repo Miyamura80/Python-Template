@@ -34,7 +34,7 @@ def transfer_rls_policies_to_tables():
 
 default_schema = "public"
 
-from global_config import global_config  # noqa
+from common.global_config import global_config  # noqa
 
 
 # Import all models so Alembic can detect them
@@ -46,8 +46,6 @@ _discovered_models = discover_models()
 
 # Manual imports for backward compatibility and explicit control
 from src.db.models.auth.users import User  # noqa
-from src.db.models.public.api_keys import APIKey  # noqa
-
 
 
 # Transfer RLS policies from model classes to table metadata

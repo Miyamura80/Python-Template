@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Custom import to get global config
-from global_config import global_config  # type: ignore
+from common.global_config import global_config  # type: ignore
 from src.db.models import Base
 
 # Import RLS support to enable automatic RLS policy detection
