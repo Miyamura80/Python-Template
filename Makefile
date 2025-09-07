@@ -178,7 +178,7 @@ db_migrate: check_uv ## Run pending database migrations
 
 db_validate: check_uv ## Validate database models and dependencies before migration
 	@echo "$(YELLOW)🔍Validating database models and dependencies...$(RESET)"
-	@uv tool run python scripts/validate_models.py
+	@uv run python scripts/validate_models.py
 	@echo "$(GREEN)✅Database validation completed.$(RESET)"
 
 db_migration: check_uv db_validate ## Create new database migration (requires msg='message')
