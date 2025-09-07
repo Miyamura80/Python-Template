@@ -91,6 +91,11 @@ def compare_rls_policies(
 
     This function is called during autogeneration to detect RLS policy changes.
     """
+    # Check if metadata_table is None (can happen when table exists in DB but not in metadata)
+    if metadata_table is None:
+        print(f"⚠️  No metadata table found for {schemaname}.{tablename}, skipping RLS comparison")
+        return
+    
     # Get model policies from table info (transferred from model class)
     model_policies = metadata_table.info.get("rls_policies", [])
 
