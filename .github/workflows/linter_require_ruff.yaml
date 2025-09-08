@@ -1,0 +1,28 @@
+name: Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '.github/workflows/**'
+
+jobs:
+  lint:
+    if: github.event_name == 'pull_request' || github.event.pull_request == null
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Add uv to path
+        run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Setup
+        run: make setup
+      - name: Run ruff
+        run: make ruff
