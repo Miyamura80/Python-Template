@@ -1,6 +1,6 @@
 from dspy.utils.callback import BaseCallback
-from langfuse.decorators import langfuse_context
-from langfuse.client import Langfuse, StatefulGenerationClient
+from langfuse.decorators import langfuse_context  # type: ignore
+from langfuse.client import Langfuse, StatefulGenerationClient  # type: ignore
 from litellm.cost_calculator import completion_cost  # type: ignore
 from typing import Optional, Any, Literal
 from pydantic import BaseModel, ValidationError, Field
