@@ -1,10 +1,17 @@
 from fastapi import HTTPException, Request
 from pydantic import BaseModel
 import httpx
-from global_config import global_config
+from common import global_config
 from loguru import logger
 from typing import Any
+from src.api.auth.jwt_utils import (
+    extract_bearer_token,
+    build_supabase_auth_headers,
+)
+from src.utils.logging_config import setup_logging
 
+# Setup logging at module import
+setup_logging()
 
 class SupabaseUser(BaseModel):
     id: str  # noqa
@@ -26,20 +33,14 @@ async def get_current_supabase_user(request: Request) -> SupabaseUser:
         raise HTTPException(status_code=401, detail="Missing authorization header")
 
     try:
-        # Extract token
-        if not auth_header.lower().startswith("bearer "):
-            raise HTTPException(status_code=401, detail="Invalid authorization format")
-
-        token = auth_header[7:]  # Remove "bearer " prefix
+        # Extract token via shared helper
+        token = extract_bearer_token(auth_header)
 
         # Verify token directly with Supabase Auth API
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{global_config.SUPABASE_URL}/auth/v1/user",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "apikey": global_config.SUPABASE_ANON_KEY,
-                },
+                headers=build_supabase_auth_headers(token),
             )
 
             if response.status_code != 200:
