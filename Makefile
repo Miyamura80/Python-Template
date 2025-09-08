@@ -143,9 +143,9 @@ vulture: install_tools
 	@uv tool run vulture .
 	@echo "$(GREEN)✅Vulture completed.$(RESET)"
 
-ty: install_tools
+ty:
 	@echo "$(YELLOW)🔍Running Typer...$(RESET)"
-	@uv tool run ty check
+	@uv run ty check
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
 
 ci: ruff vulture ty ## Run all CI checks (ruff, vulture, ty)
