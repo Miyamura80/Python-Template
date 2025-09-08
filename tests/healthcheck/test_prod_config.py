@@ -1,9 +1,11 @@
 import os
 import importlib
+import sys
 from pathlib import Path
 from tests.test_template import TestTemplate
 
 root_dir = Path(__file__).parent.parent.parent
+
 
 class TestProdConfig(TestTemplate):
     def test_prod_config_loading(self):
@@ -11,13 +13,12 @@ class TestProdConfig(TestTemplate):
         original_environ = os.environ.copy()
 
         # --- Test Production Environment ---
-        os.environ['DEV_ENV'] = 'prod'
-        os.environ['OPENAI_API_KEY'] = 'prod_api_key'
-        os.environ['ANTHROPIC_API_KEY'] = 'prod_api_key'
-        os.environ['GROQ_API_KEY'] = 'prod_api_key'
-        os.environ['PERPLEXITY_API_KEY'] = 'prod_api_key'
-        os.environ['GEMINI_API_KEY'] = 'prod_api_key'
-
+        os.environ["DEV_ENV"] = "prod"
+        os.environ["OPENAI_API_KEY"] = "prod_api_key"
+        os.environ["ANTHROPIC_API_KEY"] = "prod_api_key"
+        os.environ["GROQ_API_KEY"] = "prod_api_key"
+        os.environ["PERPLEXITY_API_KEY"] = "prod_api_key"
+        os.environ["GEMINI_API_KEY"] = "prod_api_key"
 
         # Reload the common.global_config module to pick up the new .env file
         common_module = sys.modules["common.global_config"]
@@ -26,22 +27,25 @@ class TestProdConfig(TestTemplate):
 
         # Assert that the variables are loaded from .prod.env
         assert reloaded_config.DEV_ENV == "prod", "Should load from .prod.env"
-        assert reloaded_config.OPENAI_API_KEY == "prod_api_key", "Should load from .prod.env"
+        assert (
+            reloaded_config.OPENAI_API_KEY == "prod_api_key"
+        ), "Should load from .prod.env"
 
         # Assert that production_config.yaml overrides global_config.yaml
-        assert reloaded_config.example_parent.example_child == "prod_value", "Should be overridden by production_config.yaml"
+        assert (
+            reloaded_config.example_parent.example_child == "prod_value"
+        ), "Should be overridden by production_config.yaml"
 
         # --- Test Development Environment ---
         # Restore original environment and set up for dev
         os.environ.clear()
         os.environ.update(original_environ)
-        os.environ['DEV_ENV'] = 'dev'
-        os.environ['OPENAI_API_KEY'] = 'dev_api_key'
-        os.environ['ANTHROPIC_API_KEY'] = 'dev_api_key'
-        os.environ['GROQ_API_KEY'] = 'dev_api_key'
-        os.environ['PERPLEXITY_API_KEY'] = 'dev_api_key'
-        os.environ['GEMINI_API_KEY'] = 'dev_api_key'
-
+        os.environ["DEV_ENV"] = "dev"
+        os.environ["OPENAI_API_KEY"] = "dev_api_key"
+        os.environ["ANTHROPIC_API_KEY"] = "dev_api_key"
+        os.environ["GROQ_API_KEY"] = "dev_api_key"
+        os.environ["PERPLEXITY_API_KEY"] = "dev_api_key"
+        os.environ["GEMINI_API_KEY"] = "dev_api_key"
 
         # Reload the common.global_config module again
         importlib.reload(common_module)
@@ -49,10 +53,14 @@ class TestProdConfig(TestTemplate):
 
         # Assert that the variables are loaded from .env
         assert reloaded_config.DEV_ENV == "dev", "Should load from .env"
-        assert reloaded_config.OPENAI_API_KEY == "dev_api_key", "Should load from .env"
+        assert (
+            reloaded_config.OPENAI_API_KEY == "dev_api_key"
+        ), "Should load from .env"
 
         # Assert that global_config.yaml is used
-        assert reloaded_config.example_parent.example_child == "example_value", "Should use value from global_config.yaml"
+        assert (
+            reloaded_config.example_parent.example_child == "example_value"
+        ), "Should use value from global_config.yaml"
 
         # --- Cleanup ---
         # Restore original environment
@@ -66,6 +74,16 @@ class TestProdConfig(TestTemplate):
 
         dot_env_path = root_dir / ".env"
         prod_dot_env_path = root_dir / ".prod.env"
+
+        original_dot_env_content = None
+        if dot_env_path.exists():
+            with open(dot_env_path, "r") as f:
+                original_dot_env_content = f.read()
+
+        original_prod_dot_env_content = None
+        if prod_dot_env_path.exists():
+            with open(prod_dot_env_path, "r") as f:
+                original_prod_dot_env_content = f.read()
 
         try:
             # 2. Create a temporary .env file with DEV_ENV=prod
@@ -94,7 +112,16 @@ class TestProdConfig(TestTemplate):
 
         finally:
             # 7. Cleanup
-            if os.path.exists(dot_env_path):
-                os.remove(dot_env_path)
-            if os.path.exists(prod_dot_env_path):
-                os.remove(prod_dot_env_path)
+            if original_dot_env_content is not None:
+                with open(dot_env_path, "w") as f:
+                    f.write(original_dot_env_content)
+            else:
+                if os.path.exists(dot_env_path):
+                    os.remove(dot_env_path)
+
+            if original_prod_dot_env_content is not None:
+                with open(prod_dot_env_path, "w") as f:
+                    f.write(original_prod_dot_env_content)
+            else:
+                if os.path.exists(prod_dot_env_path):
+                    os.remove(prod_dot_env_path)
