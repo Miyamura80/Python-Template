@@ -4,7 +4,7 @@ Before running the project, you need to set the required environment variables. 
 
 Create a `.env` file in the root of the project and add the environment variables defined in `common/global_config.py`. You can find the required keys in the `REQUIRED_ENV_VARS` list within the `Config` class.
 
-Before submitting, please run `make ruff` and ensure that all linting issues are fixed.
+Before submitting any PR, it should always run `make ci` first so that it can see the CI outputs and fix any issues that come up
 
 # Agent Instructions
 
