@@ -4,14 +4,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 import pytest_asyncio
 import jwt
- 
+
 import ssl
 
 from src.api.auth.jwt_utils import decode_jwt_payload, extract_bearer_token
 
 from src.server import app
 from src.db.database_base import get_db
-from tests.test_template import TestTemplate    
+from tests.test_template import TestTemplate
 from common import global_config
 from src.utils.logging_config import setup_logging
 from src.auth.user_auth import ensure_profile_exists
@@ -76,7 +76,6 @@ class E2ETestBase(TestTemplate):
 
             return {"Authorization": f"Bearer {token}"}
 
-
     def get_user_from_token(self, token):
         """Helper method to get user info from auth token by decoding JWT directly"""
         try:
@@ -108,5 +107,3 @@ class E2ETestBase(TestTemplate):
             dict: Decoded token payload
         """
         return jwt.decode(token, options={"verify_signature": not verify})
-
-
