@@ -13,6 +13,7 @@ from src.utils.logging_config import setup_logging
 # Setup logging at module import
 setup_logging()
 
+
 class SupabaseUser(BaseModel):
     id: str  # noqa
     email: str  # noqa
