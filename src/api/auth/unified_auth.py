@@ -16,21 +16,19 @@ from src.api.auth.supabase_jwt import get_current_supabase_user
 from src.middleware.auth_middleware import get_current_user_from_api_key_header
 
 
-async def get_authenticated_user_id(
-    request: Request, db_session: Session
-) -> str:
+async def get_authenticated_user_id(request: Request, db_session: Session) -> str:
     """
     Flexible authentication that supports both Supabase JWT and API key authentication.
-    
+
     Tries JWT authentication first (Authorization header), then falls back to API key (X-API-KEY header).
-    
+
     Args:
         request: FastAPI request object
         db_session: Database session
-        
+
     Returns:
         user_id string if authenticated
-        
+
     Raises:
         HTTPException: If neither authentication method succeeds
     """
@@ -47,7 +45,7 @@ async def get_authenticated_user_id(
         except Exception as e:
             logger.warning(f"Unexpected error in JWT authentication: {e}")
             # Continue to try API key authentication
-    
+
     # Try API key authentication
     api_key = request.headers.get("X-API-KEY")
     if api_key:
@@ -60,9 +58,9 @@ async def get_authenticated_user_id(
             logger.warning(f"API key authentication failed: {e.detail}")
         except Exception as e:
             logger.warning(f"Unexpected error in API key authentication: {e}")
-    
+
     # If we get here, both authentication methods failed
     raise HTTPException(
         status_code=401,
-        detail="Authentication required. Provide either 'Authorization: Bearer <jwt_token>' or 'X-API-KEY: <api_key>' header"
-    ) 
+        detail="Authentication required. Provide either 'Authorization: Bearer <jwt_token>' or 'X-API-KEY: <api_key>' header",
+    )

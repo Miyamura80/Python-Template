@@ -178,10 +178,9 @@ class DependencyValidator:
 
             # Check foreign key constraints for use_alter=True
             for constraint in table_args:  # type: ignore
-                if (
-                    hasattr(constraint, "columns")  # type: ignore
-                    and hasattr(constraint, "referred_table")  # type: ignore
-                ):
+                if hasattr(constraint, "columns") and hasattr(  # type: ignore
+                    constraint, "referred_table"
+                ):  # type: ignore
                     # This is a foreign key constraint
                     if getattr(constraint, "use_alter", False):  # type: ignore
                         # Found at least one use_alter=True, cycle is properly handled
