@@ -1,7 +1,7 @@
 """Initialization of alembic by eito
 
 Revision ID: 54eeece17890
-Revises: 
+Revises:
 Create Date: 2025-03-21 18:56:26.807211
 
 """

@@ -84,5 +84,3 @@ def decode_jwt_payload(token: str) -> dict[str, Any]:
     except Exception as exc:
         log.error(f"Failed to decode JWT payload: {exc}")
         raise ValueError(f"Failed to decode JWT payload: {exc}")
-
-

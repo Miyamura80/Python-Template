@@ -44,11 +44,13 @@ def get_existing_policies(
         Set of existing policy names
     """
     try:
-        query = text("""
+        query = text(
+            """
             SELECT policyname 
             FROM pg_policies 
             WHERE schemaname = :schema AND tablename = :table_name
-        """)
+        """
+        )
         result = connection.execute(query, {"schema": schema, "table_name": table_name})
         return {row[0] for row in result}
     except Exception:
@@ -69,12 +71,14 @@ def get_table_rls_enabled(connection: Connection, schema: str, table_name: str) 
         True if RLS is enabled, False otherwise
     """
     try:
-        query = text("""
+        query = text(
+            """
             SELECT c.relrowsecurity 
             FROM pg_class c 
             JOIN pg_namespace n ON c.relnamespace = n.oid
             WHERE n.nspname = :schema AND c.relname = :table_name
-        """)
+        """
+        )
         result = connection.execute(query, {"schema": schema, "table_name": table_name})
         row = result.fetchone()
         return bool(row[0]) if row else False
@@ -93,9 +97,11 @@ def compare_rls_policies(
     """
     # Check if metadata_table is None (can happen when table exists in DB but not in metadata)
     if metadata_table is None:
-        print(f"⚠️  No metadata table found for {schemaname}.{tablename}, skipping RLS comparison")
+        print(
+            f"⚠️  No metadata table found for {schemaname}.{tablename}, skipping RLS comparison"
+        )
         return
-    
+
     # Get model policies from table info (transferred from model class)
     model_policies = metadata_table.info.get("rls_policies", [])
 

@@ -130,21 +130,27 @@ def ignore_init_migrations(context, revision, directives):
 
     # Operations that are considered schema drift and should be filtered out
     schema_drift_operations = {
-        'createindexop', 'dropindexop',  # Filter out index operations as drift
-        'createforeignkeyop', 'dropforeignkeyop', 
-        'createuniqueconstraintop', 'dropuniqueconstraintop',
-        'altercolumnop',
-        'createcheckconstraintop', 'dropcheckconstraintop',
-        'dropcolumnop',  # Only filter out column drops, not additions
+        "createindexop",
+        "dropindexop",  # Filter out index operations as drift
+        "createforeignkeyop",
+        "dropforeignkeyop",
+        "createuniqueconstraintop",
+        "dropuniqueconstraintop",
+        "altercolumnop",
+        "createcheckconstraintop",
+        "dropcheckconstraintop",
+        "dropcolumnop",  # Only filter out column drops, not additions
         # NOTE: Removed 'createtableop', 'droptableop', 'addcolumnop' - allow new table/column creation from model changes
-        'dropconstraintop',  # Also filter out constraint drops
+        "dropconstraintop",  # Also filter out constraint drops
     }
 
     # Operations that should ALWAYS generate migrations (genuine schema changes)
     truly_important_operations = {
-        'createpolicyop', 'droppolicyop',  # Explicit RLS operations only
-        'createtableop', 'droptableop',    # New table creation/deletion from models
-        'addcolumnop',                     # Column additions from model changes
+        "createpolicyop",
+        "droppolicyop",  # Explicit RLS operations only
+        "createtableop",
+        "droptableop",  # New table creation/deletion from models
+        "addcolumnop",  # Column additions from model changes
     }
 
     def is_rls_policy_operation(op):
