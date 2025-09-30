@@ -10,12 +10,11 @@ import ssl
 from src.api.auth.jwt_utils import decode_jwt_payload, extract_bearer_token
 
 from src.server import app
-from src.db.database_base import get_db
+from src.db.database import get_db_session
 from tests.test_template import TestTemplate
 from common import global_config
 from src.utils.logging_config import setup_logging
-from src.auth.user_auth import ensure_profile_exists
-from src.db.models.public.profiles import WaitlistStatus
+from src.db.models.public.profiles import WaitlistStatus, Profiles
 
 
 setup_logging(debug=True)
@@ -33,7 +32,7 @@ class E2ETestBase(TestTemplate):
     @pytest_asyncio.fixture
     async def db(self) -> Session:
         """Get database session"""
-        db = next(get_db())
+        db = next(get_db_session())
         try:
             yield db
         finally:
@@ -65,10 +64,18 @@ class E2ETestBase(TestTemplate):
             self.test_user_email = user_info["email"]
 
             # Ensure the user profile exists and is approved for tests
-            profile = await ensure_profile_exists(
-                user_id=self.test_user_id, email=self.test_user_email, db=db
-            )
-            if not profile.is_approved:
+            profile = db.query(Profiles).filter(Profiles.user_id == self.test_user_id).first()
+            if not profile:
+                profile = Profiles(
+                    user_id=self.test_user_id,
+                    email=self.test_user_email,
+                    is_approved=True,
+                    waitlist_status=WaitlistStatus.APPROVED
+                )
+                db.add(profile)
+                db.commit()
+                db.refresh(profile)
+            elif not profile.is_approved:
                 profile.is_approved = True
                 profile.waitlist_status = WaitlistStatus.APPROVED
                 db.commit()
