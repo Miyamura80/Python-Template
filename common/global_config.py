@@ -45,6 +45,12 @@ class Config:
         "PERPLEXITY_API_KEY",
         "GEMINI_API_KEY",
         "BACKEND_DB_URI",
+        "TELEGRAM_BOT_TOKEN",
+        "STRIPE_TEST_SECRET_KEY",
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "TEST_USER_EMAIL",
+        "TEST_USER_PASSWORD",
     ]
 
     def __init__(self):
@@ -67,8 +73,9 @@ class Config:
                     prod_config_data = yaml.safe_load(file)
                 if prod_config_data:
                     config_data = recursive_update(config_data, prod_config_data)
-                    logger.warning("\033[33m❗️ Overwriting common/global_config.yaml with common/production_config.yaml\033[0m")
-
+                    logger.warning(
+                        "\033[33m❗️ Overwriting common/global_config.yaml with common/production_config.yaml\033[0m"
+                    )
 
             # Load the local .gitignored custom global config if it exists
         custom_config_path = root_dir / ".global_config.yaml"

@@ -43,3 +43,26 @@ logging:
     warning: true # Show warning logs
     error: true   # Show error logs
     critical: true # Show critical logs
+
+########################################################
+# Subscription
+########################################################
+subscription:
+  stripe:
+    price_ids:
+      test: # TODO: Fill in
+
+########################################################
+# Stripe
+########################################################
+stripe:
+  webhook:
+    url: "# TODO: Set your webhook URL here"
+
+########################################################
+# Telegram
+########################################################
+telegram:
+  chat_ids:
+    admin_alerts: "1560836485"
+    test: "1560836485" 
