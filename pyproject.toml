@@ -24,6 +24,13 @@ dependencies = [
     "pytest-env>=1.1.5",
     "psycopg2-binary>=2.9.10",
     "sqlalchemy>=2.0.42",
+    "googlesearch-python>=1.2.3",
+    "pydantic>=2.0.0",
+    "pydantic-core",
+    "typing-extensions",
+    "typing-inspection",
+    "annotated-types",
+    "cloudpickle",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
