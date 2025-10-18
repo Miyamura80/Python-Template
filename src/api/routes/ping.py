@@ -14,8 +14,8 @@ router = APIRouter()
 class PingResponse(BaseModel):
     """Response for ping endpoint."""
 
-    message: str
-    status: str
+    message: str  # noqa: vulture
+    status: str  # noqa: vulture
     timestamp: str
 
 
