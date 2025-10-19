@@ -37,7 +37,11 @@ app.add_middleware(
 
 # Automatically discover and include all routers
 def include_all_routers():
+    from src.api.routes import all_routers
+    
     main_router = APIRouter()
+    for router in all_routers:
+        main_router.include_router(router)
 
     return main_router
 
