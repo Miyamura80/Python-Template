@@ -51,6 +51,8 @@ class Config:
         "SUPABASE_ANON_KEY",
         "TEST_USER_EMAIL",
         "TEST_USER_PASSWORD",
+        "WORKOS_API_KEY",
+        "WORKOS_CLIENT_ID",
     ]
 
     def __init__(self):
