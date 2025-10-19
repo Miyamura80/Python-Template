@@ -1,7 +1,5 @@
-import pytest
 import pytest_asyncio
 import warnings
-import uuid
 from src.api.routes.agent.tools.alert_admin import alert_admin
 from src.utils.logging_config import setup_logging
 from loguru import logger as log
@@ -33,7 +31,7 @@ class TestAdminAgentTools(E2ETestBase):
         self.user_id = user_info["id"]
         yield
 
-    def test_alert_admin_success(self, db, setup_test_user):
+    def test_alert_admin_success(self, db):
         """Test successful admin alert with complete user context."""
         log.info("Testing successful admin alert - sending real message to Telegram")
 
@@ -63,7 +61,7 @@ class TestAdminAgentTools(E2ETestBase):
         )
         log.info("✅ Real message sent to test chat for verification")
 
-    def test_alert_admin_without_optional_context(self, db, setup_test_user):
+    def test_alert_admin_without_optional_context(self, db):
         """Test admin alert without optional user context."""
         log.info(
             "Testing admin alert without optional context - sending real message to Telegram"
@@ -96,7 +94,7 @@ class TestAdminAgentTools(E2ETestBase):
         )
         log.info("✅ Real message sent to test chat (without optional context)")
 
-    def test_alert_admin_telegram_failure(self, db, setup_test_user):
+    def test_alert_admin_telegram_failure(self, db):
         """Test admin alert when Telegram message fails to send."""
         log.info("Testing admin alert when Telegram fails - using invalid chat")
 
@@ -131,7 +129,7 @@ class TestAdminAgentTools(E2ETestBase):
             "✅ Admin alert sent successfully - real failure testing requires network/API issues"
         )
 
-    def test_alert_admin_exception_handling(self, db, setup_test_user):
+    def test_alert_admin_exception_handling(self, db):
         """Test admin alert handles exceptions gracefully."""
         log.info(
             "Testing admin alert exception handling - this will send a real message"
