@@ -1534,6 +1534,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pyjwt"
+version = "2.10.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e7/46/bd74733ff231675599650d3e47f361794b22ef3e3770998dda30d3b63726/pyjwt-2.10.1.tar.gz", hash = "sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953", size = 87785 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/ad/689f02752eeec26aed679477e80e632ef1b682313be70793d798c1d5fc8f/PyJWT-2.10.1-py3-none-any.whl", hash = "sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb", size = 22997 },
+]
+
+[[package]]
 name = "pytest"
 version = "8.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1604,6 +1613,7 @@ dependencies = [
     { name = "dspy" },
     { name = "fastapi" },
     { name = "google-genai" },
+    { name = "httpx" },
     { name = "human-id" },
     { name = "itsdangerous" },
     { name = "jwt" },
@@ -1625,6 +1635,7 @@ dependencies = [
     { name = "ty" },
     { name = "uvicorn" },
     { name = "vulture" },
+    { name = "workos" },
 ]
 
 [package.metadata]
@@ -1633,6 +1644,7 @@ requires-dist = [
     { name = "dspy", specifier = ">=2.6.24" },
     { name = "fastapi", specifier = ">=0.118.0" },
     { name = "google-genai", specifier = ">=1.15.0" },
+    { name = "httpx", specifier = ">=0.27.0" },
     { name = "human-id", specifier = ">=0.2.0" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
     { name = "jwt", specifier = ">=1.4.0" },
@@ -1654,6 +1666,7 @@ requires-dist = [
     { name = "ty", specifier = ">=0.0.1a9" },
     { name = "uvicorn", specifier = ">=0.37.0" },
     { name = "vulture", specifier = ">=2.14" },
+    { name = "workos", specifier = ">=4.0.0" },
 ]
 
 [[package]]
@@ -2175,6 +2188,21 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083 },
+]
+
+[[package]]
+name = "workos"
+version = "5.31.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pyjwt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/49/b3/c409a2e6abc18ae66c7213a7420d952be3f21c62d6dac1771d6a7de9c6c3/workos-5.31.1.tar.gz", hash = "sha256:1a288cbee5e3b3336459507cfa66577efaad0434d14ea9c50556b676b3ec0c71", size = 83932 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/ae/5efced18b88d524e384768b84aa83572e82c3df6b18de5a19284d975995b/workos-5.31.1-py3-none-any.whl", hash = "sha256:11a88ea62bd128b362a428c2919ea3a124ffbd522682af425db2ecf44fed90ca", size = 92607 },
 ]
 
 [[package]]
