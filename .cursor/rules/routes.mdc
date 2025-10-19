@@ -1,0 +1,92 @@
+---
+globs: src/api/routes/**
+alwaysApply: false
+---
+# API Routes
+
+All routes are automatically registered through `src/api/routes/__init__.py` → `server.py`.
+
+## Quick Start: Adding a New Route
+
+### 1. Create Route Module (e.g., `src/api/routes/my_feature.py`)
+
+```python
+"""My Feature Route - description"""
+
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter()
+
+class MyResponse(BaseModel):
+    """Response model."""
+    message: str
+    data: dict
+
+@router.get("/my-feature", response_model=MyResponse)
+async def my_feature() -> MyResponse:
+    """Endpoint description."""
+    return MyResponse(message="success", data={"key": "value"})
+```
+
+### 2. Register in `src/api/routes/__init__.py`
+
+```python
+from .ping import router as ping_router
+from .my_feature import router as my_feature_router  # Add import
+
+all_routers = [
+    ping_router,
+    my_feature_router,  # Add to list
+]
+
+__all__ = ["all_routers", "ping_router", "my_feature_router"]  # Add to exports
+```
+
+### 3. Write Tests in `tests/e2e/test_my_feature.py`
+
+```python
+"""E2E tests for my feature endpoint"""
+from tests.e2e.e2e_test_base import E2ETestBase
+
+class TestMyFeature(E2ETestBase):
+    """Tests for my feature endpoint"""
+    
+    def test_my_feature_endpoint(self):
+        """Test that endpoint works"""
+        response = self.client.get("/my-feature")
+        assert response.status_code == 200
+        assert response.json()["message"] == "success"
+```
+
+## Authentication
+
+For protected endpoints:
+
+```python
+from fastapi import Request, Depends
+from sqlalchemy.orm import Session
+from src.api.auth.unified_auth import get_authenticated_user_id
+from src.db.database import get_db_session
+
+@router.get("/protected")
+async def protected(request: Request, db: Session = Depends(get_db_session)):
+    user_id = await get_authenticated_user_id(request, db)  # Validates WorkOS JWT
+    return {"user_id": user_id}
+```
+
+## Subdirectory Routes
+
+For routes in subdirectories (e.g., `src/api/routes/payments/checkout.py`):
+
+```python
+# src/api/routes/payments/__init__.py
+from .checkout import router as checkout_router
+__all__ = ["checkout_router"]
+
+# src/api/routes/__init__.py
+from .payments import checkout_router
+all_routers = [ping_router, checkout_router]
+```
+
+## Reference: See `src/api/routes/ping.py` and `tests/e2e/test_ping.py` for complete examples
