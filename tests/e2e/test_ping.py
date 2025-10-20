@@ -18,15 +18,15 @@ class TestPing(E2ETestBase):
     def test_ping_endpoint_returns_pong(self):
         """Test that ping endpoint returns expected pong response"""
         response = self.client.get("/ping")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # Verify response structure
         assert "message" in data
         assert "status" in data
         assert "timestamp" in data
-        
+
         # Verify response values
         assert data["message"] == "pong"
         assert data["status"] == "ok"
@@ -34,10 +34,10 @@ class TestPing(E2ETestBase):
     def test_ping_endpoint_timestamp_format(self):
         """Test that ping endpoint returns valid ISO format timestamp"""
         response = self.client.get("/ping")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # Verify timestamp is valid ISO format
         timestamp_str = data["timestamp"]
         try:
@@ -50,7 +50,7 @@ class TestPing(E2ETestBase):
         """Test that ping endpoint does not require authentication"""
         # Make request without auth headers
         response = self.client.get("/ping")
-        
+
         # Should still succeed without authentication
         assert response.status_code == 200
         data = response.json()
@@ -66,4 +66,3 @@ class TestPing(E2ETestBase):
             data = response.json()
             assert data["message"] == "pong"
             assert data["status"] == "ok"
-

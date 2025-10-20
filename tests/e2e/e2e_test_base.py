@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 import pytest_asyncio
 import jwt
 import time
+import uuid
 
 from src.server import app
 from src.db.database import get_db_session
@@ -38,14 +39,14 @@ class E2ETestBase(TestTemplate):
     async def auth_headers(self, db: Session):
         """
         Get authentication token for test user and approve them.
-        
+
         Creates a mock WorkOS JWT token for testing purposes.
         In production, this would come from actual WorkOS authentication.
         """
         # Use test user credentials from config
         test_user_email = global_config.TEST_USER_EMAIL
         test_user_id = "test_user_workos_001"  # Mock WorkOS user ID
-        
+
         # Create a mock WorkOS JWT token
         token_payload = {
             "sub": test_user_id,  # Subject (user ID)
@@ -57,22 +58,24 @@ class E2ETestBase(TestTemplate):
             "iss": "https://api.workos.com",  # Issuer
             "aud": global_config.WORKOS_CLIENT_ID,  # Audience
         }
-        
+
         # Create JWT token (unsigned for testing)
         token = jwt.encode(token_payload, "test-secret", algorithm="HS256")
-        
+
         # Store user info for tests
         self.test_user_id = test_user_id
         self.test_user_email = test_user_email
-        
+
         # Ensure the user profile exists and is approved for tests
-        profile = db.query(Profiles).filter(Profiles.user_id == self.test_user_id).first()
+        profile = (
+            db.query(Profiles).filter(Profiles.user_id == self.test_user_id).first()
+        )
         if not profile:
             profile = Profiles(
                 user_id=self.test_user_id,
                 email=self.test_user_email,
                 is_approved=True,
-                waitlist_status=WaitlistStatus.APPROVED
+                waitlist_status=WaitlistStatus.APPROVED,
             )
             db.add(profile)
             db.commit()
@@ -82,16 +85,16 @@ class E2ETestBase(TestTemplate):
             profile.waitlist_status = WaitlistStatus.APPROVED  # noqa
             db.commit()
             db.refresh(profile)
-        
+
         return {"Authorization": f"Bearer {token}"}
 
     def get_user_from_token(self, token: str) -> dict:
         """
         Helper method to get user info from auth token by decoding JWT directly.
-        
+
         Args:
             token: JWT token string
-            
+
         Returns:
             Dict with user information (id, email, etc.)
         """
@@ -111,10 +114,10 @@ class E2ETestBase(TestTemplate):
     def get_user_from_auth_headers(self, auth_headers: dict) -> dict:
         """
         Helper method to extract user info from auth headers.
-        
+
         Args:
             auth_headers: Dict with Authorization header
-            
+
         Returns:
             Dict with user information
         """

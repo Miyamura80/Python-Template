@@ -8,7 +8,6 @@ class SubscriptionTier(str, Enum):
     PLUS = "plus_tier"  # Matches current implementation
 
 
-
 class SubscriptionStatus(str, Enum):
     """Subscription status types from Stripe"""
 
