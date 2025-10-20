@@ -6,6 +6,7 @@ from typing import Optional, Any, Literal
 from pydantic import BaseModel, ValidationError, Field
 from dspy.adapters import Image as dspy_Image
 from dspy.signatures import Signature as dspy_Signature
+from pydantic import ConfigDict
 import contextvars
 from loguru import logger as log
 
@@ -32,8 +33,7 @@ class _ModelOutputPayload(BaseModel):
     )  # Corrected usage: List to list
     usage: Optional[_UsagePayload] = None
 
-    class Config:
-        extra = "allow"  # Allow other fields in the dict not defined in model # noqa
+    model_config = ConfigDict(extra="allow")
 
 
 """
