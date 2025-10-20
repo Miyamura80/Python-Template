@@ -229,30 +229,6 @@ class TestSubscriptionE2E(E2ETestBase):
         assert status_data["payment_status"] == PaymentStatus.ACTIVE.value
         assert status_data["source"] == "stripe"
 
-    def _generate_stripe_signature(self, event):
-        """Helper method to generate a valid stripe signature for testing"""
-        timestamp = int(datetime.now(timezone.utc).timestamp())
-
-        # Convert event to a proper JSON string
-        if isinstance(event, dict):
-            payload = json.dumps(event)
-        elif hasattr(event, "to_dict"):
-            # Handle Stripe event objects
-            payload = json.dumps(event.to_dict())
-        else:
-            payload = str(event)
-
-        # Create the signed payload string
-        signed_payload = f"{timestamp}.{payload}"
-
-        # Compute signature using the webhook secret
-        signature = stripe.WebhookSignature._compute_signature(
-            signed_payload.encode("utf-8"), global_config.STRIPE_TEST_WEBHOOK_SECRET
-        )
-
-        # Return the complete signature header
-        return f"t={timestamp},v1={signature}"
-
     @pytest.mark.asyncio
     async def test_cancel_subscription_e2e(self, db: Session, auth_headers):
         """Test cancelling a subscription"""

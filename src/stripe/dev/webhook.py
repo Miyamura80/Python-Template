@@ -76,4 +76,4 @@ def create_or_update_webhook_endpoint():
 
 if __name__ == "__main__":
     # Example usage
-    endpoint = create_or_update_webhook_endpoint()
+    _endpoint = create_or_update_webhook_endpoint()
