@@ -36,13 +36,14 @@ class Profiles(Base):
     )
 
     # Row-Level Security (RLS) policies
-    __rls_policies__ = {
-        "user_owns_profile": {
-            "command": "ALL",
-            "using": "user_id = auth.uid()",
-            "check": "user_id = auth.uid()",
-        }
-    }
+    # Temporarily removed for WorkOS migration - will add custom auth schema later
+    # __rls_policies__ = {
+    #     "user_owns_profile": {
+    #         "command": "ALL",
+    #         "using": "user_id = auth.uid()",
+    #         "check": "user_id = auth.uid()",
+    #     }
+    # }
 
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = Column(String, nullable=True)

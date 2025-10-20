@@ -24,12 +24,13 @@ class UserSubscriptions(Base):
     )
 
     # Row-Level Security (RLS) policies
-    __rls_policies__ = {
-        "user_can_view_subscription": {
-            "command": "SELECT",
-            "using": "user_id = auth.uid()",
-        }
-    }
+    # Temporarily removed for WorkOS migration - will add custom auth schema later
+    # __rls_policies__ = {
+    #     "user_can_view_subscription": {
+    #         "command": "SELECT",
+    #         "using": "user_id = auth.uid()",
+    #     }
+    # }
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), nullable=False)

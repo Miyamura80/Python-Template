@@ -39,19 +39,8 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),
         schema="public",
-        info={
-            "rls_policies": {
-                "owner_controls_organization": {
-                    "command": "ALL",
-                    "using": "owner_user_id = auth.uid()",
-                    "check": "owner_user_id = auth.uid()",
-                }
-            }
-        },
     )
-    op.execute(
-        "ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;\nCREATE POLICY owner_controls_organization ON public.organizations\n                AS PERMISSIVE\n                FOR ALL\n                USING (owner_user_id = auth.uid())\n                WITH CHECK (owner_user_id = auth.uid());"
-    )
+    # RLS policies temporarily removed for WorkOS migration
 
     op.create_table(
         "profiles",
@@ -82,19 +71,8 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("user_id"),
         schema="public",
-        info={
-            "rls_policies": {
-                "user_owns_profile": {
-                    "command": "ALL",
-                    "using": "user_id = auth.uid()",
-                    "check": "user_id = auth.uid()",
-                }
-            }
-        },
     )
-    op.execute(
-        "ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;\nCREATE POLICY user_owns_profile ON public.profiles\n                AS PERMISSIVE\n                FOR ALL\n                USING (user_id = auth.uid())\n                WITH CHECK (user_id = auth.uid());"
-    )
+    # RLS policies temporarily removed for WorkOS migration
     op.drop_table("stripe_products")
     # ### end Alembic commands ###
 
@@ -123,10 +101,7 @@ def downgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("stripe_products_pkey")),
     )
-    op.execute("DROP POLICY IF EXISTS user_owns_profile ON public.profiles;")
+    # RLS policies were removed, no need to drop them
     op.drop_table("profiles", schema="public")
-    op.execute(
-        "DROP POLICY IF EXISTS owner_controls_organization ON public.organizations;"
-    )
     op.drop_table("organizations", schema="public")
     # ### end Alembic commands ###
