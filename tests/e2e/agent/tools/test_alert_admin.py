@@ -1,4 +1,3 @@
-import pytest_asyncio
 import warnings
 from src.api.routes.agent.tools.alert_admin import alert_admin
 from src.utils.logging_config import setup_logging
@@ -24,14 +23,7 @@ setup_logging()
 class TestAdminAgentTools(E2ETestBase):
     """Test suite for Agent Admin Tools"""
 
-    @pytest_asyncio.fixture(autouse=True)
-    async def setup_test_user(self, db, auth_headers):
-        """Set up the test user."""
-        user_info = self.get_user_from_auth_headers(auth_headers)
-        self.user_id = user_info["id"]
-        yield
-
-    def test_alert_admin_success(self, db):
+    def test_alert_admin_success(self, setup_test_user, db):
         """Test successful admin alert with complete user context."""
         log.info("Testing successful admin alert - sending real message to Telegram")
 
@@ -61,7 +53,7 @@ class TestAdminAgentTools(E2ETestBase):
         )
         log.info("✅ Real message sent to test chat for verification")
 
-    def test_alert_admin_without_optional_context(self, db):
+    def test_alert_admin_without_optional_context(self, setup_test_user, db):
         """Test admin alert without optional user context."""
         log.info(
             "Testing admin alert without optional context - sending real message to Telegram"
@@ -94,7 +86,7 @@ class TestAdminAgentTools(E2ETestBase):
         )
         log.info("✅ Real message sent to test chat (without optional context)")
 
-    def test_alert_admin_telegram_failure(self, db):
+    def test_alert_admin_telegram_failure(self, setup_test_user, db):
         """Test admin alert when Telegram message fails to send."""
         log.info("Testing admin alert when Telegram fails - using invalid chat")
 
@@ -129,7 +121,7 @@ class TestAdminAgentTools(E2ETestBase):
             "✅ Admin alert sent successfully - real failure testing requires network/API issues"
         )
 
-    def test_alert_admin_exception_handling(self, db):
+    def test_alert_admin_exception_handling(self, setup_test_user, db):
         """Test admin alert handles exceptions gracefully."""
         log.info(
             "Testing admin alert exception handling - this will send a real message"

@@ -23,15 +23,9 @@ def alert_admin(user_id: str, issue_description: str, user_context: str = None) 
         db = next(get_db_session())
         user_uuid = uuid.UUID(user_id)
 
-        from src.db.tables.profiles import Profiles
-        from src.db.tables.user_twitter_auth import UserTwitterAuth
+        from src.db.models.public.profiles import Profiles
 
         user_profile = db.query(Profiles).filter(Profiles.user_id == user_uuid).first()
-        twitter_auth = (
-            db.query(UserTwitterAuth)
-            .filter(UserTwitterAuth.user_id == user_uuid)
-            .first()
-        )
 
         # Build user context for admin alert
         user_info = f"User ID: {user_id}"
@@ -39,9 +33,6 @@ def alert_admin(user_id: str, issue_description: str, user_context: str = None) 
             user_info += f"\nEmail: {user_profile.email}"
             if user_profile.organization_id:
                 user_info += f"\nOrganization ID: {user_profile.organization_id}"
-
-        if twitter_auth:
-            user_info += f"\nTwitter Handle: {twitter_auth.display_name}"
 
         # Construct the alert message
         alert_message = f"""🚨 *Agent Escalation Alert* 🚨

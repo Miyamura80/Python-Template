@@ -89,6 +89,24 @@ class E2ETestBase(TestTemplate):
 
         return {"Authorization": f"Bearer {token}"}
 
+    @pytest_asyncio.fixture
+    async def setup_test_user(self, db, auth_headers):
+        """
+        Set up test user with auth headers for authenticated E2E tests.
+        
+        This fixture extracts user info from auth headers and makes it available
+        as instance variables for test methods. Use this in test classes that
+        require authenticated user context.
+        
+        Sets:
+            self.user_id: The authenticated user's ID
+            self.auth_headers: The authentication headers dict
+        """
+        user_info = self.get_user_from_auth_headers(auth_headers)
+        self.user_id = user_info["id"]
+        self.auth_headers = auth_headers
+        yield
+
     def get_user_from_token(self, token: str) -> dict:
         """
         Helper method to get user info from auth token by decoding JWT directly.
