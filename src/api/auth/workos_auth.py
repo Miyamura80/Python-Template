@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from loguru import logger
 from typing import Any
 import jwt
-from jwt.exceptions import InvalidTokenError
+from jwt.exceptions import DecodeError
 
 from common import global_config
 from src.utils.logging_config import setup_logging
@@ -77,7 +77,7 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
                     "verify_signature": False
                 },  # TODO: Verify signature in production
             )
-        except InvalidTokenError as e:
+        except DecodeError as e:
             logger.error(f"Invalid WorkOS token: {e}")
             raise HTTPException(
                 status_code=401, detail="Invalid or expired token. Please log in again."
