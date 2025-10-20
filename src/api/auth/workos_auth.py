@@ -20,6 +20,7 @@ setup_logging()
 
 class WorkOSUser(BaseModel):
     """WorkOS user model"""
+
     id: str  # noqa
     email: str  # noqa
     first_name: str | None = None  # noqa
@@ -58,8 +59,8 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
 
     if not auth_header.lower().startswith("bearer "):
         raise HTTPException(
-            status_code=401, 
-            detail="Invalid authorization header format. Expected 'Bearer <token>'"
+            status_code=401,
+            detail="Invalid authorization header format. Expected 'Bearer <token>'",
         )
 
     try:
@@ -72,22 +73,23 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
         try:
             decoded_token = jwt.decode(
                 token,
-                options={"verify_signature": False},  # TODO: Verify signature in production
+                options={
+                    "verify_signature": False
+                },  # TODO: Verify signature in production
             )
         except InvalidTokenError as e:
             logger.error(f"Invalid WorkOS token: {e}")
             raise HTTPException(
-                status_code=401,
-                detail="Invalid or expired token. Please log in again."
+                status_code=401, detail="Invalid or expired token. Please log in again."
             )
 
         # Check if token has expired
         import time
+
         if "exp" in decoded_token:
             if decoded_token["exp"] < time.time():
                 raise HTTPException(
-                    status_code=401,
-                    detail="Token has expired. Please log in again."
+                    status_code=401, detail="Token has expired. Please log in again."
                 )
 
         # Create user object from token data
@@ -97,7 +99,7 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
             logger.error(f"Token missing required fields: {decoded_token}")
             raise HTTPException(
                 status_code=401,
-                detail="Invalid token: missing required user information"
+                detail="Invalid token: missing required user information",
             )
 
         logger.debug(f"Successfully authenticated WorkOS user: {user.email}")
@@ -109,4 +111,3 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
     except Exception as e:
         logger.exception(f"Unexpected error in WorkOS authentication: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-
