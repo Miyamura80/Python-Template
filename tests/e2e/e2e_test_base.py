@@ -21,7 +21,7 @@ class E2ETestBase(TestTemplate):
     """Base class for E2E tests with common fixtures and utilities using WorkOS authentication"""
 
     @pytest.fixture(autouse=True)
-    def setup_test(self, setup):
+    def setup_test(self, setup):  # noqa
         """Setup test client"""
         self.client = TestClient(app)
         self.test_user_id = None  # Initialize user ID
@@ -127,16 +127,3 @@ class E2ETestBase(TestTemplate):
             token = auth_value.split(" ", 1)[1]
             return self.get_user_from_token(token)
         raise ValueError("Invalid Authorization header format")
-
-    def decode_jwt_token(self, token: str, verify: bool = False) -> dict:
-        """
-        Helper method to decode JWT token.
-
-        Args:
-            token: JWT token to decode
-            verify: Whether to verify the token signature
-
-        Returns:
-            Decoded token payload
-        """
-        return jwt.decode(token, options={"verify_signature": verify})
