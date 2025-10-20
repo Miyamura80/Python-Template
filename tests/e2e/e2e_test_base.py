@@ -93,10 +93,10 @@ class E2ETestBase(TestTemplate):
     async def setup_test_user(self, db, auth_headers):
         """
         Set up test user with auth headers for authenticated E2E tests.
-        
+
         This fixture automatically runs for all E2E tests that inherit from this base class.
         It extracts user info from auth headers and makes it available as instance variables.
-        
+
         Sets:
             self.user_id: The authenticated user's ID
             self.auth_headers: The authentication headers dict

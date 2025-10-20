@@ -39,7 +39,9 @@ class AgentResponse(BaseModel):
 
     response: str = Field(..., description="Agent's response")
     user_id: str = Field(..., description="Authenticated user ID")
-    reasoning: str | None = Field(None, description="Agent's reasoning (if available)")  # noqa
+    reasoning: str | None = Field(
+        None, description="Agent's reasoning (if available)"
+    )  # noqa
 
 
 class AgentSignature(dspy.Signature):
