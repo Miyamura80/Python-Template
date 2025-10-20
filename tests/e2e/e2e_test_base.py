@@ -89,14 +89,13 @@ class E2ETestBase(TestTemplate):
 
         return {"Authorization": f"Bearer {token}"}
 
-    @pytest_asyncio.fixture
+    @pytest_asyncio.fixture(autouse=True)
     async def setup_test_user(self, db, auth_headers):
         """
         Set up test user with auth headers for authenticated E2E tests.
         
-        This fixture extracts user info from auth headers and makes it available
-        as instance variables for test methods. Use this in test classes that
-        require authenticated user context.
+        This fixture automatically runs for all E2E tests that inherit from this base class.
+        It extracts user info from auth headers and makes it available as instance variables.
         
         Sets:
             self.user_id: The authenticated user's ID

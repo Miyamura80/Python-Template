@@ -37,7 +37,7 @@ class TestAgent(E2ETestBase):
         assert response.status_code == 401
         assert "Authentication required" in response.json()["detail"]
 
-    def test_agent_basic_message(self, setup_test_user):
+    def test_agent_basic_message(self):
         """Test agent endpoint with a basic message"""
         log.info("Testing agent endpoint with basic message")
 
@@ -63,7 +63,7 @@ class TestAgent(E2ETestBase):
 
         log.info(f"Agent response: {data['response'][:100]}...")
 
-    def test_agent_with_context(self, setup_test_user):
+    def test_agent_with_context(self):
         """Test agent endpoint with additional context"""
         log.info("Testing agent endpoint with context")
 
@@ -88,7 +88,7 @@ class TestAgent(E2ETestBase):
 
         log.info(f"Agent response with context: {data['response'][:100]}...")
 
-    def test_agent_without_optional_context(self, setup_test_user):
+    def test_agent_without_optional_context(self):
         """Test agent endpoint without optional context"""
         log.info("Testing agent endpoint without optional context")
 
@@ -107,7 +107,7 @@ class TestAgent(E2ETestBase):
 
         log.info(f"Agent response without context: {data['response'][:100]}...")
 
-    def test_agent_empty_message_validation(self, setup_test_user):
+    def test_agent_empty_message_validation(self):
         """Test that agent endpoint validates empty messages"""
         log.info("Testing agent endpoint with empty message")
 
@@ -122,7 +122,7 @@ class TestAgent(E2ETestBase):
         # For now, just verify it doesn't crash
         assert response.status_code in [200, 422]
 
-    def test_agent_missing_message_field(self, setup_test_user):
+    def test_agent_missing_message_field(self):
         """Test that agent endpoint requires message field"""
         log.info("Testing agent endpoint without message field")
 
@@ -136,7 +136,7 @@ class TestAgent(E2ETestBase):
         assert response.status_code == 422
         assert "field required" in response.json()["detail"][0]["msg"].lower()
 
-    def test_agent_invalid_json(self, setup_test_user):
+    def test_agent_invalid_json(self):
         """Test agent endpoint with invalid JSON"""
         log.info("Testing agent endpoint with invalid JSON")
 
@@ -149,7 +149,7 @@ class TestAgent(E2ETestBase):
         # Should fail with 422 for invalid JSON
         assert response.status_code == 422
 
-    def test_agent_complex_message(self, setup_test_user):
+    def test_agent_complex_message(self):
         """Test agent endpoint with a complex multi-part message"""
         log.info("Testing agent endpoint with complex message")
 
