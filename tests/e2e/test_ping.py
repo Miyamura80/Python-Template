@@ -10,11 +10,6 @@ from tests.e2e.e2e_test_base import E2ETestBase
 class TestPing(E2ETestBase):
     """Tests for the ping endpoint"""
 
-    @pytest.fixture(autouse=True)
-    def setup_shared_variables(self, setup):
-        """Initialize shared attributes"""
-        pass
-
     def test_ping_endpoint_returns_pong(self):
         """Test that ping endpoint returns expected pong response"""
         response = self.client.get("/ping")
