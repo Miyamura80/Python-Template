@@ -11,7 +11,6 @@ from typing import Any
 import jwt
 from jwt.exceptions import DecodeError
 
-from common import global_config
 from src.utils.logging_config import setup_logging
 
 # Setup logging at module import
