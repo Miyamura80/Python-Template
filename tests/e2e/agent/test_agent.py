@@ -3,6 +3,7 @@ E2E tests for agent endpoint
 """
 
 import warnings
+import json
 from tests.e2e.e2e_test_base import E2ETestBase
 from loguru import logger as log
 from src.utils.logging_config import setup_logging
@@ -179,3 +180,111 @@ class TestAgent(E2ETestBase):
         assert len(data["response"]) > 50
 
         log.info(f"Agent response to complex message: {data['response'][:150]}...")
+
+    def test_agent_stream_requires_authentication(self):
+        """Test that agent streaming endpoint requires authentication"""
+        response = self.client.post(
+            "/agent/stream",
+            json={"message": "Hello, agent!"},
+        )
+
+        # Should fail without authentication
+        assert response.status_code == 401
+        assert "Authentication required" in response.json()["detail"]
+
+    def test_agent_stream_basic_message(self):
+        """Test agent streaming endpoint with a basic message"""
+        log.info("Testing agent streaming endpoint with basic message")
+
+        response = self.client.post(
+            "/agent/stream",
+            json={"message": "What is 2 + 2?"},
+            headers=self.auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert "text/event-stream" in response.headers["content-type"]
+
+        # Parse the streaming response
+        chunks = []
+        start_received = False
+        done_received = False
+
+        # Split by double newline to get individual SSE messages
+        messages = response.text.strip().split("\n\n")
+
+        for message in messages:
+            if message.startswith("data: "):
+                data = json.loads(message[6:])  # Skip "data: " prefix
+                chunks.append(data)
+
+                if data["type"] == "start":
+                    start_received = True
+                    assert "user_id" in data
+                    assert data["user_id"] == self.user_id
+                elif data["type"] == "token":
+                    assert "content" in data
+                elif data["type"] == "done":
+                    done_received = True
+
+        # Verify we received start and done signals
+        assert start_received, "Should receive start signal"
+        assert done_received, "Should receive done signal"
+
+        # Verify we received some tokens
+        token_chunks = [c for c in chunks if c["type"] == "token"]
+        assert len(token_chunks) > 0, "Should receive at least one token"
+
+        # Reconstruct the full response
+        full_response = "".join([c["content"] for c in token_chunks])
+        assert len(full_response) > 0, "Response should not be empty"
+
+        log.info(f"Agent streaming response: {full_response[:100]}...")
+
+    def test_agent_stream_with_context(self):
+        """Test agent streaming endpoint with additional context"""
+        log.info("Testing agent streaming endpoint with context")
+
+        response = self.client.post(
+            "/agent/stream",
+            json={
+                "message": "Tell me about Python",
+                "context": "I am a beginner programmer",
+            },
+            headers=self.auth_headers,
+        )
+
+        assert response.status_code == 200
+        assert "text/event-stream" in response.headers["content-type"]
+
+        # Parse and verify streaming response
+        messages = response.text.strip().split("\n\n")
+        chunks = []
+
+        for message in messages:
+            if message.startswith("data: "):
+                data = json.loads(message[6:])
+                chunks.append(data)
+
+        # Verify structure
+        assert any(c["type"] == "start" for c in chunks)
+        assert any(c["type"] == "done" for c in chunks)
+        token_chunks = [c for c in chunks if c["type"] == "token"]
+        assert len(token_chunks) > 0
+
+        full_response = "".join([c["content"] for c in token_chunks])
+        log.info(f"Agent streaming response with context: {full_response[:100]}...")
+
+    def test_agent_stream_missing_message_field(self):
+        """Test that agent streaming endpoint requires message field"""
+        log.info("Testing agent streaming endpoint without message field")
+
+        response = self.client.post(
+            "/agent/stream",
+            json={},
+            headers=self.auth_headers,
+        )
+
+        # Should fail validation
+        assert response.status_code == 422
+        assert "field required" in response.json()["detail"][0]["msg"].lower()

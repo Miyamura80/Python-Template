@@ -6,10 +6,12 @@ This endpoint is protected because LLM inference costs can be expensive.
 """
 
 from fastapi import APIRouter, Request, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 import dspy
 from loguru import logger as log
+import json
 
 from src.api.auth.unified_auth import get_authenticated_user_id
 from src.db.database import get_db_session
@@ -142,3 +144,95 @@ async def agent_endpoint(
             user_id=user_id,
             reasoning=f"Error: {str(e)}",
         )
+
+
+@router.post("/agent/stream")  # noqa
+@observe()
+async def agent_stream_endpoint(
+    agent_request: AgentRequest,
+    request: Request,
+    db: Session = Depends(get_db_session),
+) -> StreamingResponse:
+    """
+    Streaming version of the authenticated AI agent endpoint using DSPY.
+
+    This endpoint processes user messages using an LLM agent with streaming
+    support, allowing for real-time token-by-token responses. Authentication
+    is required as LLM inference can be expensive.
+
+    The response is streamed as Server-Sent Events (SSE) format, with each
+    chunk sent as a data line.
+
+    Available tools:
+    - alert_admin: Escalate issues to administrators when the agent cannot help
+
+    Args:
+        agent_request: The agent request containing the user's message
+        request: FastAPI request object for authentication
+        db: Database session
+
+    Returns:
+        StreamingResponse with text/event-stream content type
+
+    Raises:
+        HTTPException: If authentication fails (401)
+    """
+    # Authenticate user - will raise 401 if auth fails
+    user_id = await get_authenticated_user_id(request, db)
+    langfuse_context.update_current_observation(name=f"agent-stream-{user_id}")
+
+    log.info(
+        f"Agent streaming request from user {user_id}: {agent_request.message[:100]}..."
+    )
+
+    async def stream_generator():
+        """Generate streaming response chunks."""
+        try:
+            # Send initial metadata
+            yield f"data: {json.dumps({'type': 'start', 'user_id': user_id})}\n\n"
+
+            # Note: Tool use with streaming is complex and may not work reliably
+            # For now, we'll use streaming without tools
+            # If tools are needed, consider using the non-streaming endpoint
+
+            # Initialize DSPY inference module without tools for streaming
+            inference_module = DSPYInference(
+                pred_signature=AgentSignature,
+                tools=[],  # Streaming with tools is not yet fully supported
+                observe=True,  # Enable LangFuse observability
+            )
+
+            # Stream the response
+            async for chunk in inference_module.run_streaming(
+                stream_field="response",
+                user_id=user_id,
+                message=agent_request.message,
+                context=agent_request.context or "No additional context provided",
+            ):
+                # Send each chunk as SSE data
+                yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+
+            # Send completion signal
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+            log.info(f"Agent streaming response completed for user {user_id}")
+
+        except Exception as e:
+            log.error(
+                f"Error processing agent streaming request for user {user_id}: {str(e)}"
+            )
+            error_msg = (
+                "I apologize, but I encountered an error processing your request. "
+                "Please try again or contact support if the issue persists."
+            )
+            yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
+
+    return StreamingResponse(
+        stream_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        },
+    )

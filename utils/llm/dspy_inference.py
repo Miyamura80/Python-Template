@@ -1,4 +1,4 @@
-from typing import Callable, Any
+from typing import Callable, Any, AsyncGenerator
 import dspy
 from common import global_config
 
@@ -33,25 +33,34 @@ class DSPYInference:
             temperature=temperature,
             max_tokens=max_tokens,
         )
+        self.observe = observe
         if observe:
-            # Initialize a LangFuseDSPYCallback and configure the LM instance for generation tracing
+            # Initialize a LangFuseDSPYCallback for generation tracing
             self.callback = LangFuseDSPYCallback(pred_signature)
-            dspy.configure(lm=self.lm, callbacks=[self.callback])
         else:
-            dspy.configure(lm=self.lm)
+            self.callback = None
 
-        # Agent Intiialization
-        if len(tools) > 0:
-            self.inference_module = dspy.ReAct(
-                pred_signature,
-                tools=tools,  # Uses tools as passed, no longer appends read_memory
-                max_iters=max_iters,
-            )
-        else:
-            self.inference_module = dspy.Predict(pred_signature)
-        self.inference_module_async: Callable[..., Any] = dspy.asyncify(
-            self.inference_module
-        )
+        # Store tools and signature for lazy initialization
+        self.tools = tools
+        self.pred_signature = pred_signature
+        self.max_iters = max_iters
+        self._inference_module = None
+        self._inference_module_async = None
+
+    def _get_inference_module(self):
+        """Lazy initialization of inference module."""
+        if self._inference_module is None:
+            # Agent Initialization
+            if len(self.tools) > 0:
+                self._inference_module = dspy.ReAct(
+                    self.pred_signature,
+                    tools=self.tools,
+                    max_iters=self.max_iters,
+                )
+            else:
+                self._inference_module = dspy.Predict(self.pred_signature)
+            self._inference_module_async = dspy.asyncify(self._inference_module)
+        return self._inference_module, self._inference_module_async
 
     @observe()
     @retry(
@@ -70,9 +79,68 @@ class DSPYInference:
         **kwargs: Any,
     ) -> Any:
         try:
-            # user_id is passed if the pred_signature requires it.
-            result = await self.inference_module_async(**kwargs, lm=self.lm)
+            # Get inference module (lazy init)
+            _, inference_module_async = self._get_inference_module()
+
+            # Use dspy.context() for async-safe configuration
+            context_kwargs = {"lm": self.lm}
+            if self.observe and self.callback:
+                context_kwargs["callbacks"] = [self.callback]
+
+            with dspy.context(**context_kwargs):
+                result = await inference_module_async(**kwargs, lm=self.lm)
+
         except Exception as e:
             log.error(f"Error in run: {str(e)}")
             raise e
         return result
+
+    @observe()
+    async def run_streaming(
+        self,
+        stream_field: str = "response",
+        **kwargs: Any,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Run inference with streaming output.
+
+        Args:
+            stream_field: The output field to stream (default: "response")
+            **kwargs: Input arguments for the signature
+
+        Yields:
+            str: Chunks of streamed text as they are generated
+        """
+        try:
+            # Get inference module (lazy init)
+            inference_module, _ = self._get_inference_module()
+
+            # Use dspy.context() for async-safe configuration
+            context_kwargs = {"lm": self.lm}
+            if self.observe and self.callback:
+                context_kwargs["callbacks"] = [self.callback]
+
+            with dspy.context(**context_kwargs):
+                # Create a streaming version of the inference module
+                stream_listener = dspy.streaming.StreamListener(
+                    signature_field_name=stream_field
+                )
+                stream_module = dspy.streamify(
+                    inference_module,
+                    stream_listeners=[stream_listener],
+                )
+
+                # Execute the streaming module
+                output_stream = stream_module(**kwargs, lm=self.lm)
+
+                # Yield chunks as they arrive
+                async for chunk in output_stream:
+                    if isinstance(chunk, dspy.streaming.StreamResponse):
+                        yield chunk.chunk
+                    elif isinstance(chunk, dspy.Prediction):
+                        # Final prediction received, streaming complete
+                        log.debug("Streaming completed")
+
+        except Exception as e:
+            log.error(f"Error in run_streaming: {str(e)}")
+            raise e
