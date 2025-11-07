@@ -44,7 +44,6 @@ class Config:
         "GROQ_API_KEY",
         "PERPLEXITY_API_KEY",
         "GEMINI_API_KEY",
-        "BACKEND_DB_URI",
     ]
 
     def __init__(self):
