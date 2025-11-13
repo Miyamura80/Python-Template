@@ -51,7 +51,7 @@ class LoggingLocationConfig(BaseModel):
     show_for_error: bool
 
 
-class FormatConfig(BaseModel):
+class LoggingFormatConfig(BaseModel):
     """Logging format configuration."""
 
     show_time: bool
@@ -73,5 +73,5 @@ class LoggingConfig(BaseModel):
     """Complete logging configuration."""
 
     verbose: bool
-    format: FormatConfig
+    format: LoggingFormatConfig
     levels: LoggingLevelsConfig
