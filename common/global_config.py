@@ -1,11 +1,14 @@
 import os
+import re
+import warnings
 import yaml
 from pathlib import Path
 from typing import Any
+
+from dotenv import load_dotenv, dotenv_values
+from loguru import logger
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
-from loguru import logger
-import re
 
 # Import configuration models
 from .config_models import (
@@ -209,9 +212,6 @@ class Config(BaseSettings):
 
 # Load .env files before creating the config instance
 # Load .env file first, to get DEV_ENV if it's defined there
-from dotenv import load_dotenv, dotenv_values
-import warnings
-
 load_dotenv(dotenv_path=root_dir / ".env", override=True)
 
 # Now, check DEV_ENV and load .prod.env if it's 'prod', overriding .env
