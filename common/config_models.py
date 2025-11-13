@@ -38,7 +38,7 @@ class LlmConfig(BaseModel):
     retry: RetryConfig
 
 
-class LocationConfig(BaseModel):
+class LoggingLocationConfig(BaseModel):
     """Location information display configuration for logging."""
 
     enabled: bool
@@ -56,10 +56,10 @@ class FormatConfig(BaseModel):
 
     show_time: bool
     show_session_id: bool
-    location: LocationConfig
+    location: LoggingLocationConfig
 
 
-class LevelsConfig(BaseModel):
+class LoggingLevelsConfig(BaseModel):
     """Logging level configuration."""
 
     debug: bool
@@ -74,4 +74,4 @@ class LoggingConfig(BaseModel):
 
     verbose: bool
     format: FormatConfig
-    levels: LevelsConfig
+    levels: LoggingLevelsConfig
