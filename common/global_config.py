@@ -2,68 +2,23 @@ import os
 import yaml
 from pathlib import Path
 from typing import Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 from loguru import logger
 import re
+
+# Import configuration models
+from .config_models import (
+    ExampleParent,
+    DefaultLlm,
+    LlmConfig,
+    LoggingConfig,
+)
 
 # Get the path to the root directory (one level up from common)
 root_dir = Path(__file__).parent.parent
 
 OPENAI_O_SERIES_PATTERN = r"o(\d+)(-mini)?"
-
-
-# Nested models for configuration structure
-class ExampleParent(BaseModel):
-    example_child: str
-
-
-class DefaultLlm(BaseModel):
-    default_model: str
-    default_temperature: float
-    default_max_tokens: int
-
-
-class RetryConfig(BaseModel):
-    max_attempts: int
-    min_wait_seconds: int
-    max_wait_seconds: int
-
-
-class LlmConfig(BaseModel):
-    cache_enabled: bool
-    retry: RetryConfig
-
-
-class LocationConfig(BaseModel):
-    enabled: bool
-    show_file: bool
-    show_function: bool
-    show_line: bool
-    show_for_info: bool
-    show_for_debug: bool
-    show_for_warning: bool
-    show_for_error: bool
-
-
-class FormatConfig(BaseModel):
-    show_time: bool
-    show_session_id: bool
-    location: LocationConfig
-
-
-class LevelsConfig(BaseModel):
-    debug: bool
-    info: bool
-    warning: bool
-    error: bool
-    critical: bool
-
-
-class LoggingConfig(BaseModel):
-    verbose: bool
-    format: FormatConfig
-    levels: LevelsConfig
 
 
 # Custom YAML settings source
