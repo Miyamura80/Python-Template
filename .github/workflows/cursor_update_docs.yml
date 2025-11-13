@@ -1,0 +1,139 @@
+name: Update Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.github/workflows/**'
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  update-docs:
+    # Only run on merged PRs or direct pushes to main
+    if: >-
+      ${{ github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged == true) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if significant code changes occurred
+        id: check-changes
+        run: |
+          # Get the comparison base
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
+          # Count changed lines in non-docs files
+          CHANGED_LINES=$(git diff --numstat "$BASE_SHA" "$HEAD_SHA" | \
+            grep -v "^[0-9]* [0-9]* docs/" | \
+            awk '{sum += $1 + $2} END {print sum}')
+
+          echo "changed_lines=$CHANGED_LINES" >> $GITHUB_OUTPUT
+
+          # Consider it "large" if more than 50 lines changed outside docs
+          if [ "$CHANGED_LINES" -gt 50 ]; then
+            echo "significant=true" >> $GITHUB_OUTPUT
+          else
+            echo "significant=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install Cursor CLI
+        if: steps.check-changes.outputs.significant == 'true'
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+
+      - name: Configure git identity
+        if: steps.check-changes.outputs.significant == 'true'
+        run: |
+          git config user.name "Cursor Agent"
+          git config user.email "cursoragent@cursor.com"
+
+      - name: Update documentation
+        if: steps.check-changes.outputs.significant == 'true'
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          MODEL: gpt-5
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_PREFIX: docs-update
+        run: |
+          cursor-agent -p "You are operating in a GitHub Actions runner to update documentation after significant codebase changes.
+
+          The GitHub CLI is available as \`gh\` and authenticated via \`GH_TOKEN\`. Git is available. You have write access to repository contents.
+
+          # Context:
+          - Repo: ${{ github.repository }}
+          - Owner: ${{ github.repository_owner }}
+          - Event: ${{ github.event_name }}
+          - Branch: ${{ github.ref_name }}
+          - Changed Lines: ${{ steps.check-changes.outputs.changed_lines }}
+          - Branch Prefix: ${{ env.BRANCH_PREFIX }}
+
+          # Goal:
+          Update all documentation in the /docs folder to reflect recent codebase changes. Create a PR with the documentation updates.
+
+          # CRITICAL RESTRICTIONS:
+          1) **YOU MAY ONLY MODIFY FILES INSIDE THE /docs DIRECTORY**
+          2) **YOU MUST NEVER TOUCH ANY CODE FILES (.py, .js, .ts, .go, etc.)**
+          3) **YOU MUST NEVER MODIFY CONFIGURATION FILES (pyproject.toml, package.json, etc.)**
+          4) **YOU MUST NEVER MODIFY CI/CD FILES (.github/workflows/**, etc.)**
+          5) **YOU MUST NEVER MODIFY ANY FILES OUTSIDE /docs/**
+
+          # Requirements:
+          1) Review recent changes to the codebase (excluding docs) to understand what changed.
+          2) Read existing documentation in /docs to understand the current state.
+          3) Identify which documentation files need updates based on code changes.
+          4) Update ONLY files in /docs/** to reflect:
+             - New features or functionality
+             - Changed APIs or interfaces
+             - Removed or deprecated functionality
+             - Updated setup or configuration steps
+             - Changed file structures or organization
+          5) Maintain consistent documentation style and formatting.
+          6) Create a new branch using the Branch Prefix and current timestamp.
+          7) Commit changes with a clear message describing what docs were updated.
+          8) Push the branch to origin.
+          9) Create a PR from your docs branch to main with:
+             - Title: \"docs: Update documentation for recent codebase changes\"
+             - Body describing which docs were updated and why
+
+          # Safety Checks:
+          - Before committing, verify that \`git status\` shows ONLY files under docs/
+          - If any non-docs files are modified, discard those changes immediately
+          - Use \`git add docs/\` to ensure only docs are staged
+
+          # Commands available:
+          - Use \`gh pr create\` to create the pull request
+          - Use \`gh pr view\`, \`gh pr list\` to check existing PRs
+          - Use standard git commands for all operations
+          - Use \`git diff\` to review recent changes to the codebase
+
+          # Deliverables:
+          - A new branch with documentation updates (ONLY in /docs)
+          - Pushed commits to that branch
+          - A pull request created and ready for review
+
+          # If no documentation updates are needed:
+          - Simply exit without making changes or creating a PR
+          " --force --model "$MODEL" --output-format=text
