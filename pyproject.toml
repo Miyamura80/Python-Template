@@ -43,7 +43,7 @@ exclude = [
     "tests/**/test_*.py",
     "tests/test_template.py",
     "utils/llm/",
-    "common/global_config.py",
+    "common/",
     "src/utils/logging_config.py",
     "src/utils/context.py",
     "tests/conftest.py"
