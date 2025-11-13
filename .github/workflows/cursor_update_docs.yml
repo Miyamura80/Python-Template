@@ -44,6 +44,11 @@ jobs:
             HEAD_SHA="${{ github.sha }}"
           fi
 
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
           # Count changed lines in non-docs files
           CHANGED_LINES=$(git diff --numstat "$BASE_SHA" "$HEAD_SHA" | \
             grep -v "^[0-9]* [0-9]* docs/" | \
@@ -51,11 +56,35 @@ jobs:
 
           echo "changed_lines=$CHANGED_LINES" >> $GITHUB_OUTPUT
 
-          # Consider it "large" if more than 50 lines changed outside docs
-          if [ "$CHANGED_LINES" -gt 50 ]; then
+          # Check if public-facing modules changed (from .cursor/docs-scope.yml)
+          # Public modules that should trigger docs updates: common/, src/api/
+          PUBLIC_MODULE_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -q "^common/"; then
+            PUBLIC_MODULE_CHANGED=true
+            echo "Public module 'common/' was modified"
+          fi
+          # Add more public module checks as needed
+          # if echo "$CHANGED_FILES" | grep -q "^src/api/"; then
+          #   PUBLIC_MODULE_CHANGED=true
+          # fi
+
+          # Check for critical file patterns
+          CRITICAL_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -qE "(/__init__\.py$|global_config\.|README\.md$)"; then
+            CRITICAL_CHANGED=true
+            echo "Critical file pattern detected"
+          fi
+
+          # Consider it "significant" if:
+          # 1. More than 50 lines changed outside docs, OR
+          # 2. A public module changed, OR
+          # 3. A critical file pattern changed
+          if [ "$CHANGED_LINES" -gt 50 ] || [ "$PUBLIC_MODULE_CHANGED" = true ] || [ "$CRITICAL_CHANGED" = true ]; then
             echo "significant=true" >> $GITHUB_OUTPUT
+            echo "Documentation update triggered (lines: $CHANGED_LINES, public: $PUBLIC_MODULE_CHANGED, critical: $CRITICAL_CHANGED)"
           else
             echo "significant=false" >> $GITHUB_OUTPUT
+            echo "No significant changes requiring docs update"
           fi
 
       - name: Install Cursor CLI
@@ -91,37 +120,90 @@ jobs:
           - Branch Prefix: ${{ env.BRANCH_PREFIX }}
 
           # Goal:
-          Update all documentation in the /docs folder to reflect recent codebase changes. Create a PR with the documentation updates.
+          Update documentation in the /docs folder to reflect recent codebase changes, focusing ONLY on public-facing APIs.
+
+          # DOCUMENTATION SCOPE - READ THIS FIRST:
+
+          **CRITICAL**: Before doing anything, read \`.cursor/docs-scope.yml\` to understand:
+          - Which modules are PUBLIC-FACING (require comprehensive /docs)
+          - Which modules are PRIVATE/INTERNAL (only need docstrings, NOT /docs)
+          - Which paths are excluded from documentation
+
+          **ALSO READ**: \`.cursor/rules/documentation.mdc\` for documentation standards.
+
+          # DOCUMENTATION PRIORITY:
+
+          **HIGH PRIORITY (Must Document in /docs):**
+          - Public modules listed in \`public_modules\` in docs-scope.yml (e.g., common/)
+          - Exported APIs in \`exported_apis\`
+          - Code marked with \`# Public API\` or \`@public\`
+          - Functions/classes WITHOUT leading underscore in public modules
+
+          **LOW PRIORITY (Docstrings Only, NOT /docs):**
+          - Private modules listed in \`private_modules\` (e.g., src/utils/, tests/)
+          - Internal utilities and helpers
+          - Code marked with \`# Internal only\` or \`@internal\`
+          - Functions/classes WITH leading underscore (_private_function)
+
+          **DO NOT DOCUMENT:**
+          - Paths in \`exclude_from_docs\` (.github/, .cursor/, __pycache__, etc.)
 
           # CRITICAL RESTRICTIONS:
           1) **YOU MAY ONLY MODIFY FILES INSIDE THE /docs DIRECTORY**
           2) **YOU MUST NEVER TOUCH ANY CODE FILES (.py, .js, .ts, .go, etc.)**
-          3) **YOU MUST NEVER MODIFY CONFIGURATION FILES (pyproject.toml, package.json, etc.)**
+          3) **YOU MUST NEVER MODIFY CONFIGURATION FILES (pyproject.toml, .cursor/docs-scope.yml, etc.)**
           4) **YOU MUST NEVER MODIFY CI/CD FILES (.github/workflows/**, etc.)**
           5) **YOU MUST NEVER MODIFY ANY FILES OUTSIDE /docs/**
+          6) **YOU MUST NOT OVER-DOCUMENT PRIVATE/INTERNAL CODE** - Focus only on public APIs
 
           # Requirements:
-          1) Review recent changes to the codebase (excluding docs) to understand what changed.
-          2) Read existing documentation in /docs to understand the current state.
-          3) Identify which documentation files need updates based on code changes.
-          4) Update ONLY files in /docs/** to reflect:
-             - New features or functionality
-             - Changed APIs or interfaces
-             - Removed or deprecated functionality
+          1) **READ** \`.cursor/docs-scope.yml\` to understand documentation scope
+          2) **READ** \`.cursor/rules/documentation.mdc\` for standards
+          3) Review recent changes to the codebase to identify what changed
+          4) **FILTER** changes to identify only PUBLIC-FACING changes:
+             - Check if changed files are in \`public_modules\` paths
+             - Check if changed code is exported or marked public
+             - Ignore private/internal changes (underscore prefix, private_modules)
+          5) Read existing documentation in /docs to understand current state
+          6) Update ONLY files in /docs/** for PUBLIC-FACING changes:
+             - New public features or functionality
+             - Changed public APIs or interfaces
+             - Removed or deprecated public functionality
              - Updated setup or configuration steps
-             - Changed file structures or organization
-          5) Maintain consistent documentation style and formatting.
-          6) Create a new branch using the Branch Prefix and current timestamp.
-          7) Commit changes with a clear message describing what docs were updated.
-          8) Push the branch to origin.
-          9) Create a PR from your docs branch to main with:
-             - Title: \"docs: Update documentation for recent codebase changes\"
-             - Body describing which docs were updated and why
+             - Changed file structures affecting public usage
+          7) **DO NOT** document private utilities, internal helpers, or test code
+          8) Follow the docs structure from docs-scope.yml:
+             - API reference → docs/api/
+             - User guides → docs/guides/
+             - Setup → docs/setup/
+             - Examples → docs/examples/
+          9) Create a new branch using the Branch Prefix and current timestamp
+          10) Commit changes with a clear message describing what docs were updated
+          11) Push the branch to origin
+          12) Create a PR from your docs branch to main with:
+              - Title: \"docs: Update documentation for recent codebase changes\"
+              - Body listing specific public APIs/modules that were documented
 
           # Safety Checks:
+          - Before starting, verify docs-scope.yml exists and read it
+          - Only document changes in paths listed under \`public_modules\`
+          - Skip any changes in \`private_modules\` or \`exclude_from_docs\`
           - Before committing, verify that \`git status\` shows ONLY files under docs/
           - If any non-docs files are modified, discard those changes immediately
           - Use \`git add docs/\` to ensure only docs are staged
+
+          # Decision Process for Each Changed File:
+
+          For each changed file, ask:
+          1. Is it in a \`public_modules\` path? → YES = Document in /docs
+          2. Is it in a \`private_modules\` path? → YES = Skip, no /docs needed
+          3. Does it have a leading underscore? → YES = Skip, internal only
+          4. Is it in \`exclude_from_docs\`? → YES = Skip completely
+
+          Example:
+          - common/global_config.py → Public module → Document in docs/api/common.md
+          - src/utils/_internal.py → Private module + underscore → Skip
+          - tests/test_config.py → Private module → Skip
 
           # Commands available:
           - Use \`gh pr create\` to create the pull request
@@ -130,10 +212,11 @@ jobs:
           - Use \`git diff\` to review recent changes to the codebase
 
           # Deliverables:
-          - A new branch with documentation updates (ONLY in /docs)
+          - A new branch with documentation updates (ONLY in /docs, ONLY for public APIs)
           - Pushed commits to that branch
           - A pull request created and ready for review
 
-          # If no documentation updates are needed:
+          # If no PUBLIC-FACING changes occurred:
+          - If all changes were to private/internal code, exit without creating docs
           - Simply exit without making changes or creating a PR
           " --force --model "$MODEL" --output-format=text
