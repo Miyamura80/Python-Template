@@ -1,11 +1,17 @@
 ---
 description: How to use global config across the project.
-globs: 
+globs:
 alwaysApply: true
 ---
 ## Using global configuration
 
-Global config is used to store hyperparameters that should be applied across the entire codebase. They handle both environment variables (should not be committed to the repo) and other configuration values (safe to commit to the repo). 
+Global config is used to store hyperparameters that should be applied across the entire codebase. The configuration system uses **pydantic-settings** for automatic validation and type checking. They handle both environment variables (should not be committed to the repo) and other configuration values (safe to commit to the repo).
+
+**Configuration Files:**
+- `common/global_config.yaml` - Base configuration values
+- `common/config_models.py` - Pydantic models defining structure and validation
+- `common/global_config.py` - Main Config class using BaseSettings
+- `.env` - Environment variables and secrets (git-ignored)
 
 Whenever there is a hyperparameter that should be applied across the entire codebase, add those hyperparameters in `common/global_config.yaml`. Whenever a user seems to have defined a hyperparameter in the wrong scope, or using a constant value in their code point them towards `common/global_config.yaml` and ask them to add it there instead.
 
@@ -21,8 +27,7 @@ Examples of this are:
 - `GITHUB_PERSONAL_ACCESS_TOKEN`
 - etc, etc
 
-
-And to autoload these from the environment, add the names to the global_config.py class member `_ENV`.
+To add new configuration fields with nested structures, define the corresponding Pydantic model in `common/config_models.py` first, then add the field to the `Config` class in `common/global_config.py`.
 
 Then, these common values can be accessed in python files using:
 
