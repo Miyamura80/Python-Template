@@ -18,13 +18,16 @@ class DSPYInference:
     def __init__(
         self,
         pred_signature: type[dspy.Signature],
-        tools: list[Callable[..., Any]] = [],
+        tools: list[Callable[..., Any]] | None = None,
         observe: bool = True,
         model_name: str = global_config.default_llm.default_model,
         temperature: float = global_config.default_llm.default_temperature,
         max_tokens: int = global_config.default_llm.default_max_tokens,
         max_iters: int = 5,
     ) -> None:
+        if tools is None:
+            tools = []
+
         api_key = global_config.llm_api_key(model_name)
         self.lm = dspy.LM(
             model=model_name,

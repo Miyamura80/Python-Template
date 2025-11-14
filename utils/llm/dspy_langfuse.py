@@ -99,10 +99,10 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 outputs_extracted = {k: v for k, v in outputs.items()}
             except AttributeError:
                 outputs_extracted = {"value": outputs}
-            except Exception as e:
+            except (TypeError, ValueError, KeyError) as e:
                 outputs_extracted = {"error_extracting_module_output": str(e)}
         langfuse_context.update_current_observation(
-            input=self.input_field_values.get(None) or {},
+            input=self.input_field_values.get() or {},
             output=outputs_extracted,
             metadata=metadata,
         )
@@ -114,7 +114,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         inputs: dict[str, Any],
     ) -> None:
         # There is a double-trigger, so only count the first trigger.
-        if self.current_span.get(None):
+        if self.current_span.get():
             return
         lm_instance = instance
         lm_dict = lm_instance.__dict__
@@ -158,7 +158,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         exception: Optional[Exception] = None,
     ) -> None:
         completion_content: Optional[str] = None
-        model_name: Optional[str] = self.model_name_at_span_creation.get(None)
+        model_name: Optional[str] = self.model_name_at_span_creation.get()
         level: Literal["DEFAULT", "WARNING", "ERROR"] = "DEFAULT"
         status_message: Optional[str] = None
 
@@ -166,9 +166,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         completion_tokens: Optional[int] = None
         total_tokens: Optional[int] = None
 
-        span = self.current_span.get(None)
-        system_prompt: Optional[str] = self.current_system_prompt.get(None)
-        prompt: Optional[str] = self.current_prompt.get(None)
+        span = self.current_span.get()
+        system_prompt: Optional[str] = self.current_system_prompt.get()
+        prompt: Optional[str] = self.current_prompt.get()
 
         if exception:
             level = "ERROR"
@@ -207,9 +207,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
 
                 # Extract completion content from choices
                 if parsed_output.choices:
-                    first_choice = (
-                        parsed_output.choices[0] if parsed_output.choices else None
-                    )
+                    first_choice = parsed_output.choices[0]
                     if first_choice and first_choice.message:
                         completion_content = first_choice.message.content
 
@@ -228,9 +226,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
             except ValidationError as e:
                 level = "ERROR"
                 status_message = f"Error validating LM output structure (dict using Pydantic): {e}. Output: {str(outputs)[:200]}"
-            except (
-                Exception
-            ) as e:  # Catch any other unexpected errors during dict processing
+            except (KeyError, AttributeError, TypeError, ValueError) as e:
                 level = "ERROR"
                 status_message = f"Unexpected error processing LM output (dict): {e}. Output: {str(outputs)[:200]}"
 
@@ -278,7 +274,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                         prompt=current_system_prompt + current_prompt,
                         completion=current_completion_content,
                     )
-                except Exception as cost_calc_exception:
+                except (
+                    KeyError,
+                    ValueError,
+                    TypeError,
+                    AttributeError,
+                ) as cost_calc_exception:
                     log.warning(
                         f"litellm.completion_cost failed for model {current_model_name}: {cost_calc_exception}"
                     )
@@ -319,7 +320,13 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                         usage_details=usage_details_update,
                         cost_details=cost_details_update,
                     )
-            except Exception as e:
+            except (
+                KeyError,
+                ValueError,
+                TypeError,
+                AttributeError,
+                ZeroDivisionError,
+            ) as e:
                 # This outer try-except catches errors in the token calculation logic itself
                 log.warning(f"General failure in usage/cost block: {str(e)}")
                 if level == "DEFAULT":
