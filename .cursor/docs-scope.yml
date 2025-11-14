@@ -1,103 +1,51 @@
-# Documentation Scope Configuration
-# This file defines what parts of the codebase require public-facing documentation
+# Documentation Scope - Defines what needs public-facing docs vs docstrings only
 
-# =============================================================================
-# PUBLIC-FACING DOCUMENTATION (High Priority)
-# =============================================================================
-# These are user-facing APIs, modules, and features that external developers
-# or users will interact with. These MUST be documented thoroughly in /docs.
-
+# PUBLIC MODULES (comprehensive /docs required)
 public_modules:
-  # Main source code directories that contain public APIs
   - path: "common/"
-    description: "Shared utilities and global configuration accessible to all users"
+    description: "Shared utilities and global configuration"
     doc_level: "comprehensive"
-    doc_files:
-      - "docs/api/common.md"
-      - "docs/setup/configuration.md"
-
-  # Add more public modules as your codebase grows
-  # Example:
+    doc_files: ["docs/api/common.md", "docs/setup/configuration.md"]
+  # Add new public modules:
   # - path: "src/api/"
-  #   description: "Public REST API endpoints"
+  #   description: "Public REST API"
   #   doc_level: "comprehensive"
-  #   doc_files:
-  #     - "docs/api/rest-api.md"
-  #     - "docs/api/authentication.md"
+  #   doc_files: ["docs/api/rest-api.md"]
 
-# Patterns to identify public APIs within Python code
+# PUBLIC API PATTERNS
 public_api_patterns:
-  # Files/classes/functions starting with these patterns are public
-  - pattern: "^[^_].*"  # Anything NOT starting with underscore
-    scope: "modules"
-  - pattern: "class [A-Z][^_].*"  # Public classes (PascalCase, no leading _)
-    scope: "classes"
-  - pattern: "def [^_].*"  # Public functions (no leading _)
-    scope: "functions"
-  - marker: "# Public API"  # Explicit marker in code comments
+  - pattern: "^[^_].*"     # No leading underscore
     scope: "all"
-  - marker: "@public"  # Decorator-style marker
+  - marker: "# Public API" # Explicit marker
     scope: "all"
 
-# Exported APIs that users directly import
+# EXPORTED APIs (user-facing imports)
 exported_apis:
   - "common.global_config"
   - "common.global_config.GlobalConfig"
-  # Add more as your public API surface grows
-  # Example:
-  # - "src.api.client.APIClient"
-  # - "src.models.User"
 
-# =============================================================================
-# PRIVATE/INTERNAL DOCUMENTATION (Low Priority)
-# =============================================================================
-# These are internal implementation details. Light documentation is fine,
-# but they don't need comprehensive public-facing docs.
-
+# PRIVATE MODULES (docstrings only, no /docs)
 private_modules:
-  # Internal utilities not meant for external use
-  - path: "src/utils/"
-    description: "Internal utilities and helpers"
-    doc_level: "minimal"  # Just docstrings, no extensive /docs files
+  - {path: "src/utils/", description: "Internal utilities", doc_level: "minimal"}
+  - {path: "tests/", description: "Test suite", doc_level: "minimal"}
+  - {path: "init/", description: "Init scripts", doc_level: "minimal"}
+  - {path: "utils/", description: "Internal utilities", doc_level: "minimal"}
 
-  - path: "tests/"
-    description: "Test suite (internal)"
-    doc_level: "minimal"
-
-  - path: "init/"
-    description: "Initialization scripts (internal)"
-    doc_level: "minimal"
-
-  - path: "utils/"
-    description: "Internal utilities"
-    doc_level: "minimal"
-
-# Patterns for private/internal code
+# PRIVATE API PATTERNS
 private_api_patterns:
-  - pattern: "^_.*"  # Leading underscore = private
+  - pattern: "^_.*"           # Leading underscore
     scope: "all"
-  - pattern: "class _.*"  # Private classes
-    scope: "classes"
-  - pattern: "def _.*"  # Private functions
-    scope: "functions"
-  - marker: "# Internal only"
-    scope: "all"
-  - marker: "@internal"
+  - marker: "# Internal only" # Explicit marker
     scope: "all"
 
-# =============================================================================
-# EXCLUSIONS (Never Document)
-# =============================================================================
-# These should never be documented in /docs
-
+# EXCLUSIONS (never document)
 exclude_from_docs:
   - ".github/"
   - ".git/"
   - ".cursor/"
   - "**/__pycache__/"
   - "**/*.pyc"
-  - ".env"
-  - ".env.*"
+  - ".env*"
   - "*.log"
   - ".pytest_cache/"
   - ".mypy_cache/"
@@ -105,56 +53,28 @@ exclude_from_docs:
   - "dist/"
   - "build/"
 
-# =============================================================================
 # DOCUMENTATION REQUIREMENTS
-# =============================================================================
-
 documentation_requirements:
-  comprehensive:
-    # For public modules
+  comprehensive:  # Public modules
     - "API reference in /docs/api/"
-    - "Usage examples with code snippets"
-    - "Setup and configuration guide"
-    - "Common use cases and patterns"
-    - "Error handling and troubleshooting"
-    - "Type signatures and parameters documented"
+    - "Usage examples"
+    - "Setup guide"
+  minimal:        # Private modules
+    - "Docstrings only"
+    - "Inline comments for complex logic"
 
-  standard:
-    # For semi-public modules
-    - "Brief overview in relevant /docs file"
-    - "Key functions/classes documented"
-    - "Basic usage example"
-
-  minimal:
-    # For private modules
-    - "Docstrings in code (not /docs)"
-    - "Brief inline comments for complex logic"
-
-# =============================================================================
-# DOCUMENTATION TRIGGERS
-# =============================================================================
-# Define when documentation updates are needed
-
+# UPDATE TRIGGERS
 update_triggers:
-  # Automatically trigger docs update when these paths change significantly
   high_priority_paths:
     - "common/"
-    - "src/api/"  # If you add a public API directory
-
-  # Number of lines changed to consider "significant"
+    - "src/api/"
   significant_change_threshold: 50
-
-  # File patterns that always trigger docs update
   critical_patterns:
-    - "**/__init__.py"  # Changes to public exports
-    - "**/global_config.*"  # Configuration changes
-    - "**/README.md"  # README changes should sync to docs
+    - "**/__init__.py"
+    - "**/global_config.*"
+    - "**/README.md"
 
-# =============================================================================
-# DOCUMENTATION STRUCTURE
-# =============================================================================
-# Where different types of documentation should live
-
+# DOCS STRUCTURE
 docs_structure:
   api_reference: "docs/api/"
   user_guides: "docs/guides/"

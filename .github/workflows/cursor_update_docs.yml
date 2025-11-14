@@ -107,116 +107,31 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH_PREFIX: docs-update
         run: |
-          cursor-agent -p "You are operating in a GitHub Actions runner to update documentation after significant codebase changes.
+          cursor-agent -p "Update /docs for recent codebase changes.
 
-          The GitHub CLI is available as \`gh\` and authenticated via \`GH_TOKEN\`. Git is available. You have write access to repository contents.
+          Context: ${{ github.repository }}, branch: ${{ github.ref_name }}, changed lines: ${{ steps.check-changes.outputs.changed_lines }}
 
-          # Context:
-          - Repo: ${{ github.repository }}
-          - Owner: ${{ github.repository_owner }}
-          - Event: ${{ github.event_name }}
-          - Branch: ${{ github.ref_name }}
-          - Changed Lines: ${{ steps.check-changes.outputs.changed_lines }}
-          - Branch Prefix: ${{ env.BRANCH_PREFIX }}
+          CRITICAL SETUP:
+          1. Read \`.cursor/docs-scope.yml\` - defines public vs private modules
+          2. Read \`.cursor/rules/documentation.mdc\` - documentation standards
 
-          # Goal:
-          Update documentation in the /docs folder to reflect recent codebase changes, focusing ONLY on public-facing APIs.
+          SCOPE RULES:
+          - Document in /docs: \`public_modules\` from docs-scope.yml (e.g., common/), exported APIs, \`# Public API\` markers
+          - Skip /docs: \`private_modules\` (utils/, tests/), underscore-prefixed code, \`# Internal only\` markers
+          - Never document: Paths in \`exclude_from_docs\`
 
-          # DOCUMENTATION SCOPE - READ THIS FIRST:
+          RESTRICTIONS (CRITICAL):
+          - ONLY modify files in /docs/** - NEVER touch code, configs, or CI files
+          - ONLY document public-facing APIs - NEVER over-document private/internal code
+          - Use \`git add docs/\` before committing
 
-          **CRITICAL**: Before doing anything, read \`.cursor/docs-scope.yml\` to understand:
-          - Which modules are PUBLIC-FACING (require comprehensive /docs)
-          - Which modules are PRIVATE/INTERNAL (only need docstrings, NOT /docs)
-          - Which paths are excluded from documentation
+          WORKFLOW:
+          1. Review code changes via \`git diff\`
+          2. Filter for public module changes only (check against docs-scope.yml)
+          3. Update relevant /docs files (docs/api/, docs/guides/, etc.)
+          4. Create branch: ${{ env.BRANCH_PREFIX }}-<timestamp>
+          5. Commit and push
+          6. Create PR: \`gh pr create --title 'docs: Update for codebase changes' --body '<list modules documented>'\`
 
-          **ALSO READ**: \`.cursor/rules/documentation.mdc\` for documentation standards.
-
-          # DOCUMENTATION PRIORITY:
-
-          **HIGH PRIORITY (Must Document in /docs):**
-          - Public modules listed in \`public_modules\` in docs-scope.yml (e.g., common/)
-          - Exported APIs in \`exported_apis\`
-          - Code marked with \`# Public API\` or \`@public\`
-          - Functions/classes WITHOUT leading underscore in public modules
-
-          **LOW PRIORITY (Docstrings Only, NOT /docs):**
-          - Private modules listed in \`private_modules\` (e.g., src/utils/, tests/)
-          - Internal utilities and helpers
-          - Code marked with \`# Internal only\` or \`@internal\`
-          - Functions/classes WITH leading underscore (_private_function)
-
-          **DO NOT DOCUMENT:**
-          - Paths in \`exclude_from_docs\` (.github/, .cursor/, __pycache__, etc.)
-
-          # CRITICAL RESTRICTIONS:
-          1) **YOU MAY ONLY MODIFY FILES INSIDE THE /docs DIRECTORY**
-          2) **YOU MUST NEVER TOUCH ANY CODE FILES (.py, .js, .ts, .go, etc.)**
-          3) **YOU MUST NEVER MODIFY CONFIGURATION FILES (pyproject.toml, .cursor/docs-scope.yml, etc.)**
-          4) **YOU MUST NEVER MODIFY CI/CD FILES (.github/workflows/**, etc.)**
-          5) **YOU MUST NEVER MODIFY ANY FILES OUTSIDE /docs/**
-          6) **YOU MUST NOT OVER-DOCUMENT PRIVATE/INTERNAL CODE** - Focus only on public APIs
-
-          # Requirements:
-          1) **READ** \`.cursor/docs-scope.yml\` to understand documentation scope
-          2) **READ** \`.cursor/rules/documentation.mdc\` for standards
-          3) Review recent changes to the codebase to identify what changed
-          4) **FILTER** changes to identify only PUBLIC-FACING changes:
-             - Check if changed files are in \`public_modules\` paths
-             - Check if changed code is exported or marked public
-             - Ignore private/internal changes (underscore prefix, private_modules)
-          5) Read existing documentation in /docs to understand current state
-          6) Update ONLY files in /docs/** for PUBLIC-FACING changes:
-             - New public features or functionality
-             - Changed public APIs or interfaces
-             - Removed or deprecated public functionality
-             - Updated setup or configuration steps
-             - Changed file structures affecting public usage
-          7) **DO NOT** document private utilities, internal helpers, or test code
-          8) Follow the docs structure from docs-scope.yml:
-             - API reference → docs/api/
-             - User guides → docs/guides/
-             - Setup → docs/setup/
-             - Examples → docs/examples/
-          9) Create a new branch using the Branch Prefix and current timestamp
-          10) Commit changes with a clear message describing what docs were updated
-          11) Push the branch to origin
-          12) Create a PR from your docs branch to main with:
-              - Title: \"docs: Update documentation for recent codebase changes\"
-              - Body listing specific public APIs/modules that were documented
-
-          # Safety Checks:
-          - Before starting, verify docs-scope.yml exists and read it
-          - Only document changes in paths listed under \`public_modules\`
-          - Skip any changes in \`private_modules\` or \`exclude_from_docs\`
-          - Before committing, verify that \`git status\` shows ONLY files under docs/
-          - If any non-docs files are modified, discard those changes immediately
-          - Use \`git add docs/\` to ensure only docs are staged
-
-          # Decision Process for Each Changed File:
-
-          For each changed file, ask:
-          1. Is it in a \`public_modules\` path? → YES = Document in /docs
-          2. Is it in a \`private_modules\` path? → YES = Skip, no /docs needed
-          3. Does it have a leading underscore? → YES = Skip, internal only
-          4. Is it in \`exclude_from_docs\`? → YES = Skip completely
-
-          Example:
-          - common/global_config.py → Public module → Document in docs/api/common.md
-          - src/utils/_internal.py → Private module + underscore → Skip
-          - tests/test_config.py → Private module → Skip
-
-          # Commands available:
-          - Use \`gh pr create\` to create the pull request
-          - Use \`gh pr view\`, \`gh pr list\` to check existing PRs
-          - Use standard git commands for all operations
-          - Use \`git diff\` to review recent changes to the codebase
-
-          # Deliverables:
-          - A new branch with documentation updates (ONLY in /docs, ONLY for public APIs)
-          - Pushed commits to that branch
-          - A pull request created and ready for review
-
-          # If no PUBLIC-FACING changes occurred:
-          - If all changes were to private/internal code, exit without creating docs
-          - Simply exit without making changes or creating a PR
+          If no public API changes, exit without creating PR.
           " --force --model "$MODEL" --output-format=text

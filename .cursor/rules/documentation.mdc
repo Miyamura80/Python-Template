@@ -6,219 +6,85 @@ globs:
 alwaysApply: true
 ---
 
-# Documentation Standards and Scope
+# Documentation Standards
 
-## CRITICAL: Documentation Scope
+## Quick Reference
 
-**ALWAYS** read and follow `.cursor/docs-scope.yml` before creating or updating documentation.
+**ALWAYS read `.cursor/docs-scope.yml` first** - it defines what needs documentation.
 
-This file defines:
-- **Public-facing modules** that REQUIRE comprehensive documentation
-- **Private/internal modules** that only need minimal documentation
-- **Excluded paths** that should never be documented
+### What to Document in /docs (PUBLIC APIs)
+- Modules in `public_modules` (e.g., `common/`)
+- Functions/classes in `__all__` exports
+- Code marked `# Public API`
+- No underscore prefix in public modules
 
-## Documentation Scope Rules
+### What NOT to Document in /docs (PRIVATE/INTERNAL)
+- Modules in `private_modules` (e.g., `utils/`, `tests/`)
+- Underscore-prefixed code (`_private_function`)
+- Code marked `# Internal only`
+- Paths in `exclude_from_docs`
 
-### 1. Public-Facing Documentation (HIGH PRIORITY)
-
-Public-facing documentation is for:
-- **User-facing APIs**: Code that external developers/users will import and use
-- **Public modules**: Listed in `.cursor/docs-scope.yml` under `public_modules`
-- **Exported APIs**: Anything in `__all__` or explicitly exported
-- **Marked as public**: Code with `# Public API` or `@public` markers
-
-**Requirements for public-facing code:**
-- ✅ Comprehensive documentation in `/docs`
-- ✅ API reference with all parameters and return types
-- ✅ Usage examples with real code snippets
-- ✅ Setup and configuration instructions
-- ✅ Error handling and troubleshooting guides
-
-### 2. Private/Internal Code (LOW PRIORITY)
-
-Private/internal code includes:
-- **Private modules**: Listed under `private_modules` in `.cursor/docs-scope.yml`
-- **Underscore prefix**: Functions/classes starting with `_`
-- **Internal utilities**: Code in `utils/`, `tests/`, `init/` directories
-- **Marked as internal**: Code with `# Internal only` or `@internal` markers
-
-**Requirements for private code:**
-- ✅ Docstrings in the code (not `/docs` files)
-- ✅ Brief inline comments for complex logic
-- ❌ NO comprehensive documentation in `/docs`
-- ❌ NO user guides for internal utilities
-
-### 3. Excluded Paths (NEVER DOCUMENT)
-
-**NEVER** create documentation for:
-- `.github/`, `.git/`, `.cursor/`
-- `__pycache__/`, `*.pyc`, cache directories
-- `.env` files or secrets
-- `node_modules/`, `dist/`, `build/`
-
-See `exclude_from_docs` in `.cursor/docs-scope.yml` for the full list.
-
-## Identifying What to Document
-
-### When reviewing code changes:
-
-1. **Check the path**: Is it in `public_modules` or `private_modules`?
-2. **Check naming conventions**:
-   - `_private_function()` → Internal, minimal docs
-   - `public_function()` → Public, comprehensive docs
-3. **Check markers**:
-   - `# Public API` → Document in `/docs`
-   - `# Internal only` → Just docstrings
-4. **Check exports**:
-   - In `__all__` → Public, document it
-   - Not exported → Probably internal
-
-### Decision Tree:
+## Decision Tree
 
 ```
-Is the code in a public_module path?
-├─ YES → Comprehensive docs in /docs
-└─ NO → Is it exported or marked public?
-    ├─ YES → Comprehensive docs in /docs
-    └─ NO → Minimal docs (docstrings only)
+Is it in public_modules? → YES = Document in /docs
+Is it in __all__? → YES = Document in /docs
+Has # Public API marker? → YES = Document in /docs
+Has underscore prefix? → YES = Skip /docs (docstrings only)
+Is it in private_modules? → YES = Skip /docs (docstrings only)
 ```
 
 ## Documentation Structure
 
-Use the structure defined in `.cursor/docs-scope.yml`:
+Per `.cursor/docs-scope.yml`:
+- **docs/api/** - API reference
+- **docs/guides/** - User guides
+- **docs/setup/** - Setup instructions
+- **docs/examples/** - Code examples
 
-- **API Reference**: `docs/api/` - Complete API documentation
-- **User Guides**: `docs/guides/` - How-to guides and tutorials
-- **Setup**: `docs/setup/` - Installation and configuration
-- **Examples**: `docs/examples/` - Code examples and use cases
-- **Prompts**: `docs/prompts/` - LLM prompts and templates
-- **Commands**: `docs/commands/` - CLI commands and tools
+## Quality Standards
 
-## Documentation Quality Standards
-
-### For Public-Facing Documentation:
-
+**Public APIs** - Comprehensive:
 ```python
-# ✅ GOOD: Comprehensive public API documentation
-class GlobalConfig:
-    """Global configuration manager for the application.
+# Public API
+class APIClient:
+    """Client for the REST API.
 
-    This class provides centralized access to configuration values,
-    environment variables, and hyperparameters used throughout the codebase.
-
-    Public API - Documented in docs/api/common.md
-
-    Attributes:
-        example_key (str): Description of what this key controls
-        MAX_RETRIES (int): Maximum retry attempts for failed operations
+    See docs/api/client.md for full reference.
 
     Example:
-        >>> from common import global_config
-        >>> print(global_config.example_key)
-        'example_value'
-
-    See Also:
-        - docs/api/common.md - Full API reference
-        - docs/setup/configuration.md - Configuration guide
+        >>> client = APIClient("https://api.example.com")
+        >>> client.get("/users")
     """
+```
+
+**Private code** - Docstrings only:
+```python
+# Internal only
+def _retry(func):
+    """Internal retry helper."""
     pass
 ```
 
-### For Private/Internal Code:
+## Markers
 
 ```python
-# ✅ GOOD: Minimal internal documentation
-def _internal_helper(data: dict) -> str:
-    """Internal helper to format data. Not part of public API."""
-    # Internal only - no /docs needed
-    return json.dumps(data)
+# Public API - Forces /docs documentation
+def public_func(): pass
+
+# Internal only - Prevents /docs documentation
+def _private_func(): pass
 ```
 
-## When Updating Documentation
+## Restrictions
 
-### Triggers for Documentation Updates:
+- ✅ Modify `docs/**` only
+- ❌ Never touch code, configs, or CI files
+- ❌ Never over-document private utilities
 
-Check `.cursor/docs-scope.yml` → `update_triggers`:
+## Checklist
 
-1. **High priority paths changed** (e.g., `common/`, public APIs)
-2. **Significant changes** (>50 lines by default)
-3. **Critical file patterns** (`__init__.py`, `global_config.*`, etc.)
-
-### Documentation Update Process:
-
-1. **Read** `.cursor/docs-scope.yml` to understand scope
-2. **Identify** which modules are public vs private
-3. **Update** ONLY public-facing docs in `/docs`
-4. **Verify** no private internals are over-documented
-5. **Check** that all public APIs have comprehensive docs
-
-## Restrictions When Updating Documentation
-
-### ✅ ALLOWED:
-- Modify any files in `docs/**`
-- Update README.md if needed
-- Add new documentation files for public APIs
-
-### ❌ FORBIDDEN:
-- Modifying code files (`.py`, `.js`, `.ts`, etc.)
-- Changing configuration files (`pyproject.toml`, etc.)
-- Editing CI/CD workflows (`.github/workflows/`)
-- Creating documentation for private/internal utilities
-- Documenting excluded paths
-
-## Documentation Markers in Code
-
-Use these markers to explicitly declare API visibility:
-
-```python
-# Public API - This function is part of the public interface
-def public_function():
-    """This will be documented in /docs."""
-    pass
-
-# Internal only - Not for external use
-def _internal_function():
-    """This only needs docstrings, not /docs."""
-    pass
-```
-
-## Verification Checklist
-
-Before committing documentation changes:
-
-- [ ] Read `.cursor/docs-scope.yml` to understand scope
-- [ ] Verified changes are ONLY in `docs/**` directory
-- [ ] Documented all public-facing APIs comprehensively
-- [ ] Did NOT over-document private/internal utilities
-- [ ] Followed the docs structure in `docs-scope.yml`
-- [ ] Included code examples for public APIs
-- [ ] Updated relevant setup/configuration guides
-- [ ] No code files were modified (only docs)
-
-## Example: Determining Documentation Scope
-
-```python
-# File: common/global_config.py
-# ✅ PUBLIC - in public_modules, needs comprehensive docs in /docs/api/common.md
-
-# File: src/utils/logging_config.py
-# ❌ PRIVATE - in private_modules, only needs docstrings
-
-# File: tests/test_config.py
-# ❌ PRIVATE - in private_modules, minimal docs
-
-# Function: common.global_config.get_value()
-# ✅ PUBLIC - exported from public module, needs /docs
-
-# Function: utils._format_log()
-# ❌ PRIVATE - underscore prefix, only needs docstring
-```
-
-## Summary
-
-**Key Principle**: Focus documentation efforts on PUBLIC-FACING APIs that users will interact with. Don't waste time documenting internal implementation details in `/docs`.
-
-1. **Always check** `.cursor/docs-scope.yml` first
-2. **Public code** = Comprehensive `/docs` documentation
-3. **Private code** = Minimal docstrings only
-4. **When in doubt**, check if it's exported or in `public_modules`
+- [ ] Read `.cursor/docs-scope.yml`
+- [ ] Changes only in `docs/**`
+- [ ] Only documented public APIs
+- [ ] Followed docs structure from scope file
