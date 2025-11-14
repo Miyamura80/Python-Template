@@ -8,7 +8,11 @@ from typing import Any
 from dotenv import load_dotenv, dotenv_values
 from loguru import logger
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+from pydantic_settings import (
+    BaseSettings,
+    SettingsConfigDict,
+    PydanticBaseSettingsSource,
+)
 
 # Import configuration models
 from .config_models import (
@@ -72,7 +76,9 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                             "\033[33m❗️ Overwriting common/global_config.yaml with common/production_config.yaml\033[0m"
                         )
                 except FileNotFoundError:
-                    logger.warning(f"Production config file not found: {prod_config_path}")
+                    logger.warning(
+                        f"Production config file not found: {prod_config_path}"
+                    )
                 except yaml.YAMLError as e:
                     raise RuntimeError(f"Invalid YAML in {prod_config_path}: {e}")
 
@@ -209,7 +215,11 @@ class Config(BaseSettings):
             raise ValueError(f"No API key configured for model: {model_identifier}")
 
     def api_base(self, model_name: str) -> str:
-        """Returns the Helicone link for the model."""
+        """Returns the Helicone link for the model.
+
+        Raises:
+            ValueError: If no API base is configured for the given model.
+        """
         if "gpt" in model_name.lower() or re.match(
             OPENAI_O_SERIES_PATTERN, model_name.lower()
         ):
@@ -221,8 +231,7 @@ class Config(BaseSettings):
         elif "gemini" in model_name.lower():
             return "https://generativelanguage.googleapis.com/v1beta/openai/"
         else:
-            logger.error(f"Helicone link not found for model: {model_name}")
-            return ""
+            raise ValueError(f"No API base configured for model: {model_name}")
 
 
 # Load .env files before creating the config instance

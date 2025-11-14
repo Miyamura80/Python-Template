@@ -108,9 +108,12 @@ def _build_format_string(record: dict) -> str:
     return " | ".join(format_parts) + "\n"  # Added newline here
 
 
-def _should_log_level(level: str, overrides: dict = {}) -> bool:
+def _should_log_level(level: str, overrides: dict | None = None) -> bool:
     """Determine if this log level should be shown based on config and overrides"""
     level = level.lower()
+
+    if overrides is None:
+        overrides = {}
 
     # Check overrides first if they exist
     if overrides and level in overrides:
