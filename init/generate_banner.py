@@ -6,7 +6,7 @@ from common import global_config
 from utils.llm.dspy_inference import DSPYInference
 import dspy
 import asyncio
-import os
+from pathlib import Path
 
 
 class BannerDescription(dspy.Signature):
@@ -62,9 +62,10 @@ async def generate_banner(title: str, suggestion: str | None = None) -> Image.Im
         raise ValueError(f"Failed to extract image from response: {e}") from e
 
     # Create media directory if it doesn't exist
-    os.makedirs("media", exist_ok=True)
+    media_dir = Path(__file__).parent.parent / "media"
+    media_dir.mkdir(parents=True, exist_ok=True)
 
-    img.save("media/banner.png")
+    img.save(media_dir / "banner.png")
     return img
 
 

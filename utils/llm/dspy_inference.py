@@ -74,5 +74,5 @@ class DSPYInference:
             result = await self.inference_module_async(**kwargs, lm=self.lm)
         except Exception as e:
             log.error(f"Error in run: {str(e)}")
-            raise e
+            raise
         return result

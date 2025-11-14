@@ -102,7 +102,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
             except Exception as e:
                 outputs_extracted = {"error_extracting_module_output": str(e)}
         langfuse_context.update_current_observation(
-            input=self.input_field_values.get({}),
+            input=self.input_field_values.get(None) or {},
             output=outputs_extracted,
             metadata=metadata,
         )
@@ -122,10 +122,13 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         temperature = lm_dict.get("kwargs", {}).get("temperature")
         max_tokens = lm_dict.get("kwargs", {}).get("max_tokens")
         messages = inputs.get("messages")
-        assert messages is not None, "Messages must be provided"
-        assert messages[0].get("role") == "system"
+        if messages is None:
+            raise ValueError("Messages must be provided")
+        if not messages or messages[0].get("role") != "system":
+            raise ValueError("First message must be a system message")
         system_prompt = messages[0].get("content")
-        assert messages[1].get("role") == "user"
+        if len(messages) < 2 or messages[1].get("role") != "user":
+            raise ValueError("Second message must be a user message")
         user_input = messages[1].get("content")
         self.current_system_prompt.set(system_prompt)
         self.current_prompt.set(user_input)
