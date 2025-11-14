@@ -64,8 +64,16 @@
 
 ## Configuration Options
 
-1. Global config: [`common/global_config.yaml`](common/global_config.yaml)
-2. Environment Variables: Store environmnent variables in `.env` (Create this if not exists) and `common/global_config.py`  will read those out automatically. Then, you can import them as follows:
+This project uses **pydantic-settings** for configuration management, providing automatic validation and type checking.
+
+**Configuration Files:**
+- `common/global_config.yaml` - Base configuration values
+- `common/config_models.py` - Pydantic models for validation
+- `common/global_config.py` - Main Config class
+- `.env` - Environment variables and secrets (create this file)
+
+1. **Global config:** [`common/global_config.yaml`](common/global_config.yaml) - Add hyperparameters here
+2. **Environment Variables:** Store environment variables in `.env` (git-ignored) and `common/global_config.py` will read them automatically with validation:
 
     `.env` file:
     ```env
