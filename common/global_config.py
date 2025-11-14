@@ -51,33 +51,48 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
         # Load base config
         config_path = root_dir / "common" / "global_config.yaml"
-        with open(config_path, "r") as file:
-            config_data = yaml.safe_load(file) or {}
+        try:
+            with open(config_path, "r") as file:
+                config_data = yaml.safe_load(file) or {}
+        except FileNotFoundError:
+            raise RuntimeError(f"Required config file not found: {config_path}")
+        except yaml.YAMLError as e:
+            raise RuntimeError(f"Invalid YAML in {config_path}: {e}")
 
         # Load production config if in prod environment
         if os.getenv("DEV_ENV") == "prod":
             prod_config_path = root_dir / "common" / "production_config.yaml"
             if prod_config_path.exists():
-                with open(prod_config_path, "r") as file:
-                    prod_config_data = yaml.safe_load(file)
-                if prod_config_data:
-                    config_data = recursive_update(config_data, prod_config_data)
-                    logger.warning(
-                        "\033[33m❗️ Overwriting common/global_config.yaml with common/production_config.yaml\033[0m"
-                    )
+                try:
+                    with open(prod_config_path, "r") as file:
+                        prod_config_data = yaml.safe_load(file)
+                    if prod_config_data:
+                        config_data = recursive_update(config_data, prod_config_data)
+                        logger.warning(
+                            "\033[33m❗️ Overwriting common/global_config.yaml with common/production_config.yaml\033[0m"
+                        )
+                except FileNotFoundError:
+                    logger.warning(f"Production config file not found: {prod_config_path}")
+                except yaml.YAMLError as e:
+                    raise RuntimeError(f"Invalid YAML in {prod_config_path}: {e}")
 
         # Load custom local config if it exists (highest priority)
         custom_config_path = root_dir / ".global_config.yaml"
         if custom_config_path.exists():
-            with open(custom_config_path, "r") as file:
-                custom_config_data = yaml.safe_load(file)
+            try:
+                with open(custom_config_path, "r") as file:
+                    custom_config_data = yaml.safe_load(file)
 
-            if custom_config_data:
-                config_data = recursive_update(config_data, custom_config_data)
-                warning_msg = "\033[33m❗️ Overwriting default common/global_config.yaml with .global_config.yaml\033[0m"
-                if config_data.get("logging", {}).get("verbose"):
-                    warning_msg += f"\033[33mCustom .global_config.yaml values:\n---\n{yaml.dump(custom_config_data, default_flow_style=False)}\033[0m"
-                logger.warning(warning_msg)
+                if custom_config_data:
+                    config_data = recursive_update(config_data, custom_config_data)
+                    warning_msg = "\033[33m❗️ Overwriting default common/global_config.yaml with .global_config.yaml\033[0m"
+                    if config_data.get("logging", {}).get("verbose"):
+                        warning_msg += f"\033[33mCustom .global_config.yaml values:\n---\n{yaml.dump(custom_config_data, default_flow_style=False)}\033[0m"
+                    logger.warning(warning_msg)
+            except FileNotFoundError:
+                logger.warning(f"Custom config file not found: {custom_config_path}")
+            except yaml.YAMLError as e:
+                raise RuntimeError(f"Invalid YAML in {custom_config_path}: {e}")
 
         return config_data
 
