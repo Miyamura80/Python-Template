@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Delete Merged Branches
-        uses: SvanBoxel/delete-merged-branch@v4
+        uses: SvanBoxel/delete-merged-branch@2b5b058e3db41a3328fd9a6a58fd4c2545a14353
         with:
           # This token is provided by GitHub Actions
           github_token: ${{ secrets.GITHUB_TOKEN }}
