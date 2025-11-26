@@ -65,6 +65,9 @@ setup: check_uv
 	fi
 	@echo "$(YELLOW)🔄Updating python dependencies...$(RESET)"
 	@uv sync
+	@echo "$(YELLOW)📦Installing project in editable mode...$(RESET)"
+	@uv pip install -e .
+	@echo "$(GREEN)✅Project installed.$(RESET)"
 
 view_python_venv_size:
 	@echo "$(YELLOW)🔍Checking python venv size...$(RESET)"
@@ -82,9 +85,9 @@ view_python_venv_size_by_libraries:
 # Run Main Application
 ########################################################
 
-all: setup setup_githooks
+run: setup setup_githooks
 	@echo "$(GREEN)🏁Running main application...$(RESET)"
-	@$(PYTHON) main.py
+	@$(PYTHON) -m miyamura80_demo
 	@echo "$(GREEN)✅ Main application run completed.$(RESET)"
 
 
@@ -115,6 +118,7 @@ install_tools: check_uv
 	@uv tool install ruff --force
 	@uv tool install ty --force
 	@uv tool install vulture --force
+	@uv tool install twine --force
 	@echo "$(GREEN)✅Tools installed.$(RESET)"
 
 fmt: install_tools check_jq
@@ -150,6 +154,30 @@ ty:
 
 ci: ruff vulture ty ## Run all CI checks (ruff, vulture, ty)
 	@echo "$(GREEN)✅CI checks completed.$(RESET)"
+
+########################################################
+# Deployment
+########################################################
+
+build:
+	@echo "$(YELLOW)🔨Building package...$(RESET)"
+	@uv pip build
+	@echo "$(GREEN)✅Package built.$(RESET)"
+
+publish: build
+	@echo "$(YELLOW)🚀Publishing package...$(RESET)"
+	@uv tool run twine upload dist/*
+	@echo "$(GREEN)✅Package published.$(RESET)"
+
+push:
+	@echo "$(YELLOW)Pushing to Git...$(RESET)"
+	@git push
+	@git push --tags
+	@echo "$(GREEN)✅Pushed to Git.$(RESET)"
+
+all: build publish push ## Build, publish, and push the package
+	@echo "$(GREEN)✅All tasks completed.$(RESET)"
+
 
 ########################################################
 # Dependencies

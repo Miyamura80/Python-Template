@@ -18,7 +18,7 @@ def test_env_var_loading_precedence(monkeypatch):
         with open(dot_env_path, "r") as f:
             original_dot_env_content = f.read()
 
-    common_module = sys.modules["common.global_config"]
+    common_module = sys.modules["miyamura80_demo.common.global_config"]
 
     try:
         # 1. Set mock system environment variables

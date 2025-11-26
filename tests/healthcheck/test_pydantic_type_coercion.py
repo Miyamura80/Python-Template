@@ -13,7 +13,7 @@ def test_pydantic_type_coercion(monkeypatch):
     Test that pydantic-settings automatically coerces environment variable strings
     to the correct types (int, float, bool) as defined in the Pydantic models.
     """
-    common_module = sys.modules["common.global_config"]
+    common_module = sys.modules["miyamura80_demo.common.global_config"]
 
     # Set environment variables with intentionally "wrong" types (but coercible)
     # These should all be automatically converted to the correct types by pydantic-settings

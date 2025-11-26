@@ -1,7 +1,7 @@
 import pytest
 from copy import deepcopy
 from human_id import generate_id
-from common import global_config
+from miyamura80_demo.common import global_config
 
 # Markers for slow, and nondeterministic tests
 slow_test = pytest.mark.slow
