@@ -115,6 +115,7 @@ install_tools: check_uv
 	@uv tool install ruff --force
 	@uv tool install ty --force
 	@uv tool install vulture --force
+	@uv tool install hatch --force
 	@echo "$(GREEN)✅Tools installed.$(RESET)"
 
 fmt: install_tools check_jq
@@ -150,6 +151,20 @@ ty:
 
 ci: ruff vulture ty ## Run all CI checks (ruff, vulture, ty)
 	@echo "$(GREEN)✅CI checks completed.$(RESET)"
+
+########################################################
+# Publishing
+########################################################
+
+push:
+	@echo "$(YELLOW)Building package...$(RESET)"
+	@uv tool run hatch build
+	@echo "$(GREEN)✅Package built successfully.$(RESET)"
+
+publish: push
+	@echo "$(YELLOW)Publishing package to PyPI...$(RESET)"
+	@uv tool run hatch publish
+	@echo "$(GREEN)✅Package published successfully.$(RESET)"
 
 ########################################################
 # Dependencies
