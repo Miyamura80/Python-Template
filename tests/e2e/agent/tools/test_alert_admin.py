@@ -25,25 +25,50 @@ setup_logging()
 class TestAdminAgentTools(E2ETestBase):
     """Test suite for Agent Admin Tools"""
 
-    def _delete_test_message(self, message_id: int, chat_name: str = "test") -> None:
+    def _delete_test_message(
+        self, message_id: int | None, chat_name: str = "test"
+    ) -> None:
         """
         Helper method to delete a test Telegram message.
 
         Args:
-            message_id: The ID of the message to delete
+            message_id: The ID of the message to delete (can be None)
             chat_name: The name of the chat (defaults to "test")
         """
-        if not message_id:
+        if not message_id or message_id == 0:
+            log.debug("Skipping message deletion - no valid message ID provided")
             return
 
         telegram = Telegram()
         chat_id = getattr(global_config.telegram.chat_ids, chat_name, None)
-        if chat_id:
-            deleted = telegram.delete_message(chat_id=chat_id, message_id=message_id)
-            if deleted:
-                log.info(f"✅ Test message {message_id} deleted successfully")
-            else:
-                log.warning(f"⚠️ Failed to delete test message {message_id}")
+        if not chat_id:
+            log.warning(
+                f"⚠️ Cannot delete message {message_id} - chat_id not found for chat '{chat_name}'"
+            )
+            return
+
+        deleted = telegram.delete_message(chat_id=chat_id, message_id=message_id)
+        if deleted:
+            log.info(f"✅ Test message {message_id} deleted successfully")
+        else:
+            log.warning(f"⚠️ Failed to delete test message {message_id}")
+
+    def _delete_message_from_result(
+        self, result: dict, chat_name: str = "test"
+    ) -> None:
+        """
+        Helper method to delete a Telegram message from an alert_admin result.
+
+        Args:
+            result: The result dictionary from alert_admin
+            chat_name: The name of the chat (defaults to "test")
+        """
+        if (
+            result.get("status") == "success"
+            and "telegram_message_id" in result
+            and result["telegram_message_id"]
+        ):
+            self._delete_test_message(result["telegram_message_id"], chat_name)
 
     def _verify_alert_result(self, result: dict) -> int:
         """
@@ -131,10 +156,14 @@ class TestAdminAgentTools(E2ETestBase):
 
         fake_user_id = str(uuid_module.uuid4())
 
-        result = alert_admin(
+        # First call - might succeed and send a message
+        first_result = alert_admin(
             user_id=fake_user_id,
             issue_description="[TEST] Test failure scenario with invalid user",
         )
+
+        # Delete the first message if it was sent
+        self._delete_message_from_result(first_result)
 
         # This should still succeed because the Telegram part works, but let's test with a real scenario
         # Instead, let's test what happens when we have valid data but verify error handling exists
@@ -154,9 +183,8 @@ class TestAdminAgentTools(E2ETestBase):
             "✅ Admin alert sent successfully - real failure testing requires network/API issues"
         )
 
-        # Delete the test message if it was sent
-        if "telegram_message_id" in result and result["telegram_message_id"]:
-            self._delete_test_message(result["telegram_message_id"])
+        # Delete the second test message if it was sent
+        self._delete_message_from_result(result)
 
     def test_alert_admin_exception_handling(self, db):
         """Test admin alert handles exceptions gracefully."""
