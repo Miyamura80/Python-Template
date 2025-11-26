@@ -2,7 +2,7 @@
 
 ### Core Features
 
-
+- Look at letstellit for inspiration around tests & core features
 
 ### Security Issues
 - [ ] Fix session secret key in `src/server.py:13` - Currently hardcoded placeholder, should load from environment variable
