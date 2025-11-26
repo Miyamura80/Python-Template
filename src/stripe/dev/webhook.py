@@ -14,7 +14,7 @@ with open("src/stripe/dev/env_config.yaml", "r") as file:
 def create_or_update_webhook_endpoint():
     """Create a new webhook endpoint or update existing one with subscription and invoice event listeners."""
 
-    stripe.api_key = global_config.STRIPE_API_KEY
+    stripe.api_key = global_config.STRIPE_SECRET_KEY
 
     try:
         webhook_config = config["webhook"]

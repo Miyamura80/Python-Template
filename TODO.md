@@ -3,7 +3,7 @@
 ### Security Issues
 - [ ] Fix session secret key in `src/server.py:13` - Currently hardcoded placeholder, should load from environment variable
 - [ ] Implement WorkOS JWT signature verification in `src/api/auth/workos_auth.py:77` - Currently disabled (`verify_signature: False`), security risk in production
-- [x] Add `STRIPE_API_KEY` to environment variables - Code references `global_config.STRIPE_API_KEY` but it's missing from `_ENV` list in `common/global_config.py`
+- [x] Add `STRIPE_SECRET_KEY` to environment variables - Code references `global_config.STRIPE_SECRET_KEY` but it's missing from `_ENV` list in `common/global_config.py`
 
 
 ### Infrastructure
