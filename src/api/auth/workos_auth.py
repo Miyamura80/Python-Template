@@ -9,12 +9,30 @@ from pydantic import BaseModel
 from loguru import logger
 from typing import Any
 import jwt
-from jwt.exceptions import DecodeError
+from jwt.exceptions import DecodeError, InvalidTokenError, PyJWKClientError
+from jwt import PyJWKClient
 
 from src.utils.logging_config import setup_logging
+from common import global_config
 
 # Setup logging at module import
 setup_logging()
+
+# Initialize WorkOS JWKS client (cached at module level)
+WORKOS_JWKS_URL = f"https://api.workos.com/sso/jwks/{global_config.WORKOS_CLIENT_ID}"
+WORKOS_ISSUER = "https://api.workos.com"
+WORKOS_AUDIENCE = global_config.WORKOS_CLIENT_ID
+
+# Create JWKS client instance (will cache keys automatically)
+_jwks_client: PyJWKClient | None = None
+
+
+def get_jwks_client() -> PyJWKClient:
+    """Get or create the WorkOS JWKS client instance."""
+    global _jwks_client
+    if _jwks_client is None:
+        _jwks_client = PyJWKClient(WORKOS_JWKS_URL)
+    return _jwks_client
 
 
 class WorkOSUser(BaseModel):
@@ -66,30 +84,31 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
         # Extract token
         token = auth_header.split(" ", 1)[1]
 
-        # Decode and verify the JWT token
-        # WorkOS tokens are signed JWTs - we verify without signature for now
-        # In production, you should verify the signature using WorkOS public keys
+        # Verify and decode the JWT token using WorkOS JWKS
         try:
+            jwks_client = get_jwks_client()
+            # Get the signing key from JWKS
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
+
+            # Decode and verify the JWT token with signature verification
             decoded_token = jwt.decode(
                 token,
+                signing_key.key,
+                algorithms=["RS256"],  # WorkOS uses RS256 for JWT signing
+                issuer=WORKOS_ISSUER,
+                audience=WORKOS_AUDIENCE,
                 options={
-                    "verify_signature": False
-                },  # TODO: Verify signature in production
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_iss": True,
+                    "verify_aud": True,
+                },
             )
-        except DecodeError as e:
-            logger.error(f"Invalid WorkOS token: {e}")
+        except (DecodeError, InvalidTokenError, PyJWKClientError) as e:
+            logger.error(f"Invalid WorkOS token or JWKS lookup failed: {e}")
             raise HTTPException(
                 status_code=401, detail="Invalid or expired token. Please log in again."
             )
-
-        # Check if token has expired
-        import time
-
-        if "exp" in decoded_token:
-            if decoded_token["exp"] < time.time():
-                raise HTTPException(
-                    status_code=401, detail="Token has expired. Please log in again."
-                )
 
         # Create user object from token data
         user = WorkOSUser.from_workos_token(decoded_token)
