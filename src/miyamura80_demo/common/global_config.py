@@ -22,8 +22,8 @@ from .config_models import (
     LoggingConfig,
 )
 
-# Get the path to the root directory (one level up from common)
-root_dir = Path(__file__).parent.parent
+# Get the path to the root directory (four levels up from this file)
+root_dir = Path(__file__).parent.parent.parent.parent
 
 OPENAI_O_SERIES_PATTERN = r"o(\d+)(-mini)?"
 
@@ -54,7 +54,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
             return default
 
         # Load base config
-        config_path = root_dir / "common" / "global_config.yaml"
+        config_path = Path(__file__).parent / "global_config.yaml"
         try:
             with open(config_path, "r") as file:
                 config_data = yaml.safe_load(file) or {}
@@ -65,7 +65,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
         # Load production config if in prod environment
         if os.getenv("DEV_ENV") == "prod":
-            prod_config_path = root_dir / "common" / "production_config.yaml"
+            prod_config_path = Path(__file__).parent / "production_config.yaml"
             if prod_config_path.exists():
                 try:
                     with open(prod_config_path, "r") as file:
@@ -121,9 +121,6 @@ class Config(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        # Load from .env file (will be handled separately for .prod.env)
-        env_file=str(root_dir / ".env"),
-        env_file_encoding="utf-8",
         # Allow nested env vars with double underscore
         env_nested_delimiter="__",
         # Case sensitive for field names
@@ -131,6 +128,13 @@ class Config(BaseSettings):
         # Allow extra fields from YAML
         extra="allow",
     )
+
+    def __init__(self, **values: Any):
+        # Load .env files before initializing the settings
+        load_dotenv(dotenv_path=root_dir / ".env", override=True)
+        if os.getenv("DEV_ENV") == "prod":
+            load_dotenv(dotenv_path=root_dir / ".prod.env", override=True)
+        super().__init__(**values)
 
     # Top-level fields
     model_name: str
@@ -233,14 +237,6 @@ class Config(BaseSettings):
         else:
             raise ValueError(f"No API base configured for model: {model_name}")
 
-
-# Load .env files before creating the config instance
-# Load .env file first, to get DEV_ENV if it's defined there
-load_dotenv(dotenv_path=root_dir / ".env", override=True)
-
-# Now, check DEV_ENV and load .prod.env if it's 'prod', overriding .env
-if os.getenv("DEV_ENV") == "prod":
-    load_dotenv(dotenv_path=root_dir / ".prod.env", override=True)
 
 # Check if .env file has been properly loaded
 is_local = os.getenv("GITHUB_ACTIONS") != "true"

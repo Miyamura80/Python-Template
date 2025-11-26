@@ -1,5 +1,5 @@
 [project]
-name = "python-template"
+name = "miyamura80-demo"
 version = "0.1.0"
 description = "Add your description here"
 authors = [
@@ -31,11 +31,14 @@ requires-python = ">= 3.12"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project.scripts]
+miyamura80-demo = "miyamura80_demo.__main__:main"
+
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/python_template"]
+packages = ["src/miyamura80_demo"]
 
 [tool.vulture]
 exclude = [
