@@ -1,4 +1,8 @@
-## High Priority
+## 🟢 High Priority
+
+### Core Features
+
+
 
 ### Security Issues
 - [ ] Fix session secret key in `src/server.py:13` - Currently hardcoded placeholder, should load from environment variable
@@ -9,7 +13,7 @@
 - [ ] Move DB over to Convex
 - [ ] Use RAILWAY_PRIVATE_DOMAIN to avoid egress fees
 
-## Low Priority
+## 🟡 Low Priority
 
 ### Features
 - [ ] Implement API key authentication in `src/api/auth/unified_auth.py:53` - Structure exists but not implemented
