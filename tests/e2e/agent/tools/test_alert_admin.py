@@ -1,8 +1,10 @@
 import warnings
 from src.api.routes.agent.tools.alert_admin import alert_admin
 from src.utils.logging_config import setup_logging
+from src.utils.integration.telegram import Telegram
 from loguru import logger as log
 from tests.e2e.e2e_test_base import E2ETestBase
+from common import global_config
 
 # Suppress common warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic.*")
@@ -23,6 +25,47 @@ setup_logging()
 class TestAdminAgentTools(E2ETestBase):
     """Test suite for Agent Admin Tools"""
 
+    def _delete_test_message(self, message_id: int, chat_name: str = "test") -> None:
+        """
+        Helper method to delete a test Telegram message.
+
+        Args:
+            message_id: The ID of the message to delete
+            chat_name: The name of the chat (defaults to "test")
+        """
+        if not message_id:
+            return
+
+        telegram = Telegram()
+        chat_id = getattr(global_config.telegram.chat_ids, chat_name, None)
+        if chat_id:
+            deleted = telegram.delete_message(chat_id=chat_id, message_id=message_id)
+            if deleted:
+                log.info(f"✅ Test message {message_id} deleted successfully")
+            else:
+                log.warning(f"⚠️ Failed to delete test message {message_id}")
+
+    def _verify_alert_result(self, result: dict) -> int:
+        """
+        Helper method to verify alert result structure and extract message ID.
+
+        Args:
+            result: The result dictionary from alert_admin
+
+        Returns:
+            int: The message ID if valid
+        """
+        assert result["status"] == "success"
+        assert "Administrator has been alerted" in result["message"]
+        assert "telegram_message_id" in result
+        assert result["telegram_message_id"] is not None
+
+        message_id = result["telegram_message_id"]
+        assert isinstance(message_id, int)
+        assert message_id > 0
+
+        return message_id
+
     def test_alert_admin_success(self, db):
         """Test successful admin alert with complete user context."""
         log.info("Testing successful admin alert - sending real message to Telegram")
@@ -37,21 +80,16 @@ class TestAdminAgentTools(E2ETestBase):
             user_context=user_context,
         )
 
-        # Verify result
-        assert result["status"] == "success"
-        assert "Administrator has been alerted" in result["message"]
-        assert "telegram_message_id" in result
-        assert result["telegram_message_id"] is not None
-
-        # Verify the message ID is a valid Telegram message ID format (integer)
-        message_id = result["telegram_message_id"]
-        assert isinstance(message_id, int)
-        assert message_id > 0
+        # Verify result and get message ID
+        message_id = self._verify_alert_result(result)
 
         log.info(
             f"✅ Admin alert sent successfully to Telegram with message ID: {message_id}"
         )
         log.info("✅ Real message sent to test chat for verification")
+
+        # Delete the test message
+        self._delete_test_message(message_id)
 
     def test_alert_admin_without_optional_context(self, db):
         """Test admin alert without optional user context."""
@@ -70,21 +108,16 @@ class TestAdminAgentTools(E2ETestBase):
             # No user_context provided
         )
 
-        # Verify result
-        assert result["status"] == "success"
-        assert "Administrator has been alerted" in result["message"]
-        assert "telegram_message_id" in result
-        assert result["telegram_message_id"] is not None
-
-        # Verify the message ID is a valid Telegram message ID format (integer)
-        message_id = result["telegram_message_id"]
-        assert isinstance(message_id, int)
-        assert message_id > 0
+        # Verify result and get message ID
+        message_id = self._verify_alert_result(result)
 
         log.info(
             f"✅ Admin alert sent successfully to Telegram with message ID: {message_id}"
         )
         log.info("✅ Real message sent to test chat (without optional context)")
+
+        # Delete the test message
+        self._delete_test_message(message_id)
 
     def test_alert_admin_telegram_failure(self, db):
         """Test admin alert when Telegram message fails to send."""
@@ -121,6 +154,10 @@ class TestAdminAgentTools(E2ETestBase):
             "✅ Admin alert sent successfully - real failure testing requires network/API issues"
         )
 
+        # Delete the test message if it was sent
+        if "telegram_message_id" in result and result["telegram_message_id"]:
+            self._delete_test_message(result["telegram_message_id"])
+
     def test_alert_admin_exception_handling(self, db):
         """Test admin alert handles exceptions gracefully."""
         log.info(
@@ -137,15 +174,11 @@ class TestAdminAgentTools(E2ETestBase):
             user_context="[TEST] Testing edge case handling in real environment",
         )
 
-        # This should succeed with real Telegram integration
-        assert result["status"] == "success"
-        assert "Administrator has been alerted" in result["message"]
-        assert "telegram_message_id" in result
-
-        # Verify the message ID is valid
-        message_id = result["telegram_message_id"]
-        assert isinstance(message_id, int)
-        assert message_id > 0
+        # Verify result and get message ID
+        message_id = self._verify_alert_result(result)
 
         log.info(f"✅ Admin alert sent successfully with message ID: {message_id}")
         log.info("✅ Real exception testing would require network/API failures")
+
+        # Delete the test message
+        self._delete_test_message(message_id)

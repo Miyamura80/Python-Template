@@ -86,3 +86,47 @@ class Telegram:
             return None
 
         return self.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode)
+
+    def delete_message(
+        self,
+        chat_id: str,
+        message_id: int,
+    ) -> bool:
+        """
+        Delete a message from a Telegram chat.
+
+        Args:
+            chat_id: The chat ID where the message exists
+            message_id: The ID of the message to delete
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            url = f"{self.base_url}/deleteMessage"
+            payload = {
+                "chat_id": chat_id,
+                "message_id": message_id,
+            }
+
+            response = requests.post(url, json=payload, timeout=10)
+            response.raise_for_status()
+
+            result = response.json()
+            if result.get("ok"):
+                log.debug(
+                    f"Message {message_id} deleted successfully from chat {chat_id}"
+                )
+                return True
+            else:
+                log.error(
+                    f"Failed to delete Telegram message: {result.get('description')}"
+                )
+                return False
+
+        except requests.exceptions.RequestException as e:
+            log.error(f"Error deleting Telegram message: {str(e)}")
+            return False
+        except Exception as e:
+            log.error(f"Unexpected error deleting Telegram message: {str(e)}")
+            return False
