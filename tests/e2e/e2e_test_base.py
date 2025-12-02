@@ -46,11 +46,11 @@ class E2ETestBase(TestTemplate):
         # Use test user credentials from config
         test_user_email = global_config.TEST_USER_EMAIL
         # Use a consistent UUID for testing (deterministic UUID based on namespace)
-        test_user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, "test_user_workos_001"))
+        test_user_id = uuid.uuid5(uuid.NAMESPACE_DNS, "test_user_workos_001")
 
         # Create a mock WorkOS JWT token
         token_payload = {
-            "sub": test_user_id,  # Subject (user ID)
+            "sub": str(test_user_id),  # Subject (user ID)
             "email": test_user_email,
             "first_name": "Test",
             "last_name": "User",

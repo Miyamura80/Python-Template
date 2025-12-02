@@ -59,5 +59,6 @@ exclude = [
     "src/utils/context.py",
     "tests/conftest.py",
     "alembic/",
-    "src/db/"
+    "src/db/",
+    "src/api/routes/payments/stripe_routes.py"
 ]

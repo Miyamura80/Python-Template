@@ -4,8 +4,9 @@ from sqlalchemy import (
     Boolean,
     Integer,
     ForeignKeyConstraint,
+    UUID,
 )
-from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
+from sqlalchemy.dialects.postgresql import TIMESTAMP
 from src.db.models import Base
 import uuid
 

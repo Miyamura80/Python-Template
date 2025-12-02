@@ -48,6 +48,8 @@ class Config:
         "TELEGRAM_BOT_TOKEN",
         "STRIPE_TEST_SECRET_KEY",
         "STRIPE_SECRET_KEY",
+        "STRIPE_TEST_WEBHOOK_SECRET",
+        "STRIPE_WEBHOOK_SECRET",
         "TEST_USER_EMAIL",
         "TEST_USER_PASSWORD",
         "WORKOS_API_KEY",
