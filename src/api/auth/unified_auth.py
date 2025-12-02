@@ -16,7 +16,7 @@ from src.api.auth.workos_auth import get_current_workos_user
 
 
 async def get_authenticated_user_id(
-    request: Request, db_session: Session
+    request: Request, db_session: Session  # noqa: F841
 ) -> str:  # noqa
     """
     Flexible authentication that supports both WorkOS JWT and API key authentication.
