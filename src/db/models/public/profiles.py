@@ -7,8 +7,8 @@ from sqlalchemy import (
     Integer,
     ForeignKeyConstraint,
     Index,
+    UUID,
 )
-from sqlalchemy.dialects.postgresql import UUID
 from src.db.models import Base
 import uuid
 import enum
