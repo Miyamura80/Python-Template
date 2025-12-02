@@ -1,5 +1,4 @@
-import pytest
-from src.cli.main import run
+from src.cli.main import run, update
 from unittest.mock import patch, MagicMock
 
 @patch('requests.get')
@@ -16,3 +15,11 @@ def test_cli_run(mock_get, capsys):
 
     captured = capsys.readouterr()
     assert "pong" in captured.out
+
+@patch('src.cli.main.update_package')
+def test_cli_update(mock_update):
+    """
+    Tests that the eito update command calls update_package.
+    """
+    update()
+    mock_update.assert_called_once()
