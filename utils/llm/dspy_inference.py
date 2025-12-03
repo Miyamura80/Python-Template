@@ -137,14 +137,25 @@ class DSPYInference:
                 output_stream = stream_module(**kwargs)  # type: ignore
 
                 # Yield chunks as they arrive
-                # Note: streamify returns a sync generator, but we're in an async context
-                # We iterate synchronously and yield asynchronously
-                for chunk in output_stream:  # type: ignore
-                    if isinstance(chunk, dspy.streaming.StreamResponse):  # type: ignore
-                        yield chunk.chunk
-                    elif isinstance(chunk, dspy.Prediction):
-                        # Final prediction received, streaming complete
-                        log.debug("Streaming completed")
+                # Check if it's an async generator by checking for __aiter__ method
+                if hasattr(output_stream, "__aiter__"):
+                    # It's an async generator, iterate asynchronously
+                    async for chunk in output_stream:  # type: ignore
+                        if isinstance(chunk, dspy.streaming.StreamResponse):  # type: ignore
+                            yield chunk.chunk
+                        elif isinstance(chunk, dspy.Prediction):
+                            # Final prediction received, streaming complete
+                            log.debug("Streaming completed")
+                else:
+                    # It's a sync generator, iterate synchronously
+                    # Note: This will block the event loop, but dspy.streamify typically
+                    # returns sync generators that yield quickly
+                    for chunk in output_stream:  # type: ignore
+                        if isinstance(chunk, dspy.streaming.StreamResponse):  # type: ignore
+                            yield chunk.chunk
+                        elif isinstance(chunk, dspy.Prediction):
+                            # Final prediction received, streaming complete
+                            log.debug("Streaming completed")
 
         except Exception as e:
             log.error(f"Error in run_streaming: {str(e)}")
