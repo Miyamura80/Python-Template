@@ -25,6 +25,7 @@ dependencies = [
     "pydantic-settings>=2.12.0",
     "requests>=2.31.0",
     "typer[all]>=0.12.3",
+    "packaging>=23.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -43,10 +44,10 @@ packages = ["src"]
 eito = "src.cli.main:app"
 
 [tool.vulture]
+ignore_decorators = ["@app.command"]
 exclude = [
     ".venv/",
-    "tests/**/test_*.py",
-    "tests/test_template.py",
+    "tests/",
     "utils/llm/",
     "common/",
     "src/utils/logging_config.py",
