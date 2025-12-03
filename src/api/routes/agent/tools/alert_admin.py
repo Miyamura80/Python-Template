@@ -1,11 +1,12 @@
 from src.db.database import get_db_session
 from src.utils.integration.telegram import Telegram
 from loguru import logger as log
+from typing import Optional
 import uuid
 from datetime import datetime, timezone
 
 
-def alert_admin(user_id: str, issue_description: str, user_context: str = None) -> dict:
+def alert_admin(user_id: str, issue_description: str, user_context: Optional[str] = None) -> dict:
     """
     Alert administrators via Telegram when the agent lacks context to complete a task.
     This should be used sparingly as an "escape hatch" when all other tools and approaches fail.

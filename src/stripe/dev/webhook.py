@@ -66,7 +66,7 @@ def create_or_update_webhook_endpoint():
 
         return webhook_endpoint
 
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         log.error(f"Failed to create/update webhook endpoint: {str(e)}")
         raise
     except Exception as e:

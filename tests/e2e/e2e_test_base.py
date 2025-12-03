@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
+from typing import AsyncGenerator
 import pytest_asyncio
 import jwt
 import time
@@ -27,7 +28,7 @@ class E2ETestBase(TestTemplate):
         self.test_user_id = None  # Initialize user ID
 
     @pytest_asyncio.fixture
-    async def db(self) -> Session:
+    async def db(self) -> AsyncGenerator[Session, None]:
         """Get database session"""
         db = next(get_db_session())
         try:

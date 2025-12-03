@@ -1,6 +1,7 @@
 """Telegram Bot integration for sending alerts and notifications."""
 
 import requests
+from requests.exceptions import RequestException
 from loguru import logger as log
 from common import global_config
 from typing import Optional
@@ -55,7 +56,7 @@ class Telegram:
                 )
                 return None
 
-        except requests.exceptions.RequestException as e:
+        except RequestException as e:
             log.error(f"Error sending Telegram message: {str(e)}")
             return None
         except Exception as e:
@@ -124,7 +125,7 @@ class Telegram:
                 )
                 return False
 
-        except requests.exceptions.RequestException as e:
+        except RequestException as e:
             log.error(f"Error deleting Telegram message: {str(e)}")
             return False
         except Exception as e:
