@@ -20,6 +20,7 @@ from .config_models import (
     DefaultLlm,
     LlmConfig,
     LoggingConfig,
+    CliConfig,
 )
 
 # Get the path to the root directory (one level up from common)
@@ -139,6 +140,7 @@ class Config(BaseSettings):
     default_llm: DefaultLlm
     llm_config: LlmConfig
     logging: LoggingConfig
+    cli: CliConfig
 
     # Environment variables (required)
     DEV_ENV: str

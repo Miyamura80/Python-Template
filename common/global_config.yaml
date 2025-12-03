@@ -43,3 +43,7 @@ logging:
     warning: true # Show warning logs
     error: true   # Show error logs
     critical: true # Show critical logs
+
+cli:
+  package_name: eito-cli
+  local_package_name: python-template

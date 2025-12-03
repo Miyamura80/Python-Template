@@ -1,6 +1,14 @@
+import pytest
 from unittest.mock import MagicMock
 from src.utils import version
 import importlib.metadata
+
+@pytest.fixture(autouse=True)
+def mock_global_config(monkeypatch):
+    mock_config = MagicMock()
+    mock_config.cli.package_name = "eito-cli"
+    mock_config.cli.local_package_name = "python-template"
+    monkeypatch.setattr("src.utils.version.global_config", mock_config)
 
 class TestVersionCheck:
     def test_get_current_version_success(self, monkeypatch):

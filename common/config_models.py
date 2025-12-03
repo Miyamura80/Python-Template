@@ -75,3 +75,10 @@ class LoggingConfig(BaseModel):
     verbose: bool
     format: LoggingFormatConfig
     levels: LoggingLevelsConfig
+
+
+class CliConfig(BaseModel):
+    """CLI configuration settings."""
+
+    package_name: str
+    local_package_name: str

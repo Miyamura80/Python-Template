@@ -8,10 +8,8 @@ import typer
 import json
 import time
 from pathlib import Path
+from common import global_config
 
-PACKAGE_NAME = "eito-cli"
-# Fallback for local development if the directory name matches the package name in pyproject.toml
-LOCAL_PACKAGE_NAME = "python-template"
 CACHE_DIR = Path.home() / ".eito-cli"
 CACHE_FILE = CACHE_DIR / "update_check.json"
 CACHE_TTL = 86400  # 24 hours
@@ -20,20 +18,26 @@ def get_current_version() -> str | None:
     """
     Get the currently installed version of the package.
     """
+    package_name = global_config.cli.package_name
+    local_package_name = global_config.cli.local_package_name
+
     try:
-        return importlib.metadata.version(PACKAGE_NAME)
+        return importlib.metadata.version(package_name)
     except importlib.metadata.PackageNotFoundError:
         try:
             # Fallback for local development
-            return importlib.metadata.version(LOCAL_PACKAGE_NAME)
+            return importlib.metadata.version(local_package_name)
         except importlib.metadata.PackageNotFoundError:
-            log.debug(f"Package {PACKAGE_NAME} (or {LOCAL_PACKAGE_NAME}) not found.")
+            log.debug(f"Package {package_name} (or {local_package_name}) not found.")
             return None
 
-def get_latest_version(package_name: str = PACKAGE_NAME) -> str | None:
+def get_latest_version(package_name: str | None = None) -> str | None:
     """
     Get the latest version of the package from PyPI.
     """
+    if package_name is None:
+        package_name = global_config.cli.package_name
+
     try:
         response = requests.get(f"https://pypi.org/pypi/{package_name}/json", timeout=2)
         if response.status_code == 200:
@@ -103,7 +107,7 @@ def update_package():
     """
     Update the package using pip.
     """
-    package = PACKAGE_NAME
+    package = global_config.cli.package_name
     # If we are in local dev (detected by checking if LOCAL_PACKAGE_NAME is installed but PACKAGE_NAME is not),
     # we might strictly want to update PACKAGE_NAME, but users might be confused.
     # However, the requirement is to update the CLI.
