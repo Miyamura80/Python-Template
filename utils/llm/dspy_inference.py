@@ -112,7 +112,7 @@ class DSPYInference:
             str: Chunks of streamed text as they are generated
         """
         try:
-            # Get inference module (lazy init)
+            # Get inference module (lazy init) - use sync version for streamify
             inference_module, _ = self._get_inference_module()
 
             # Use dspy.context() for async-safe configuration
@@ -122,7 +122,7 @@ class DSPYInference:
 
             with dspy.context(**context_kwargs):
                 # Create a streaming version of the inference module
-                stream_listener = dspy.streaming.StreamListener(
+                stream_listener = dspy.streaming.StreamListener(  # type: ignore
                     signature_field_name=stream_field
                 )
                 stream_module = dspy.streamify(
@@ -130,12 +130,17 @@ class DSPYInference:
                     stream_listeners=[stream_listener],
                 )
 
-                # Execute the streaming module
-                output_stream = stream_module(**kwargs, lm=self.lm)
+                # Execute the streaming module (lm is already set via context)
+                # Convert kwargs to match the signature's input fields as positional args
+                # Since streamify expects the same signature as the original module,
+                # we pass kwargs which should match the input fields
+                output_stream = stream_module(**kwargs)  # type: ignore
 
                 # Yield chunks as they arrive
-                async for chunk in output_stream:
-                    if isinstance(chunk, dspy.streaming.StreamResponse):
+                # Note: streamify returns a sync generator, but we're in an async context
+                # We iterate synchronously and yield asynchronously
+                for chunk in output_stream:  # type: ignore
+                    if isinstance(chunk, dspy.streaming.StreamResponse):  # type: ignore
                         yield chunk.chunk
                     elif isinstance(chunk, dspy.Prediction):
                         # Final prediction received, streaming complete

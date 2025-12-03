@@ -54,11 +54,11 @@ class TestSubscriptionE2E(E2ETestBase):
                 # Cancel all subscriptions
                 for subscription in subscriptions.data:
                     logger.debug(f"Deleting Stripe subscription: {subscription.id}")
-                    stripe.Subscription.delete(subscription.id)
+                    subscription.delete()
 
                 # Then delete the customer
                 logger.debug(f"Deleting Stripe customer: {customer.id}")
-                stripe.Customer.delete(customer.id)
+                customer.delete()
 
             # Also clean up database record if db session is provided
             if db and user_id:
