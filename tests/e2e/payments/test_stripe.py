@@ -30,7 +30,9 @@ STRIPE_PRICE_ID = global_config.subscription.stripe.price_ids.test
 
 class TestSubscriptionE2E(E2ETestBase):
 
-    async def cleanup_existing_subscription(self, auth_headers, db: Optional[Session] = None):
+    async def cleanup_existing_subscription(
+        self, auth_headers, db: Optional[Session] = None
+    ):
         """Helper to clean up any existing subscription"""
         try:
             # Get user info from JWT token directly

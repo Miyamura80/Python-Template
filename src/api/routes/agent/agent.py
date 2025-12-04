@@ -97,7 +97,9 @@ async def agent_endpoint(
     try:
         # Initialize DSPY inference with tools
         # Note: The alert_admin tool needs to be wrapped to match DSPY's expectations
-        def alert_admin_tool(issue_description: str, user_context: Optional[str] = None) -> dict:
+        def alert_admin_tool(
+            issue_description: str, user_context: Optional[str] = None
+        ) -> dict:
             """
             Alert administrators when the agent cannot complete a task.
             Use this as a last resort when all other approaches fail.

@@ -6,7 +6,9 @@ import uuid
 from datetime import datetime, timezone
 
 
-def alert_admin(user_id: str, issue_description: str, user_context: Optional[str] = None) -> dict:
+def alert_admin(
+    user_id: str, issue_description: str, user_context: Optional[str] = None
+) -> dict:
     """
     Alert administrators via Telegram when the agent lacks context to complete a task.
     This should be used sparingly as an "escape hatch" when all other tools and approaches fail.
