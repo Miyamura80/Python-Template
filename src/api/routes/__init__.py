@@ -12,16 +12,19 @@ See .cursor/rules/routes.mdc for detailed instructions.
 
 from .ping import router as ping_router
 from .agent.agent import router as agent_router
+from .payments import subscription_router
 
 # List of all routers to be included in the application
 # Add new routers to this list when creating new endpoints
 all_routers = [
     ping_router,
     agent_router,
+    subscription_router,
 ]
 
 __all__ = [
     "all_routers",
     "ping_router",
     "agent_router",
+    "subscription_router",
 ]

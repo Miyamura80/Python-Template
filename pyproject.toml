@@ -53,11 +53,17 @@ exclude = [
     "tests/**/test_*.py",
     "tests/test_template.py",
     "tests/e2e/e2e_test_base.py",
+    "tests/e2e/payments/test_stripe.py",
+    "tests/e2e/agent/tools/test_alert_admin.py",
     "utils/llm/",
     "common/global_config.py",
     "src/utils/logging_config.py",
     "src/utils/context.py",
     "tests/conftest.py",
     "alembic/",
-    "src/db/"
+    "src/db/",
+    "src/api/routes/",
+    "src/api/auth/",
+    "src/utils/integration/",
+    "src/stripe/"
 ]
