@@ -176,7 +176,7 @@ class TestSubscriptionE2E(E2ETestBase):
                     "cancel_at_period_end": False,
                 }
             },
-            "api_version": global_config.subscription.api_version,
+            "api_version": global_config.stripe.api_version,
             "created": current_time,
             "livemode": False,
         }

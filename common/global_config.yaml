@@ -49,13 +49,34 @@ logging:
 ########################################################
 subscription:
   stripe:
+    # Single metered price with graduated tiers (Stripe recommended approach)
+    # First N units free, then charge per unit after that
+    # Create this price in Stripe Dashboard with:
+    #   - Billing scheme: Tiered
+    #   - Tiers mode: Graduated
+    #   - Usage type: Metered
+    #   - Tier 1: up_to=1000, unit_amount=0 (free included units)
+    #   - Tier 2: up_to=inf, unit_amount=1 (overage rate in cents)
     price_ids:
-      test: # TODO: Fill in
+      test: price_1SaeJ4Kugya9tlosOgMWuJfi
+      prod: ""  # TODO: Set production price ID
+  # Metered billing configuration (for display/reference)
+  metered:
+    # Number of units included free (should match Stripe tier 1 threshold)
+    included_units: 1000
+    # Cost per unit after included (should match Stripe tier 2 rate, in cents)
+    overage_unit_amount: 1  # $0.01 per unit
+    # Unit label for display
+    unit_label: "units"
+  trial_period_days: 7
+  payment_retry:
+    max_attempts: 3
 
 ########################################################
 # Stripe
 ########################################################
 stripe:
+  api_version: "2024-11-20.acacia"
   webhook:
     url: "# TODO: Set your webhook URL here"
 

@@ -27,3 +27,17 @@ class PaymentStatus(str, Enum):
     PAYMENT_FAILED = "payment_failed"
     PAYMENT_FAILED_FINAL = "payment_failed_final"
     NO_SUBSCRIPTION = "no_subscription"
+
+
+class UsageAction(str, Enum):
+    """Usage record action types for metered billing"""
+
+    INCREMENT = "increment"  # Add to existing usage
+    SET = "set"  # Replace existing usage with new value
+
+
+class BillingType(str, Enum):
+    """Types of billing for subscription items"""
+
+    FIXED = "fixed"  # Fixed recurring price
+    METERED = "metered"  # Usage-based metered price
