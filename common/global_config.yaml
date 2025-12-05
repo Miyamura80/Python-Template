@@ -78,7 +78,7 @@ subscription:
 stripe:
   api_version: "2024-11-20.acacia"
   webhook:
-    url: "# TODO: Set your webhook URL here"
+    url: "https://python-saas-template-dev.up.railway.app"
 
 ########################################################
 # Telegram

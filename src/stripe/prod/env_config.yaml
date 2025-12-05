@@ -1,0 +1,10 @@
+webhook:
+  enabled_events:
+    - "customer.subscription.created"
+    - "customer.subscription.deleted"
+    - "customer.subscription.trial_will_end"
+    - "customer.subscription.updated"
+    - "invoice.payment_failed"
+    - "invoice.payment_succeeded"
+  description: "Stripe webhook for production"
+
