@@ -81,7 +81,7 @@ async def handle_usage_reset_webhook(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/webhook/subscription")
+@router.post("/webhook/stripe")
 async def handle_subscription_webhook(
     request: Request,
     db: Session = Depends(get_db_session),
@@ -156,6 +156,28 @@ async def handle_subscription_webhook(
                     subscription.current_period_usage = 0
                     db.commit()
                     logger.info(f"Updated subscription for user {user_id}")
+                else:
+                    # Create new subscription record
+                    trial_start = subscription_data.get("trial_start")
+                    new_subscription = UserSubscriptions(
+                        user_id=user_id,
+                        stripe_subscription_id=subscription_id,
+                        stripe_subscription_item_id=subscription_item_id,
+                        is_active=True,
+                        subscription_tier="plus_tier",
+                        included_units=INCLUDED_UNITS,
+                        billing_period_start=datetime.fromtimestamp(
+                            subscription_data.get("current_period_start"), tz=timezone.utc
+                        ),
+                        billing_period_end=datetime.fromtimestamp(
+                            subscription_data.get("current_period_end"), tz=timezone.utc
+                        ),
+                        current_period_usage=0,
+                        trial_start_date=datetime.fromtimestamp(trial_start, tz=timezone.utc) if trial_start else None,
+                    )
+                    db.add(new_subscription)
+                    db.commit()
+                    logger.info(f"Created subscription for user {user_id}")
 
         elif event_type == "customer.subscription.deleted":
             # Handle subscription cancellation

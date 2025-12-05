@@ -174,6 +174,7 @@ class TestSubscriptionE2E(E2ETestBase):
                     },
                     "billing_cycle_anchor": trial_end,
                     "cancel_at_period_end": False,
+                    "metadata": {"user_id": user["id"]},
                 }
             },
             "api_version": global_config.stripe.api_version,
