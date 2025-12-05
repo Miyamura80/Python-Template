@@ -21,6 +21,7 @@ def alert_admin(
     Returns:
         dict: Status of the alert operation
     """
+    db = None
     try:
         # Get user information for context
         db = next(get_db_session())
@@ -85,3 +86,6 @@ _This alert was generated when the agent could not resolve a user's request with
         return {
             "error": f"Failed to send admin alert: {str(e)}. Please contact support directly."
         }
+    finally:
+        if db is not None:
+            db.close()

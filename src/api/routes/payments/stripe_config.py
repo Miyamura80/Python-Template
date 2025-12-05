@@ -27,8 +27,20 @@ OVERAGE_UNIT_AMOUNT = global_config.subscription.metered.overage_unit_amount
 UNIT_LABEL = global_config.subscription.metered.unit_label
 
 
+_price_verified = False
+
+
 def verify_stripe_price():
-    """Verify Stripe price ID is valid. Call at startup."""
+    """
+    Verify Stripe price ID is valid.
+
+    This function is safe to call multiple times - it will only verify once.
+    Should be called at runtime when Stripe operations are needed, not at import time.
+    """
+    global _price_verified
+    if _price_verified:
+        return
+
     try:
         price = stripe.Price.retrieve(STRIPE_PRICE_ID, api_key=stripe.api_key)
 
@@ -53,10 +65,9 @@ def verify_stripe_price():
                 "All usage will be charged. Consider graduated tiers for included units."
             )
 
+        _price_verified = True
+
     except Exception as e:
-        logger.error(f"Error verifying price: {str(e)}")
-        raise
-
-
-# Verify price on module load
-verify_stripe_price()
+        logger.error(f"Error verifying Stripe price: {str(e)}")
+        # Don't raise - allow the application to start even if Stripe is unavailable
+        # Actual Stripe operations will fail with more specific errors if needed

@@ -30,7 +30,12 @@ async def handle_usage_reset_webhook(
         sig_header = request.headers.get("stripe-signature")
 
         # Verify webhook signature
-        webhook_secret = getattr(global_config, "STRIPE_WEBHOOK_SECRET", None)
+        # Use test webhook secret in dev, production secret in prod
+        webhook_secret = (
+            global_config.STRIPE_WEBHOOK_SECRET
+            if global_config.DEV_ENV == "prod"
+            else global_config.STRIPE_TEST_WEBHOOK_SECRET
+        )
 
         if webhook_secret:
             try:
@@ -99,7 +104,12 @@ async def handle_subscription_webhook(
         sig_header = request.headers.get("stripe-signature")
 
         # Verify webhook signature
-        webhook_secret = getattr(global_config, "STRIPE_WEBHOOK_SECRET", None)
+        # Use test webhook secret in dev, production secret in prod
+        webhook_secret = (
+            global_config.STRIPE_WEBHOOK_SECRET
+            if global_config.DEV_ENV == "prod"
+            else global_config.STRIPE_TEST_WEBHOOK_SECRET
+        )
 
         if webhook_secret:
             try:
@@ -167,13 +177,18 @@ async def handle_subscription_webhook(
                         subscription_tier="plus_tier",
                         included_units=INCLUDED_UNITS,
                         billing_period_start=datetime.fromtimestamp(
-                            subscription_data.get("current_period_start"), tz=timezone.utc
+                            subscription_data.get("current_period_start"),
+                            tz=timezone.utc,
                         ),
                         billing_period_end=datetime.fromtimestamp(
                             subscription_data.get("current_period_end"), tz=timezone.utc
                         ),
                         current_period_usage=0,
-                        trial_start_date=datetime.fromtimestamp(trial_start, tz=timezone.utc) if trial_start else None,
+                        trial_start_date=(
+                            datetime.fromtimestamp(trial_start, tz=timezone.utc)
+                            if trial_start
+                            else None
+                        ),
                     )
                     db.add(new_subscription)
                     db.commit()
