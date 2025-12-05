@@ -3,6 +3,7 @@ from sqlalchemy import (
     String,
     Boolean,
     Integer,
+    BigInteger,
     ForeignKeyConstraint,
 )
 from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
@@ -37,9 +38,19 @@ class UserSubscriptions(Base):
     trial_start_date = Column(TIMESTAMP, nullable=True)
     subscription_start_date = Column(TIMESTAMP, nullable=True)
     subscription_end_date = Column(TIMESTAMP, nullable=True)
-    subscription_tier = Column(String, nullable=True)  # e.g., "free_trial" or "premium"
+    subscription_tier = Column(String, nullable=True)  # e.g., "free" or "plus_tier"
     is_active = Column(Boolean, nullable=False, default=False)
     renewal_date = Column(TIMESTAMP, nullable=True)
     auto_renew = Column(Boolean, nullable=False, default=True)
     payment_failure_count = Column(Integer, nullable=False, default=0)
     last_payment_failure = Column(TIMESTAMP, nullable=True)
+
+    # Stripe subscription IDs for metered billing
+    stripe_subscription_id = Column(String, nullable=True)
+    stripe_subscription_item_id = Column(String, nullable=True)  # Single metered item
+
+    # Usage tracking for metered billing (local cache)
+    current_period_usage = Column(BigInteger, nullable=False, default=0)
+    included_units = Column(BigInteger, nullable=False, default=0)
+    billing_period_start = Column(TIMESTAMP, nullable=True)
+    billing_period_end = Column(TIMESTAMP, nullable=True)
