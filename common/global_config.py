@@ -47,6 +47,7 @@ class Config:
         "BACKEND_DB_URI",
         "TELEGRAM_BOT_TOKEN",
         "STRIPE_TEST_SECRET_KEY",
+        "STRIPE_TEST_WEBHOOK_SECRET",
         "STRIPE_SECRET_KEY",
         "TEST_USER_EMAIL",
         "TEST_USER_PASSWORD",
