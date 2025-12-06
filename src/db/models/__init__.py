@@ -46,6 +46,7 @@ _discovered_models = discover_models()
 
 # Manual imports for backward compatibility and explicit control
 from src.db.models.auth.users import User  # noqa
+from src.db.models.public.api_keys import APIKey  # noqa
 
 
 # Transfer RLS policies from model classes to table metadata

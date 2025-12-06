@@ -3,7 +3,7 @@ Unified Authentication Module
 
 This module provides flexible authentication that supports multiple authentication methods:
 - WorkOS JWT tokens (Authorization: Bearer header)
-- API keys (X-API-KEY header) - TODO: Implement when needed
+- API keys (X-API-KEY header)
 
 The authentication logic tries JWT first, then falls back to API key authentication.
 """
@@ -12,12 +12,15 @@ from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
 from loguru import logger
 
+from src.api.auth.api_key_auth import get_current_user_from_api_key_header
 from src.api.auth.workos_auth import get_current_workos_user
+from src.utils.logging_config import setup_logging
+
+# Setup logging at module import
+setup_logging()
 
 
-async def get_authenticated_user_id(
-    request: Request, db_session: Session  # noqa: F841
-) -> str:  # noqa
+async def get_authenticated_user_id(request: Request, db_session: Session) -> str:
     """
     Flexible authentication that supports both WorkOS JWT and API key authentication.
 
@@ -50,20 +53,20 @@ async def get_authenticated_user_id(
     # Try API key authentication (if header is present)
     api_key = request.headers.get("X-API-KEY")
     if api_key:
-        # TODO: Implement API key authentication when needed
-        # try:
-        #     user_id = await get_current_user_from_api_key_header(request, db_session)
-        #     if user_id:
-        #         logger.info(f"User authenticated via API key: {user_id}")
-        #         return user_id
-        # except HTTPException as e:
-        #     logger.warning(f"API key authentication failed: {e.detail}")
-        # except Exception as e:
-        #     logger.warning(f"Unexpected error in API key authentication: {e}")
-        logger.warning("API key authentication not yet implemented")
+        try:
+            user_id = await get_current_user_from_api_key_header(request, db_session)
+            logger.info(f"User authenticated via API key: {user_id}")
+            return user_id
+        except HTTPException as e:
+            logger.warning(f"API key authentication failed: {e.detail}")
+        except Exception as e:
+            logger.warning(f"Unexpected error in API key authentication: {e}")
 
     # If we get here, authentication failed
     raise HTTPException(
         status_code=401,
-        detail="Authentication required. Provide 'Authorization: Bearer <workos_token>' header",
+        detail=(
+            "Authentication required. Provide "
+            "'Authorization: Bearer <workos_token>' or 'X-API-KEY' header"
+        ),
     )
