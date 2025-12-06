@@ -8,7 +8,6 @@
 
 ### Features
 - [ ] Implement API key authentication in `src/api/auth/unified_auth.py:53` - Structure exists but not implemented
-- [ ] Add media handling support in DSPY LangFuse callback (`utils/llm/dspy_langfuse.py:71`) - Currently passes on image inputs
 - [ ] Support tool use with streaming in agent endpoint (`src/api/routes/agent/agent.py:194`) - Currently disabled, complex to implement
 
 
