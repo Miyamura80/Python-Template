@@ -40,10 +40,10 @@ def get_database_url() -> str:
 
 def include_object(object, name, type_, reflected, compare_to):
     """
-    Filter function to exclude objects we don't want to manage.
+        Filter function to exclude objects we don't want to manage.
 
-    This prevents Alembic from detecting changes in Supabase-managed schemas
-    and ignores schema drift in existing tables.
+    This prevents Alembic from detecting changes in Postgres schemas
+        and ignores schema drift in existing tables.
     """
     # Only include objects from the public schema
     if hasattr(object, "schema") and object.schema not in (None, "public"):
