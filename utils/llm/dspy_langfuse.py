@@ -63,12 +63,6 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         # Initialize Langfuse client
         self.langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
-        for _, input_field in signature.input_fields.items():
-            if (
-                input_field.annotation == Optional[dspy_Image]
-                or input_field.annotation == dspy_Image
-            ):
-                pass  # TODO: We need to handle media.
 
     def on_module_start(  # noqa
         self,  # noqa
@@ -80,7 +74,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         input_field_values: dict[str, Any] = {}
         for input_field_name in self.input_field_names:
             if input_field_name in extracted_args:
-                input_field_values[input_field_name] = extracted_args[input_field_name]
+                input_value = extracted_args[input_field_name]
+                # Handle dspy.Image by extracting the data URI or URL
+                if isinstance(input_value, dspy_Image) and hasattr(input_value, "url"):
+                    input_field_values[input_field_name] = input_value.url
+                else:
+                    input_field_values[input_field_name] = input_value
         self.input_field_values.set(input_field_values)
 
     def on_module_end(  # noqa
