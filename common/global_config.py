@@ -54,6 +54,7 @@ class Config:
         "TEST_USER_PASSWORD",
         "WORKOS_API_KEY",
         "WORKOS_CLIENT_ID",
+        "SESSION_SECRET_KEY",
     ]
 
     def __init__(self):

@@ -4,11 +4,6 @@
 
 - Look at letstellit for inspiration around tests & core features
 
-### Security Issues
-- [ ] Fix session secret key in `src/server.py:13` - Currently hardcoded placeholder, should load from environment variable
-- [x] Implement WorkOS JWT signature verification in `src/api/auth/workos_auth.py:77` - Currently disabled (`verify_signature: False`), security risk in production
-
-
 ### Infrastructure
 - [ ] Move DB over to Convex
 - [ ] Use RAILWAY_PRIVATE_DOMAIN to avoid egress fees
@@ -25,7 +20,3 @@
   - `src/db/models/stripe/user_subscriptions.py:27`
   - Need to implement custom auth schema for WorkOS
 
-
-### Configuration
-- [ ] Fill in Stripe price IDs in `common/global_config.yaml:53` (`subscription.stripe.price_ids.test`)
-- [ ] Set Stripe webhook URL in `common/global_config.yaml:60` (`stripe.webhook.url`)

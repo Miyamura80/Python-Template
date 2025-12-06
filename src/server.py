@@ -5,12 +5,10 @@ import os
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.routing import APIRouter
 from src.utils.logging_config import setup_logging
+from common import global_config
 
 # Setup logging before anything else
 setup_logging()
-
-# Load environment variables
-SESSION_SECRET_KEY = "TODO: Set your session secret key here"
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -29,7 +27,7 @@ app.add_middleware(
 # Add session middleware (required for OAuth flow)
 app.add_middleware(
     SessionMiddleware,
-    secret_key=SESSION_SECRET_KEY,
+    secret_key=global_config.SESSION_SECRET_KEY,
     same_site="none",
     https_only=True,
 )
