@@ -6,10 +6,6 @@ from typing import Any
 import yaml
 from loguru import logger as log
 
-from src.utils.logging_config import setup_logging
-
-setup_logging()
-
 
 class SubscriptionConfig:
     """Load and expose subscription tier limits."""

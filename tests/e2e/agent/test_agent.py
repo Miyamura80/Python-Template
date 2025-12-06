@@ -332,3 +332,53 @@ class TestAgent(E2ETestBase):
         # Should fail validation
         assert response.status_code == 422
         assert "field required" in response.json()["detail"][0]["msg"].lower()
+
+    def test_agent_stream_persists_history(self):
+        """Test that streaming responses are stored in history."""
+        log.info("Testing streaming history persistence")
+
+        stream_response = self.client.post(
+            "/agent/stream",
+            json={"message": "Persist this streaming response"},
+            headers=self.auth_headers,
+        )
+
+        assert stream_response.status_code == 200
+        messages = stream_response.text.strip().split("\n\n")
+
+        conversation_id = None
+        token_chunks = []
+
+        for message in messages:
+            if not message.startswith("data: "):
+                continue
+            data = json.loads(message[6:])
+
+            if data["type"] == "start":
+                conversation_id = data["conversation_id"]
+            elif data["type"] == "token":
+                token_chunks.append(data["content"])
+
+        assert conversation_id is not None
+        assert len(token_chunks) > 0
+
+        full_response = "".join(token_chunks)
+        assert len(full_response) > 0
+
+        history_response = self.client.get(
+            "/agent/history",
+            headers=self.auth_headers,
+        )
+
+        assert history_response.status_code == 200
+        history_data = history_response.json()
+        conversation = next(
+            (c for c in history_data["conversations"] if c["id"] == conversation_id),
+            None,
+        )
+
+        assert conversation is not None
+        assert len(conversation["messages"]) >= 2
+        assert conversation["messages"][0]["role"] == "user"
+        assert conversation["messages"][-1]["role"] == "assistant"
+        assert conversation["messages"][-1]["content"] == full_response

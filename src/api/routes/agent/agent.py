@@ -340,6 +340,8 @@ async def agent_stream_endpoint(
                     message=agent_request.message,
                     context=agent_request.context or "No additional context provided",
                 ):
+                    # Accumulate full response so we can persist it after streaming
+                    response_chunks.append(chunk)
                     yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
 
             full_response: str | None = None
