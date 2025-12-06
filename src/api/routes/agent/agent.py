@@ -18,10 +18,11 @@ from fastapi.responses import StreamingResponse
 from langfuse.decorators import observe, langfuse_context
 from loguru import logger as log
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from src.api.auth.unified_auth import get_authenticated_user_id
 from src.api.routes.agent.tools import alert_admin
+from src.api.routes.agent.utils import user_uuid_from_str
 from src.db.database import get_db_session
 from src.db.models.public.agent_conversations import AgentConversation, AgentMessage
 from src.utils.logging_config import setup_logging
@@ -55,31 +56,6 @@ class AgentResponse(BaseModel):
     conversation_id: uuid.UUID = Field(
         ..., description="Conversation identifier for the interaction"
     )
-
-
-class AgentMessageModel(BaseModel):
-    """Response model for individual chat messages."""
-
-    id: uuid.UUID
-    role: str
-    content: str
-    created_at: datetime
-
-
-class AgentConversationModel(BaseModel):
-    """Response model for conversations with embedded messages."""
-
-    id: uuid.UUID
-    title: str | None = None
-    created_at: datetime
-    updated_at: datetime
-    messages: list[AgentMessageModel]
-
-
-class AgentHistoryResponse(BaseModel):
-    """Response model for chat history."""
-
-    conversations: list[AgentConversationModel]
 
 
 class AgentSignature(dspy.Signature):
@@ -130,23 +106,6 @@ def tool_name(tool: Callable[..., Any]) -> str:
     if func and hasattr(func, "__name__"):
         return func.__name__  # type: ignore[attr-defined]
     return "unknown_tool"
-
-
-def _user_uuid_from_str(user_id: str) -> uuid.UUID:
-    """
-    Convert user ID string to UUID.
-
-    WorkOS user IDs are not guaranteed to be UUIDs. If parsing fails, fall back
-    to a deterministic uuid5 so we can store rows against the UUID-typed FK.
-    """
-    try:
-        return uuid.UUID(str(user_id))
-    except ValueError:
-        derived_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, str(user_id))
-        log.debug(
-            f"Generated deterministic UUID from non-UUID user id {user_id}: {derived_uuid}"
-        )
-        return derived_uuid
 
 
 def _conversation_title_from_message(message: str) -> str:
@@ -202,32 +161,6 @@ def record_agent_message(
     return message
 
 
-def map_conversation_to_model(
-    conversation: AgentConversation,
-) -> AgentConversationModel:
-    """Map ORM conversation with messages to response model."""
-    conversation_id = cast(uuid.UUID, conversation.id)
-    title = cast(str | None, conversation.title)
-    created_at = cast(datetime, conversation.created_at)
-    updated_at = cast(datetime, conversation.updated_at)
-
-    return AgentConversationModel(
-        id=conversation_id,
-        title=title,
-        created_at=created_at,
-        updated_at=updated_at,
-        messages=[
-            AgentMessageModel(
-                id=cast(uuid.UUID, message.id),
-                role=cast(str, message.role),
-                content=cast(str, message.content),
-                created_at=cast(datetime, message.created_at),
-            )
-            for message in conversation.messages
-        ],
-    )
-
-
 @router.post("/agent", response_model=AgentResponse)  # noqa
 @observe()
 async def agent_endpoint(
@@ -258,7 +191,7 @@ async def agent_endpoint(
     """
     # Authenticate user - will raise 401 if auth fails
     user_id = await get_authenticated_user_id(request, db)
-    user_uuid = _user_uuid_from_str(user_id)
+    user_uuid = user_uuid_from_str(user_id)
     langfuse_context.update_current_observation(name=f"agent-{user_id}")
 
     log.info(
@@ -349,7 +282,7 @@ async def agent_stream_endpoint(
     """
     # Authenticate user - will raise 401 if auth fails
     user_id = await get_authenticated_user_id(request, db)
-    user_uuid = _user_uuid_from_str(user_id)
+    user_uuid = user_uuid_from_str(user_id)
     langfuse_context.update_current_observation(name=f"agent-stream-{user_id}")
 
     log.info(
@@ -441,40 +374,4 @@ async def agent_stream_endpoint(
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # Disable nginx buffering
         },
-    )
-
-
-@router.get("/agent/history", response_model=AgentHistoryResponse)  # noqa
-@observe()
-async def agent_history_endpoint(
-    request: Request,
-    db: Session = Depends(get_db_session),
-) -> AgentHistoryResponse:
-    """
-    Retrieve authenticated user's past agent conversations with messages.
-
-    This endpoint returns all conversations for the authenticated user,
-    including ordered messages within each conversation.
-    """
-
-    user_id = await get_authenticated_user_id(request, db)
-    user_uuid = _user_uuid_from_str(user_id)
-    langfuse_context.update_current_observation(name=f"agent-history-{user_id}")
-
-    conversations = (
-        db.query(AgentConversation)
-        .options(selectinload(AgentConversation.messages))
-        .filter(AgentConversation.user_id == user_uuid)
-        .order_by(AgentConversation.updated_at.desc())
-        .all()
-    )
-
-    log.info(
-        "Fetched %s conversations for user %s",
-        len(conversations),
-        user_id,
-    )
-
-    return AgentHistoryResponse(
-        conversations=[map_conversation_to_model(conv) for conv in conversations]
     )
