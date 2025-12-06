@@ -45,6 +45,7 @@ class Config:
         "GROQ_API_KEY",
         "PERPLEXITY_API_KEY",
         "GEMINI_API_KEY",
+        "CEREBRAS_API_KEY",
         "BACKEND_DB_URI",
         "TELEGRAM_BOT_TOKEN",
         "STRIPE_TEST_SECRET_KEY",
@@ -166,6 +167,8 @@ class Config:
             return self.PERPLEXITY_API_KEY
         elif "gemini" in model_identifier.lower():
             return self.GEMINI_API_KEY
+        elif "cerebras" in model_identifier.lower():
+            return self.CEREBRAS_API_KEY
         else:
             raise ValueError(f"No API key configured for model: {model_identifier}")
 
@@ -181,6 +184,8 @@ class Config:
             return "https://perplexity.helicone.ai"
         elif "gemini" in model_name.lower():
             return "https://generativelanguage.googleapis.com/v1beta/openai/"
+        elif "cerebras" in model_name.lower():
+            return "https://api.cerebras.ai/v1"
         else:
             logger.error(f"Helicone link not found for model: {model_name}")
             return ""
