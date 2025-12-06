@@ -44,7 +44,7 @@ class WorkOSUser(BaseModel):
     """WorkOS user model"""
 
     id: str  # noqa
-    email: str  # noqa
+    email: str | None = None  # noqa
     first_name: str | None = None  # noqa
     last_name: str | None = None  # noqa
 
@@ -160,11 +160,11 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
         # Create user object from token data
         user = WorkOSUser.from_workos_token(decoded_token)
 
-        if not user.id or not user.email:
-            logger.error(f"Token missing required fields: {decoded_token}")
+        if not user.id:
+            logger.error(f"Token missing required user id: {decoded_token}")
             raise HTTPException(
                 status_code=401,
-                detail="Invalid token: missing required user information",
+                detail="Invalid token: missing required user id information",
             )
 
         logger.debug(f"Successfully authenticated WorkOS user: {user.email}")
