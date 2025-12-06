@@ -4,8 +4,3 @@
 
 - Look at letstellit for inspiration around tests & core features
 
-## 🟡 Low Priority
-
-### Features
-- [ ] Implement API key authentication in `src/api/auth/unified_auth.py:53` - Structure exists but not implemented
-
