@@ -51,6 +51,9 @@ class TestWorkOSAuth(TestTemplate):
             def get_signing_key_from_jwt(self, token: str):
                 return FakeSigningKey(public_key)
 
+        # Mark method as used for static analyzers; the code under test calls it dynamically.
+        _ = FakeJWKSClient.get_signing_key_from_jwt
+
         # Use our fake JWKS client
         monkeypatch.setattr(workos_auth, "get_jwks_client", lambda: FakeJWKSClient())
 
@@ -123,5 +126,5 @@ class TestWorkOSAuth(TestTemplate):
         with pytest.raises(HTTPException) as excinfo:
             await workos_auth.get_current_workos_user(request)
 
+        assert isinstance(excinfo.value, HTTPException)
         assert excinfo.value.status_code == 401
-
