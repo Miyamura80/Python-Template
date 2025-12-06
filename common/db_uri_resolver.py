@@ -24,6 +24,12 @@ def resolve_db_uri(base_uri: str, private_domain: str | None) -> str:
         if not parsed_db_uri.scheme or not parsed_db_uri.netloc:
             return base_uri
 
+        base_host = parsed_db_uri.hostname or ""
+
+        # If the URI already points to a Railway internal host, keep it as-is.
+        if base_host.endswith("railway.internal"):
+            return base_uri
+
         parsed_private = urlparse(f"//{private_domain}")
         private_host = parsed_private.hostname
         private_port = parsed_private.port or parsed_db_uri.port
