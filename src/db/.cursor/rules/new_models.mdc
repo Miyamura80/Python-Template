@@ -331,10 +331,10 @@ Index("idx_your_table_user_id", "user_id"),
 make db_validate
 
 # Full validation with detailed report
-rye run python -m src.db.utils.migration_validator --verbose
+uv run -m src.db.utils.migration_validator --verbose
 
 # Strict validation (treat warnings as errors)
-rye run python -m src.db.utils.migration_validator --strict
+uv run -m src.db.utils.migration_validator --strict
 ```
 
 ### Pre-flight Checks
@@ -342,7 +342,7 @@ Before running migrations in production, always run pre-flight checks:
 
 ```bash
 # Complete pre-flight check
-rye run python -m src.db.utils.migration_validator --preflight
+uv run -m src.db.utils.migration_validator --preflight
 ```
 
 ### Common Migration Issues and Solutions

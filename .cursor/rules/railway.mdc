@@ -1,0 +1,6 @@
+---
+description: Railway.app is the service we use for production environments 
+globs: 
+alwaysApply: false
+---
+The build container system deletes any .md files, so if you need prompts, always use a .txt file 
