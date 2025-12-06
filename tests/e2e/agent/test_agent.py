@@ -55,6 +55,7 @@ class TestAgent(E2ETestBase):
         assert "response" in data
         assert "user_id" in data
         assert "reasoning" in data
+        assert "conversation_id" in data
 
         # Verify user_id matches
         assert data["user_id"] == self.user_id
@@ -83,6 +84,7 @@ class TestAgent(E2ETestBase):
         # Verify response structure
         assert "response" in data
         assert "user_id" in data
+        assert "conversation_id" in data
 
         # Verify response is not empty
         assert len(data["response"]) > 0
@@ -105,6 +107,7 @@ class TestAgent(E2ETestBase):
         # Verify response structure
         assert "response" in data
         assert "user_id" in data
+        assert "conversation_id" in data
 
         log.info(f"Agent response without context: {data['response'][:100]}...")
 
@@ -175,11 +178,43 @@ class TestAgent(E2ETestBase):
         # Verify response structure
         assert "response" in data
         assert "user_id" in data
+        assert "conversation_id" in data
 
         # Verify response is substantial for a complex query
         assert len(data["response"]) > 50
 
         log.info(f"Agent response to complex message: {data['response'][:150]}...")
+
+    def test_agent_history_returns_conversations(self):
+        """Test that chat history returns previous conversations."""
+        log.info("Testing agent history endpoint")
+
+        send_response = self.client.post(
+            "/agent",
+            json={"message": "History check message"},
+            headers=self.auth_headers,
+        )
+        assert send_response.status_code == 200
+        conversation_id = send_response.json()["conversation_id"]
+
+        history_response = self.client.get(
+            "/agent/history",
+            headers=self.auth_headers,
+        )
+
+        assert history_response.status_code == 200
+        history_data = history_response.json()
+
+        assert "conversations" in history_data
+        assert len(history_data["conversations"]) >= 1
+
+        matching_conversation = next(
+            (c for c in history_data["conversations"] if c["id"] == conversation_id),
+            None,
+        )
+        assert matching_conversation is not None
+        assert len(matching_conversation["messages"]) >= 2
+        assert matching_conversation["messages"][0]["role"] == "user"
 
     def test_agent_stream_requires_authentication(self):
         """Test that agent streaming endpoint requires authentication"""
@@ -222,6 +257,7 @@ class TestAgent(E2ETestBase):
                     start_received = True
                     assert "user_id" in data
                     assert data["user_id"] == self.user_id
+                    assert "conversation_id" in data
                     assert data.get("tools_enabled") is not None
                     assert isinstance(data.get("tool_names"), list)
                 elif data["type"] == "token":
@@ -274,6 +310,7 @@ class TestAgent(E2ETestBase):
         start_event = next(c for c in chunks if c["type"] == "start")
         assert "tools_enabled" in start_event
         assert "tool_names" in start_event
+        assert "conversation_id" in start_event
         assert any(c["type"] == "start" for c in chunks)
         assert any(c["type"] == "done" for c in chunks)
         token_chunks = [c for c in chunks if c["type"] == "token"]

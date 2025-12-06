@@ -5,25 +5,27 @@ Authenticated AI agent endpoint using DSPY with tool support.
 This endpoint is protected because LLM inference costs can be expensive.
 """
 
-from fastapi import APIRouter, Request, Depends
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
-from typing import Optional, Callable, Any, Iterable
-from functools import partial
 import inspect
-import dspy
-from loguru import logger as log
 import json
+import uuid
+from datetime import datetime, timezone
+from functools import partial
+from typing import Any, Callable, Iterable, Optional, cast
+
+import dspy
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
+from langfuse.decorators import observe, langfuse_context
+from loguru import logger as log
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session, selectinload
 
 from src.api.auth.unified_auth import get_authenticated_user_id
+from src.api.routes.agent.tools import alert_admin
 from src.db.database import get_db_session
+from src.db.models.public.agent_conversations import AgentConversation, AgentMessage
 from src.utils.logging_config import setup_logging
 from utils.llm.dspy_inference import DSPYInference
-from langfuse.decorators import observe, langfuse_context
-
-# Import available tools
-from src.api.routes.agent.tools import alert_admin
 
 setup_logging()
 
@@ -37,6 +39,9 @@ class AgentRequest(BaseModel):
     context: str | None = Field(
         None, description="Optional additional context for the agent"
     )
+    conversation_id: uuid.UUID | None = Field(
+        None, description="Existing conversation ID to continue"
+    )
 
 
 class AgentResponse(BaseModel):
@@ -47,6 +52,34 @@ class AgentResponse(BaseModel):
     )  # noqa
     response: str = Field(..., description="Agent's response")
     user_id: str = Field(..., description="Authenticated user ID")
+    conversation_id: uuid.UUID = Field(
+        ..., description="Conversation identifier for the interaction"
+    )
+
+
+class AgentMessageModel(BaseModel):
+    """Response model for individual chat messages."""
+
+    id: uuid.UUID
+    role: str
+    content: str
+    created_at: datetime
+
+
+class AgentConversationModel(BaseModel):
+    """Response model for conversations with embedded messages."""
+
+    id: uuid.UUID
+    title: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    messages: list[AgentMessageModel]
+
+
+class AgentHistoryResponse(BaseModel):
+    """Response model for chat history."""
+
+    conversations: list[AgentConversationModel]
 
 
 class AgentSignature(dspy.Signature):
@@ -99,6 +132,96 @@ def tool_name(tool: Callable[..., Any]) -> str:
     return "unknown_tool"
 
 
+def _user_uuid_from_str(user_id: str) -> uuid.UUID:
+    """Convert user ID string to UUID or raise HTTP 400."""
+    try:
+        return uuid.UUID(str(user_id))
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user identifier",
+        ) from exc
+
+
+def _conversation_title_from_message(message: str) -> str:
+    """Generate a short title from the first user message."""
+    condensed = " ".join(message.split())
+    if len(condensed) > 80:
+        return f"{condensed[:80]}..."
+    return condensed
+
+
+def get_or_create_conversation_record(
+    db: Session,
+    user_uuid: uuid.UUID,
+    conversation_id: uuid.UUID | None,
+    initial_message: str,
+) -> AgentConversation:
+    """Fetch an existing conversation or create a new one for the user."""
+    if conversation_id:
+        conversation = (
+            db.query(AgentConversation)
+            .filter(
+                AgentConversation.id == conversation_id,
+                AgentConversation.user_id == user_uuid,
+            )
+            .first()
+        )
+        if not conversation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation not found",
+            )
+        return conversation
+
+    conversation = AgentConversation(
+        user_id=user_uuid, title=_conversation_title_from_message(initial_message)
+    )
+    db.add(conversation)
+    db.commit()
+    db.refresh(conversation)
+    return conversation
+
+
+def record_agent_message(
+    db: Session, conversation: AgentConversation, role: str, content: str
+) -> AgentMessage:
+    """Persist a single agent message and update conversation timestamp."""
+    conversation.updated_at = datetime.now(timezone.utc)
+    message = AgentMessage(conversation_id=conversation.id, role=role, content=content)
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    db.refresh(conversation)
+    return message
+
+
+def map_conversation_to_model(
+    conversation: AgentConversation,
+) -> AgentConversationModel:
+    """Map ORM conversation with messages to response model."""
+    conversation_id = cast(uuid.UUID, conversation.id)
+    title = cast(str | None, conversation.title)
+    created_at = cast(datetime, conversation.created_at)
+    updated_at = cast(datetime, conversation.updated_at)
+
+    return AgentConversationModel(
+        id=conversation_id,
+        title=title,
+        created_at=created_at,
+        updated_at=updated_at,
+        messages=[
+            AgentMessageModel(
+                id=cast(uuid.UUID, message.id),
+                role=cast(str, message.role),
+                content=cast(str, message.content),
+                created_at=cast(datetime, message.created_at),
+            )
+            for message in conversation.messages
+        ],
+    )
+
+
 @router.post("/agent", response_model=AgentResponse)  # noqa
 @observe()
 async def agent_endpoint(
@@ -129,11 +252,22 @@ async def agent_endpoint(
     """
     # Authenticate user - will raise 401 if auth fails
     user_id = await get_authenticated_user_id(request, db)
+    user_uuid = _user_uuid_from_str(user_id)
     langfuse_context.update_current_observation(name=f"agent-{user_id}")
 
-    log.info(f"Agent request from user {user_id}: {agent_request.message[:100]}...")
+    log.info(
+        f"Agent request from user {user_id}: {agent_request.message[:100]}...",
+    )
 
     try:
+        conversation = get_or_create_conversation_record(
+            db,
+            user_uuid,
+            agent_request.conversation_id,
+            agent_request.message,
+        )
+        record_agent_message(db, conversation, "user", agent_request.message)
+
         # Initialize DSPY inference module with tools
         inference_module = DSPYInference(
             pred_signature=AgentSignature,
@@ -148,20 +282,30 @@ async def agent_endpoint(
             context=agent_request.context or "No additional context provided",
         )
 
-        log.info(f"Agent response generated for user {user_id}")
+        record_agent_message(db, conversation, "assistant", result.response)
+        log.info(
+            f"Agent response generated for user {user_id} in conversation {conversation.id}"
+        )
 
         return AgentResponse(
             response=result.response,
             user_id=user_id,
+            conversation_id=cast(uuid.UUID, conversation.id),
             reasoning=None,  # DSPY ReAct doesn't expose reasoning in the result
         )
 
     except Exception as e:
         log.error(f"Error processing agent request for user {user_id}: {str(e)}")
         # Return a friendly error response instead of raising
+        conversation_id = (
+            cast(uuid.UUID, conversation.id)  # type: ignore[name-defined]
+            if "conversation" in locals()
+            else agent_request.conversation_id or uuid.uuid4()
+        )
         return AgentResponse(
             response="I apologize, but I encountered an error processing your request. Please try again or contact support if the issue persists.",
             user_id=user_id,
+            conversation_id=conversation_id,
             reasoning=f"Error: {str(e)}",
         )
 
@@ -199,11 +343,20 @@ async def agent_stream_endpoint(
     """
     # Authenticate user - will raise 401 if auth fails
     user_id = await get_authenticated_user_id(request, db)
+    user_uuid = _user_uuid_from_str(user_id)
     langfuse_context.update_current_observation(name=f"agent-stream-{user_id}")
 
     log.info(
         f"Agent streaming request from user {user_id}: {agent_request.message[:100]}..."
     )
+
+    conversation = get_or_create_conversation_record(
+        db,
+        user_uuid,
+        agent_request.conversation_id,
+        agent_request.message,
+    )
+    record_agent_message(db, conversation, "user", agent_request.message)
 
     async def stream_generator():
         """Generate streaming response chunks."""
@@ -211,12 +364,14 @@ async def agent_stream_endpoint(
             raw_tools = get_agent_tools()
             tool_functions = build_tool_wrappers(user_id, tools=raw_tools)
             tool_names = [tool_name(tool) for tool in raw_tools]
+            response_chunks: list[str] = []
 
             # Send initial metadata (include tool info for transparency)
-            yield f"data: {json.dumps({'type': 'start', 'user_id': user_id, 'tools_enabled': bool(tool_functions), 'tool_names': tool_names})}\n\n"
+            yield f"data: {json.dumps({'type': 'start', 'user_id': user_id, 'conversation_id': str(conversation.id), 'tools_enabled': bool(tool_functions), 'tool_names': tool_names})}\n\n"
 
             async def stream_with_inference(tools: list):
                 """Stream using DSPY with the provided tools list."""
+                response_chunks.clear()
                 inference_module = DSPYInference(
                     pred_signature=AgentSignature,
                     tools=tools,
@@ -231,10 +386,12 @@ async def agent_stream_endpoint(
                 ):
                     yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
 
+            full_response: str | None = None
             try:
                 # Primary path: stream with tools enabled
                 async for token_chunk in stream_with_inference(tool_functions):
                     yield token_chunk
+                full_response = "".join(response_chunks)
             except Exception as tool_err:
                 log.warning(
                     "Streaming with tools failed for user %s, falling back to streaming without tools: %s",
@@ -250,6 +407,10 @@ async def agent_stream_endpoint(
                 # Fallback path: stream without tools to still deliver a response
                 async for token_chunk in stream_with_inference([]):
                     yield token_chunk
+                full_response = "".join(response_chunks)
+
+            if full_response:
+                record_agent_message(db, conversation, "assistant", full_response)
 
             # Send completion signal
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
@@ -274,4 +435,40 @@ async def agent_stream_endpoint(
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # Disable nginx buffering
         },
+    )
+
+
+@router.get("/agent/history", response_model=AgentHistoryResponse)  # noqa
+@observe()
+async def agent_history_endpoint(
+    request: Request,
+    db: Session = Depends(get_db_session),
+) -> AgentHistoryResponse:
+    """
+    Retrieve authenticated user's past agent conversations with messages.
+
+    This endpoint returns all conversations for the authenticated user,
+    including ordered messages within each conversation.
+    """
+
+    user_id = await get_authenticated_user_id(request, db)
+    user_uuid = _user_uuid_from_str(user_id)
+    langfuse_context.update_current_observation(name=f"agent-history-{user_id}")
+
+    conversations = (
+        db.query(AgentConversation)
+        .options(selectinload(AgentConversation.messages))
+        .filter(AgentConversation.user_id == user_uuid)
+        .order_by(AgentConversation.updated_at.desc())
+        .all()
+    )
+
+    log.info(
+        "Fetched %s conversations for user %s",
+        len(conversations),
+        user_id,
+    )
+
+    return AgentHistoryResponse(
+        conversations=[map_conversation_to_model(conv) for conv in conversations]
     )
