@@ -25,6 +25,7 @@ from src.api.routes.agent.tools import alert_admin
 from src.api.routes.agent.utils import user_uuid_from_str
 from src.api.limits import ensure_daily_limit
 from src.db.database import get_db_session
+from src.db.utils.db_transaction import db_transaction
 from src.db.models.public.agent_conversations import AgentConversation, AgentMessage
 from src.utils.logging_config import setup_logging
 from utils.llm.dspy_inference import DSPYInference
@@ -143,8 +144,8 @@ def get_or_create_conversation_record(
     conversation = AgentConversation(
         user_id=user_uuid, title=_conversation_title_from_message(initial_message)
     )
-    db.add(conversation)
-    db.commit()
+    with db_transaction(db):
+        db.add(conversation)
     db.refresh(conversation)
     return conversation
 
@@ -155,8 +156,8 @@ def record_agent_message(
     """Persist a single agent message and update conversation timestamp."""
     conversation.updated_at = datetime.now(timezone.utc)
     message = AgentMessage(conversation_id=conversation.id, role=role, content=content)
-    db.add(message)
-    db.commit()
+    with db_transaction(db):
+        db.add(message)
     db.refresh(message)
     db.refresh(conversation)
     return message

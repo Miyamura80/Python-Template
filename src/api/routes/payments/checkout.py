@@ -7,6 +7,7 @@ from loguru import logger
 from src.db.models.stripe.user_subscriptions import UserSubscriptions
 from sqlalchemy.orm import Session
 from src.db.database import get_db_session
+from src.db.utils.db_transaction import db_transaction
 from datetime import datetime, timezone
 from src.api.auth.workos_auth import get_current_workos_user
 from src.api.routes.payments.stripe_config import STRIPE_PRICE_ID
@@ -174,17 +175,17 @@ async def cancel_subscription(
         )
 
         if subscription:
-            subscription.is_active = False
-            subscription.auto_renew = False
-            subscription.subscription_tier = "free"
-            subscription.subscription_end_date = datetime.fromtimestamp(
-                cancelled_subscription.current_period_end, tz=timezone.utc
-            )
-            # Reset usage tracking
-            subscription.current_period_usage = 0
-            subscription.stripe_subscription_id = None
-            subscription.stripe_subscription_item_id = None
-            db.commit()
+            with db_transaction(db):
+                subscription.is_active = False
+                subscription.auto_renew = False
+                subscription.subscription_tier = "free"
+                subscription.subscription_end_date = datetime.fromtimestamp(
+                    cancelled_subscription.current_period_end, tz=timezone.utc
+                )
+                # Reset usage tracking
+                subscription.current_period_usage = 0
+                subscription.stripe_subscription_id = None
+                subscription.stripe_subscription_item_id = None
             logger.info(f"Updated subscription status in database for user {user_id}")
 
         logger.info(

@@ -7,6 +7,7 @@ from loguru import logger
 from src.db.models.stripe.user_subscriptions import UserSubscriptions
 from sqlalchemy.orm import Session
 from src.db.database import get_db_session
+from src.db.utils.db_transaction import db_transaction
 from datetime import datetime, timezone
 from src.db.models.stripe.subscription_types import (
     SubscriptionTier,
@@ -73,25 +74,27 @@ async def get_subscription_status(
                 )
 
                 if db_subscription:
-                    db_subscription.stripe_subscription_id = subscription.id
-                    db_subscription.stripe_subscription_item_id = subscription_item_id
-                    db_subscription.billing_period_start = datetime.fromtimestamp(
-                        subscription.current_period_start, tz=timezone.utc
-                    )
-                    db_subscription.billing_period_end = datetime.fromtimestamp(
-                        subscription.current_period_end, tz=timezone.utc
-                    )
-                    db_subscription.included_units = INCLUDED_UNITS
-                    db_subscription.is_active = subscription.status in [
-                        "active",
-                        "trialing",
-                    ]
-                    db_subscription.subscription_tier = (
-                        SubscriptionTier.PLUS.value
-                        if db_subscription.is_active
-                        else SubscriptionTier.FREE.value
-                    )
-                    db.commit()
+                    with db_transaction(db):
+                        db_subscription.stripe_subscription_id = subscription.id
+                        db_subscription.stripe_subscription_item_id = (
+                            subscription_item_id
+                        )
+                        db_subscription.billing_period_start = datetime.fromtimestamp(
+                            subscription.current_period_start, tz=timezone.utc
+                        )
+                        db_subscription.billing_period_end = datetime.fromtimestamp(
+                            subscription.current_period_end, tz=timezone.utc
+                        )
+                        db_subscription.included_units = INCLUDED_UNITS
+                        db_subscription.is_active = subscription.status in [
+                            "active",
+                            "trialing",
+                        ]
+                        db_subscription.subscription_tier = (
+                            SubscriptionTier.PLUS.value
+                            if db_subscription.is_active
+                            else SubscriptionTier.FREE.value
+                        )
 
                 # Determine payment status
                 payment_status = (

@@ -8,6 +8,7 @@ from loguru import logger
 from src.db.models.stripe.user_subscriptions import UserSubscriptions
 from sqlalchemy.orm import Session
 from src.db.database import get_db_session
+from src.db.utils.db_transaction import db_transaction
 from datetime import datetime, timezone
 from src.api.routes.payments.stripe_config import INCLUDED_UNITS
 
@@ -65,14 +66,14 @@ async def handle_usage_reset_webhook(
 
                 if subscription:
                     # Reset usage for new billing period
-                    subscription.current_period_usage = 0
-                    subscription.billing_period_start = datetime.fromtimestamp(
-                        invoice.get("period_start"), tz=timezone.utc
-                    )
-                    subscription.billing_period_end = datetime.fromtimestamp(
-                        invoice.get("period_end"), tz=timezone.utc
-                    )
-                    db.commit()
+                    with db_transaction(db):
+                        subscription.current_period_usage = 0
+                        subscription.billing_period_start = datetime.fromtimestamp(
+                            invoice.get("period_start"), tz=timezone.utc
+                        )
+                        subscription.billing_period_end = datetime.fromtimestamp(
+                            invoice.get("period_end"), tz=timezone.utc
+                        )
                     logger.info(
                         f"Reset usage for subscription {subscription_id} on new billing period"
                     )
@@ -152,19 +153,20 @@ async def handle_subscription_webhook(
                 )
 
                 if subscription:
-                    subscription.stripe_subscription_id = subscription_id
-                    subscription.stripe_subscription_item_id = subscription_item_id
-                    subscription.is_active = True
-                    subscription.subscription_tier = "plus_tier"
-                    subscription.included_units = INCLUDED_UNITS
-                    subscription.billing_period_start = datetime.fromtimestamp(
-                        subscription_data.get("current_period_start"), tz=timezone.utc
-                    )
-                    subscription.billing_period_end = datetime.fromtimestamp(
-                        subscription_data.get("current_period_end"), tz=timezone.utc
-                    )
-                    subscription.current_period_usage = 0
-                    db.commit()
+                    with db_transaction(db):
+                        subscription.stripe_subscription_id = subscription_id
+                        subscription.stripe_subscription_item_id = subscription_item_id
+                        subscription.is_active = True
+                        subscription.subscription_tier = "plus_tier"
+                        subscription.included_units = INCLUDED_UNITS
+                        subscription.billing_period_start = datetime.fromtimestamp(
+                            subscription_data.get("current_period_start"),
+                            tz=timezone.utc,
+                        )
+                        subscription.billing_period_end = datetime.fromtimestamp(
+                            subscription_data.get("current_period_end"), tz=timezone.utc
+                        )
+                        subscription.current_period_usage = 0
                     logger.info(f"Updated subscription for user {user_id}")
                 else:
                     # Create new subscription record
@@ -190,8 +192,8 @@ async def handle_subscription_webhook(
                             else None
                         ),
                     )
-                    db.add(new_subscription)
-                    db.commit()
+                    with db_transaction(db):
+                        db.add(new_subscription)
                     logger.info(f"Created subscription for user {user_id}")
 
         elif event_type == "customer.subscription.deleted":
@@ -203,12 +205,12 @@ async def handle_subscription_webhook(
             )
 
             if subscription:
-                subscription.is_active = False
-                subscription.subscription_tier = "free"
-                subscription.stripe_subscription_id = None
-                subscription.stripe_subscription_item_id = None
-                subscription.current_period_usage = 0
-                db.commit()
+                with db_transaction(db):
+                    subscription.is_active = False
+                    subscription.subscription_tier = "free"
+                    subscription.stripe_subscription_id = None
+                    subscription.stripe_subscription_item_id = None
+                    subscription.current_period_usage = 0
                 logger.info(f"Deactivated subscription {subscription_id}")
 
         return {"status": "success"}

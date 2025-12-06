@@ -7,6 +7,7 @@ from loguru import logger
 from src.db.models.stripe.user_subscriptions import UserSubscriptions
 from sqlalchemy.orm import Session
 from src.db.database import get_db_session
+from src.db.utils.db_transaction import db_transaction
 from pydantic import BaseModel
 from src.db.models.stripe.subscription_types import UsageAction
 from src.api.auth.workos_auth import get_current_workos_user
@@ -104,8 +105,8 @@ async def report_usage(
             )
 
         # Update local usage cache
-        subscription.current_period_usage = new_usage
-        db.commit()
+        with db_transaction(db):
+            subscription.current_period_usage = new_usage
 
         # Calculate overage for display (Stripe handles actual billing)
         overage = max(0, new_usage - INCLUDED_UNITS)
