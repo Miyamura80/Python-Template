@@ -222,10 +222,14 @@ class TestAgent(E2ETestBase):
                     start_received = True
                     assert "user_id" in data
                     assert data["user_id"] == self.user_id
+                    assert data.get("tools_enabled") is not None
+                    assert isinstance(data.get("tool_names"), list)
                 elif data["type"] == "token":
                     assert "content" in data
                 elif data["type"] == "done":
                     done_received = True
+                elif data["type"] == "warning":
+                    assert data.get("code") == "tool_fallback"
 
         # Verify we received start and done signals
         assert start_received, "Should receive start signal"
@@ -267,6 +271,9 @@ class TestAgent(E2ETestBase):
                 chunks.append(data)
 
         # Verify structure
+        start_event = next(c for c in chunks if c["type"] == "start")
+        assert "tools_enabled" in start_event
+        assert "tool_names" in start_event
         assert any(c["type"] == "start" for c in chunks)
         assert any(c["type"] == "done" for c in chunks)
         token_chunks = [c for c in chunks if c["type"] == "token"]

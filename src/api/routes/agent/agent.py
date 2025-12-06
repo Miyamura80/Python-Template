@@ -9,7 +9,9 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, Callable, Any, Iterable
+from functools import partial
+import inspect
 import dspy
 from loguru import logger as log
 import json
@@ -60,6 +62,43 @@ class AgentSignature(dspy.Signature):
     )
 
 
+def get_agent_tools() -> list[Callable[..., Any]]:
+    """Return the raw agent tools (unwrapped)."""
+    return [alert_admin]
+
+
+def build_tool_wrappers(
+    user_id: str, tools: Optional[Iterable[Callable[..., Any]]] = None
+) -> list[Callable[..., Any]]:
+    """
+    Build tool callables that capture the user context for routing.
+
+    This allows us to return a list of tools, and keeps the wrapping logic
+    centralized for both streaming and non-streaming endpoints. Accepts an
+    iterable of raw tool functions; defaults to the agent's configured tools.
+    """
+
+    raw_tools = list(tools) if tools is not None else get_agent_tools()
+
+    def _wrap_tool(tool: Callable[..., Any]) -> Callable[..., Any]:
+        signature = inspect.signature(tool)
+        if "user_id" in signature.parameters:
+            return partial(tool, user_id=user_id)
+        return tool
+
+    return [_wrap_tool(tool) for tool in raw_tools]
+
+
+def tool_name(tool: Callable[..., Any]) -> str:
+    """Best-effort name for a tool (supports partials)."""
+    if hasattr(tool, "__name__"):
+        return tool.__name__  # type: ignore[attr-defined]
+    func = getattr(tool, "func", None)
+    if func and hasattr(func, "__name__"):
+        return func.__name__  # type: ignore[attr-defined]
+    return "unknown_tool"
+
+
 @router.post("/agent", response_model=AgentResponse)  # noqa
 @observe()
 async def agent_endpoint(
@@ -95,32 +134,10 @@ async def agent_endpoint(
     log.info(f"Agent request from user {user_id}: {agent_request.message[:100]}...")
 
     try:
-        # Initialize DSPY inference with tools
-        # Note: The alert_admin tool needs to be wrapped to match DSPY's expectations
-        def alert_admin_tool(
-            issue_description: str, user_context: Optional[str] = None
-        ) -> dict:
-            """
-            Alert administrators when the agent cannot complete a task.
-            Use this as a last resort when all other approaches fail.
-
-            Args:
-                issue_description: Clear description of what cannot be accomplished
-                user_context: Optional additional context about the situation
-
-            Returns:
-                dict: Status of the alert operation
-            """
-            return alert_admin(
-                user_id=user_id,
-                issue_description=issue_description,
-                user_context=user_context,
-            )
-
         # Initialize DSPY inference module with tools
         inference_module = DSPYInference(
             pred_signature=AgentSignature,
-            tools=[alert_admin_tool],
+            tools=build_tool_wrappers(user_id),
             observe=True,  # Enable LangFuse observability
         )
 
@@ -191,29 +208,48 @@ async def agent_stream_endpoint(
     async def stream_generator():
         """Generate streaming response chunks."""
         try:
-            # Send initial metadata
-            yield f"data: {json.dumps({'type': 'start', 'user_id': user_id})}\n\n"
+            raw_tools = get_agent_tools()
+            tool_functions = build_tool_wrappers(user_id, tools=raw_tools)
+            tool_names = [tool_name(tool) for tool in raw_tools]
 
-            # Note: Tool use with streaming is complex and may not work reliably
-            # For now, we'll use streaming without tools
-            # If tools are needed, consider using the non-streaming endpoint
+            # Send initial metadata (include tool info for transparency)
+            yield f"data: {json.dumps({'type': 'start', 'user_id': user_id, 'tools_enabled': bool(tool_functions), 'tool_names': tool_names})}\n\n"
 
-            # Initialize DSPY inference module without tools for streaming
-            inference_module = DSPYInference(
-                pred_signature=AgentSignature,
-                tools=[],  # Streaming with tools is not yet fully supported
-                observe=True,  # Enable LangFuse observability
-            )
+            async def stream_with_inference(tools: list):
+                """Stream using DSPY with the provided tools list."""
+                inference_module = DSPYInference(
+                    pred_signature=AgentSignature,
+                    tools=tools,
+                    observe=True,  # Enable LangFuse observability
+                )
 
-            # Stream the response
-            async for chunk in inference_module.run_streaming(
-                stream_field="response",
-                user_id=user_id,
-                message=agent_request.message,
-                context=agent_request.context or "No additional context provided",
-            ):
-                # Send each chunk as SSE data
-                yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+                async for chunk in inference_module.run_streaming(
+                    stream_field="response",
+                    user_id=user_id,
+                    message=agent_request.message,
+                    context=agent_request.context or "No additional context provided",
+                ):
+                    yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+
+            try:
+                # Primary path: stream with tools enabled
+                async for token_chunk in stream_with_inference(tool_functions):
+                    yield token_chunk
+            except Exception as tool_err:
+                log.warning(
+                    "Streaming with tools failed for user %s, falling back to streaming without tools: %s",
+                    user_id,
+                    str(tool_err),
+                )
+                warning_msg = (
+                    "Tool-enabled streaming encountered an issue. "
+                    "Continuing without tools for this response."
+                )
+                yield f"data: {json.dumps({'type': 'warning', 'code': 'tool_fallback', 'message': warning_msg})}\n\n"
+
+                # Fallback path: stream without tools to still deliver a response
+                async for token_chunk in stream_with_inference([]):
+                    yield token_chunk
 
             # Send completion signal
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
