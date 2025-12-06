@@ -23,7 +23,7 @@ setup_logging()
 WORKOS_JWKS_URL = f"https://api.workos.com/sso/jwks/{global_config.WORKOS_CLIENT_ID}"
 WORKOS_ISSUER = "https://api.workos.com"
 WORKOS_ACCESS_ISSUER = (
-    f"{WORKOS_ISSUER}/user_management/client_{global_config.WORKOS_CLIENT_ID}"
+    f"{WORKOS_ISSUER}/user_management/{global_config.WORKOS_CLIENT_ID}"
 )
 WORKOS_ALLOWED_ISSUERS = [WORKOS_ISSUER, WORKOS_ACCESS_ISSUER]
 WORKOS_AUDIENCE = global_config.WORKOS_CLIENT_ID
