@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from src.api.auth.unified_auth import get_authenticated_user_id
 from src.api.routes.agent.tools import alert_admin
 from src.api.routes.agent.utils import user_uuid_from_str
+from src.api.limits import ensure_daily_limit
 from src.db.database import get_db_session
 from src.db.models.public.agent_conversations import AgentConversation, AgentMessage
 from src.utils.logging_config import setup_logging
@@ -194,8 +195,16 @@ async def agent_endpoint(
     user_uuid = user_uuid_from_str(user_id)
     langfuse_context.update_current_observation(name=f"agent-{user_id}")
 
+    limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid)
     log.info(
         f"Agent request from user {user_id}: {agent_request.message[:100]}...",
+    )
+    log.debug(
+        "Daily chat usage for user %s: %s used, %s remaining (tier=%s)",
+        user_id,
+        limit_status.used_today,
+        limit_status.remaining,
+        limit_status.tier,
     )
 
     try:
@@ -285,8 +294,16 @@ async def agent_stream_endpoint(
     user_uuid = user_uuid_from_str(user_id)
     langfuse_context.update_current_observation(name=f"agent-stream-{user_id}")
 
+    limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid)
     log.info(
         f"Agent streaming request from user {user_id}: {agent_request.message[:100]}..."
+    )
+    log.debug(
+        "Daily chat usage for user %s: %s used, %s remaining (tier=%s)",
+        user_id,
+        limit_status.used_today,
+        limit_status.remaining,
+        limit_status.tier,
     )
 
     conversation = get_or_create_conversation_record(
