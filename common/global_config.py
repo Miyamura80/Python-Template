@@ -152,43 +152,43 @@ class Config:
         """Returns the appropriate API key based on the model name."""
 
         model_identifier = model_name or self.model_name
-        if "gpt" in model_identifier.lower() or re.match(
-            OPENAI_O_SERIES_PATTERN, model_identifier.lower()
+        model_identifier_lower = model_identifier.lower()
+
+        # Provider-specific checks first to avoid the generic "gpt" catch-all
+        if "cerebras" in model_identifier_lower:
+            return self.CEREBRAS_API_KEY
+        if "groq" in model_identifier_lower:
+            return self.GROQ_API_KEY
+        if "perplexity" in model_identifier_lower:
+            return self.PERPLEXITY_API_KEY
+        if "gemini" in model_identifier_lower:
+            return self.GEMINI_API_KEY
+        if "claude" in model_identifier_lower or "anthropic" in model_identifier_lower:
+            return self.ANTHROPIC_API_KEY
+        if "gpt" in model_identifier_lower or re.match(
+            OPENAI_O_SERIES_PATTERN, model_identifier_lower
         ):
             return self.OPENAI_API_KEY
-        elif (
-            "claude" in model_identifier.lower()
-            or "anthropic" in model_identifier.lower()
-        ):
-            return self.ANTHROPIC_API_KEY
-        elif "groq" in model_identifier.lower():
-            return self.GROQ_API_KEY
-        elif "perplexity" in model_identifier.lower():
-            return self.PERPLEXITY_API_KEY
-        elif "gemini" in model_identifier.lower():
-            return self.GEMINI_API_KEY
-        elif "cerebras" in model_identifier.lower():
-            return self.CEREBRAS_API_KEY
-        else:
-            raise ValueError(f"No API key configured for model: {model_identifier}")
+
+        raise ValueError(f"No API key configured for model: {model_identifier}")
 
     def api_base(self, model_name: str) -> str:
-        """Returns the Helicone link for the model."""
-        if "gpt" in model_name.lower() or re.match(
-            OPENAI_O_SERIES_PATTERN, model_name.lower()
-        ):
-            return "https://oai.hconeai.com/v1"
-        elif "groq" in model_name.lower():
-            return "https://groq.helicone.ai/openai/v1"
-        elif "perplexity" in model_name.lower():
-            return "https://perplexity.helicone.ai"
-        elif "gemini" in model_name.lower():
-            return "https://generativelanguage.googleapis.com/v1beta/openai/"
-        elif "cerebras" in model_name.lower():
+        """Returns the provider base URL for the model."""
+        model_lower = model_name.lower()
+
+        if "cerebras" in model_lower:
             return "https://api.cerebras.ai/v1"
-        else:
-            logger.error(f"Helicone link not found for model: {model_name}")
-            return ""
+        if "groq" in model_lower:
+            return "https://api.groq.com/openai/v1"
+        if "perplexity" in model_lower:
+            return "https://api.perplexity.ai"
+        if "gemini" in model_lower:
+            return "https://generativelanguage.googleapis.com/v1beta/openai/"
+        if "gpt" in model_lower or re.match(OPENAI_O_SERIES_PATTERN, model_lower):
+            return "https://api.openai.com/v1"
+
+        logger.error(f"Provider API base not found for model: {model_name}")
+        return ""
 
 
 # Create a singleton instance
