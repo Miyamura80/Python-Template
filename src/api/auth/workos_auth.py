@@ -22,6 +22,10 @@ setup_logging()
 # Initialize WorkOS JWKS client (cached at module level)
 WORKOS_JWKS_URL = f"https://api.workos.com/sso/jwks/{global_config.WORKOS_CLIENT_ID}"
 WORKOS_ISSUER = "https://api.workos.com"
+WORKOS_ACCESS_ISSUER = (
+    f"{WORKOS_ISSUER}/user_management/client_{global_config.WORKOS_CLIENT_ID}"
+)
+WORKOS_ALLOWED_ISSUERS = [WORKOS_ISSUER, WORKOS_ACCESS_ISSUER]
 WORKOS_AUDIENCE = global_config.WORKOS_CLIENT_ID
 
 # Create JWKS client instance (will cache keys automatically)
@@ -89,6 +93,23 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
         # Detect test mode by checking if pytest is running
         is_test_mode = "pytest" in sys.modules or "test" in sys.argv[0].lower()
 
+        # Determine whether the token declares an audience so we can decide
+        # whether to enforce audience verification (access tokens currently omit aud).
+        try:
+            unverified_claims = jwt.decode(
+                token,
+                options={
+                    "verify_signature": False,
+                    "verify_exp": False,
+                    "verify_iss": False,
+                    "verify_aud": False,
+                },
+            )
+            has_audience = "aud" in unverified_claims
+        except Exception:
+            # If we cannot read claims without verification, fall back to enforcing aud
+            has_audience = True
+
         # Verify and decode the JWT token using WorkOS JWKS
         try:
             if is_test_mode:
@@ -111,18 +132,24 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
                 signing_key = jwks_client.get_signing_key_from_jwt(token)
 
                 # Decode and verify the JWT token with signature verification
+                decode_options = {
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_iss": True,
+                    "verify_aud": has_audience,
+                }
+                if not has_audience:
+                    logger.debug(
+                        "WorkOS token missing 'aud' claim; skipping audience verification"
+                    )
+
                 decoded_token = jwt.decode(
                     token,
                     signing_key.key,
                     algorithms=["RS256"],  # WorkOS uses RS256 for JWT signing
-                    issuer=WORKOS_ISSUER,
-                    audience=WORKOS_AUDIENCE,
-                    options={
-                        "verify_signature": True,
-                        "verify_exp": True,
-                        "verify_iss": True,
-                        "verify_aud": True,
-                    },
+                    issuer=WORKOS_ALLOWED_ISSUERS,
+                    audience=WORKOS_AUDIENCE if has_audience else None,
+                    options=decode_options,
                 )
         except (DecodeError, InvalidTokenError, PyJWKClientError) as e:
             logger.error(f"Invalid WorkOS token or JWKS lookup failed: {e}")
