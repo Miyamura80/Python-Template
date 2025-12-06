@@ -229,7 +229,7 @@ def validate_database_connection() -> bool:
         from common.global_config import global_config
 
         # Check if database URI is configured
-        if not global_config.BACKEND_DB_URI:
+        if not global_config.database_uri:
             log.error("❌ Database URI not configured")
             return False
 

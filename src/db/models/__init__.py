@@ -56,7 +56,7 @@ transfer_rls_policies_to_tables()
 def get_raw_engine() -> Engine:
     # Create raw SQLAlchemy engine for non-Flask contexts
     # Sync engine.
-    raw_engine = create_raw_engine(global_config.BACKEND_DB_URI)
+    raw_engine = create_raw_engine(global_config.database_uri)
     return raw_engine
 
 

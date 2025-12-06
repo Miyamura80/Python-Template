@@ -1,6 +1,7 @@
 import os
 import sys
 from logging.config import fileConfig
+from urllib.parse import urlparse
 
 from sqlalchemy import engine_from_config, pool
 
@@ -30,10 +31,10 @@ if config.config_file_name is not None:
 
 def get_database_url() -> str:
     """Get database URL and ensure it's a valid remote database."""
-    db_uri: str = str(global_config.BACKEND_DB_URI)  # type: ignore
-    print(
-        f"✅ Using remote database: {db_uri.split('@')[1] if '@' in db_uri else 'Unknown host'}"
-    )
+    db_uri: str = str(global_config.database_uri)  # type: ignore
+    parsed_uri = urlparse(db_uri)
+    host_display = parsed_uri.hostname or "Unknown host"
+    print(f"✅ Using remote database: {host_display}")
     return db_uri
 
 

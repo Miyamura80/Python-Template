@@ -11,7 +11,7 @@ from common import global_config
 
 # Database engine
 engine = create_engine(
-    global_config.BACKEND_DB_URI,
+    global_config.database_uri,
     pool_pre_ping=True,
     pool_recycle=300,
     echo=False,  # Set to True for SQL query logging

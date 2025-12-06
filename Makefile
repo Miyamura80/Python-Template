@@ -176,9 +176,12 @@ requirements:
 
 db_test: check_uv ## Test database connection and validate it's remote
 	@echo "$(YELLOW)🔍Testing database connection...$(RESET)"
-	@uv run python -c "from common import global_config; db_uri = str(global_config.BACKEND_DB_URI); \
-	assert db_uri, f'Invalid database: {db_uri}'; \
-	print(f'✅ Remote database configured: {db_uri.split(\"@\")[1] if \"@\" in db_uri else \"Unknown\"}')"
+	@uv run python -c "from common import global_config; from urllib.parse import urlparse; \
+	    db_uri = str(global_config.database_uri); \
+	    assert db_uri, f'Invalid database: {db_uri}'; \
+	    parsed = urlparse(db_uri); \
+	    host = parsed.hostname or 'Unknown'; \
+	    print(f'✅ Remote database configured: {host}')"
 	@uv run alembic current >/dev/null 2>&1 && echo "$(GREEN)✅Database connection successful$(RESET)" || echo "$(RED)❌Database connection failed$(RESET)"
 
 db_migrate: check_uv ## Run pending database migrations

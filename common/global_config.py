@@ -5,6 +5,7 @@ from dotenv import load_dotenv, dotenv_values
 import warnings
 from loguru import logger
 import re
+from common.db_uri_resolver import resolve_db_uri
 
 # Get the path to the root directory (one level up from common)
 root_dir = Path(__file__).parent.parent
@@ -110,6 +111,23 @@ class Config:
                 raise ValueError(f"Environment variable {key} not found")
             else:
                 setattr(self, key, os.environ.get(key))
+
+        self.RAILWAY_PRIVATE_DOMAIN = os.environ.get("RAILWAY_PRIVATE_DOMAIN")
+        self.database_uri = resolve_db_uri(
+            self.BACKEND_DB_URI,
+            self.RAILWAY_PRIVATE_DOMAIN,
+        )
+
+        if self.RAILWAY_PRIVATE_DOMAIN:
+            if self.database_uri == self.BACKEND_DB_URI:
+                logger.warning(
+                    "RAILWAY_PRIVATE_DOMAIN provided but invalid; using BACKEND_DB_URI"
+                )
+            else:
+                logger.info(
+                    "Using RAILWAY_PRIVATE_DOMAIN for database connections: "
+                    f"{self.RAILWAY_PRIVATE_DOMAIN}"
+                )
 
         # Figure out runtime environment
         self.is_local = os.getenv("GITHUB_ACTIONS") != "true"
