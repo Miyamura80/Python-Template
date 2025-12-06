@@ -50,6 +50,8 @@ packages = ["src/python_template"]
 [tool.vulture]
 exclude = [
     ".venv/",
+    ".uv_tools/",
+    ".uv_cache/",
     "tests/**/test_*.py",
     "tests/test_template.py",
     "tests/e2e/e2e_test_base.py",
