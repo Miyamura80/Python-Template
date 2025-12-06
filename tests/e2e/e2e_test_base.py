@@ -12,7 +12,10 @@ from src.db.database import get_db_session
 from tests.test_template import TestTemplate
 from common import global_config
 from src.utils.logging_config import setup_logging
+from src.db.models.public.agent_conversations import AgentConversation, AgentMessage
 from src.db.models.public.profiles import WaitlistStatus, Profiles
+from src.db.models.stripe.subscription_types import SubscriptionTier
+from src.db.models.stripe.user_subscriptions import UserSubscriptions
 
 
 setup_logging(debug=True)
@@ -105,6 +108,37 @@ class E2ETestBase(TestTemplate):
         user_info = self.get_user_from_auth_headers(auth_headers)
         self.user_id = user_info["id"]
         self.auth_headers = auth_headers
+
+        # Ensure generous test quota and clean slate before each test run
+        conversation_ids_subquery = (
+            db.query(AgentConversation.id)
+            .filter(AgentConversation.user_id == self.user_id)
+            .subquery()
+        )
+        db.query(AgentMessage).filter(
+            AgentMessage.conversation_id.in_(conversation_ids_subquery)
+        ).delete(synchronize_session=False)
+        db.query(AgentConversation).filter(AgentConversation.user_id == self.user_id).delete(
+            synchronize_session=False
+        )
+
+        subscription = (
+            db.query(UserSubscriptions)
+            .filter(UserSubscriptions.user_id == self.user_id)
+            .first()
+        )
+        if subscription:
+            subscription.subscription_tier = SubscriptionTier.PLUS.value
+            subscription.is_active = True
+        else:
+            subscription = UserSubscriptions(
+                user_id=self.user_id,
+                subscription_tier=SubscriptionTier.PLUS.value,
+                is_active=True,
+            )
+            db.add(subscription)
+
+        db.commit()
         yield
 
     def get_user_from_token(self, token: str) -> dict:
