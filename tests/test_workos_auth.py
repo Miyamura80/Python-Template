@@ -107,6 +107,57 @@ class TestWorkOSAuth(TestTemplate):
         assert user.email == payload["email"]
 
     @pytest.mark.asyncio
+    async def test_missing_email_is_fetched_from_workos_api(
+        self, signing_setup, monkeypatch
+    ):
+        """Populate email via WorkOS API when the token omits it."""
+
+        now = int(time.time())
+        payload = {
+            "sub": "user_access_without_email",
+            "iss": workos_auth.WORKOS_ACCESS_ISSUER,
+            "exp": now + 3600,
+            "iat": now,
+        }
+
+        token = jwt.encode(payload, signing_setup, algorithm="RS256")
+        request = build_request_with_bearer(token)
+
+        class FakeRemoteUser:
+            def __init__(self):
+                self.email = "fetched@example.com"
+                self.first_name = "Fetched"
+                self.last_name = "User"
+
+        class FakeUserManagement:
+            def __init__(self):
+                self.requested_id = None
+
+            def get_user(self, user_id: str):
+                self.requested_id = user_id
+                return FakeRemoteUser()
+
+        fake_user_management = FakeUserManagement()
+        _ = fake_user_management.get_user(payload["sub"])
+
+        class FakeWorkOSClient:
+            def __init__(self):
+                self.user_management = fake_user_management
+
+        fake_workos_client = FakeWorkOSClient()
+        _ = fake_workos_client.user_management
+
+        monkeypatch.setattr(workos_auth, "get_workos_client", lambda: fake_workos_client)
+
+        user = await workos_auth.get_current_workos_user(request)
+
+        assert user.id == payload["sub"]
+        assert user.email == "fetched@example.com"
+        assert user.first_name == "Fetched"
+        assert user.last_name == "User"
+        assert fake_user_management.requested_id == payload["sub"]
+
+    @pytest.mark.asyncio
     async def test_token_with_untrusted_issuer_is_rejected(self, signing_setup):
         """Reject tokens that are signed but from an issuer outside the allowlist."""
 

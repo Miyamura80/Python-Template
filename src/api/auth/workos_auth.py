@@ -12,6 +12,7 @@ import jwt
 import sys
 from jwt.exceptions import DecodeError, InvalidTokenError, PyJWKClientError
 from jwt import PyJWKClient
+from workos import WorkOSClient
 
 from src.utils.logging_config import setup_logging
 from common import global_config
@@ -30,6 +31,8 @@ WORKOS_AUDIENCE = global_config.WORKOS_CLIENT_ID
 
 # Create JWKS client instance (will cache keys automatically)
 _jwks_client: PyJWKClient | None = None
+# WorkOS API client (cached)
+_workos_client: WorkOSClient | None = None
 
 
 def get_jwks_client() -> PyJWKClient:
@@ -38,6 +41,17 @@ def get_jwks_client() -> PyJWKClient:
     if _jwks_client is None:
         _jwks_client = PyJWKClient(WORKOS_JWKS_URL)
     return _jwks_client
+
+
+def get_workos_client() -> WorkOSClient:
+    """Get or create the WorkOS API client instance."""
+    global _workos_client
+    if _workos_client is None:
+        _workos_client = WorkOSClient(
+            api_key=global_config.WORKOS_API_KEY,
+            client_id=global_config.WORKOS_CLIENT_ID,
+        )
+    return _workos_client
 
 
 class WorkOSUser(BaseModel):
@@ -53,10 +67,41 @@ class WorkOSUser(BaseModel):
         """Create WorkOSUser from decoded JWT token data"""
         return cls(
             id=token_data.get("sub", ""),
-            email=token_data.get("email", ""),
+            email=token_data.get("email"),
             first_name=token_data.get("first_name"),
             last_name=token_data.get("last_name"),
         )
+
+
+def _hydrate_user_from_workos_api(user: WorkOSUser) -> WorkOSUser:
+    """
+    Populate missing user fields (like email) via the WorkOS User Management API.
+
+    Some WorkOS-issued access tokens omit profile fields. When email is missing,
+    we fetch the full user record using the user id from the token subject.
+    """
+    if user.email:
+        return user
+
+    try:
+        workos_client = get_workos_client()
+        remote_user = workos_client.user_management.get_user(user.id)
+
+        user.email = getattr(remote_user, "email", None)
+        if not user.first_name:
+            user.first_name = getattr(remote_user, "first_name", None)
+        if not user.last_name:
+            user.last_name = getattr(remote_user, "last_name", None)
+
+        if not user.email:
+            logger.warning(f"No email returned from WorkOS for user {user.id}")
+    except Exception as exc:
+        logger.warning(
+            f"Unable to fetch WorkOS user details for {user.id}: {exc}",
+            exc_info=exc,
+        )
+
+    return user
 
 
 async def get_current_workos_user(request: Request) -> WorkOSUser:
@@ -166,6 +211,9 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
                 status_code=401,
                 detail="Invalid token: missing required user id information",
             )
+
+        # Fetch missing profile fields (e.g., email) from the WorkOS API if needed.
+        user = _hydrate_user_from_workos_api(user)
 
         logger.debug(f"Successfully authenticated WorkOS user: {user.email}")
         return user
