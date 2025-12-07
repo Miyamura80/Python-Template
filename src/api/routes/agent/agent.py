@@ -10,7 +10,7 @@ import json
 import uuid
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, Callable, Iterable, Optional, cast
+from typing import Any, Callable, Iterable, Optional, Protocol, Sequence, cast
 
 import dspy
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -20,6 +20,7 @@ from loguru import logger as log
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from common import global_config
 from src.api.auth.unified_auth import get_authenticated_user_id
 from src.api.routes.agent.tools import alert_admin
 from src.api.routes.agent.utils import user_uuid_from_str
@@ -68,14 +69,65 @@ class AgentSignature(dspy.Signature):
     context: str = dspy.InputField(
         desc="Additional context about the user or situation"
     )
+    history: list[dict[str, str]] = dspy.InputField(
+        desc="Ordered conversation history as role/content pairs (oldest to newest)"
+    )
     response: str = dspy.OutputField(
         desc="Agent's helpful and comprehensive response to the user"
     )
 
 
+class MessageLike(Protocol):
+    role: str
+    content: str
+
+
 def get_agent_tools() -> list[Callable[..., Any]]:
     """Return the raw agent tools (unwrapped)."""
     return [alert_admin]
+
+
+def get_history_limit() -> int:
+    """Return configured history window for agent context."""
+    try:
+        return int(getattr(global_config.agent_chat, "history_message_limit", 20))
+    except Exception:
+        return 20
+
+
+def fetch_recent_messages(
+    db: Session, conversation_id: uuid.UUID, history_limit: int
+) -> list[AgentMessage]:
+    """Fetch recent messages for a conversation in chronological order."""
+    if history_limit <= 0:
+        return []
+
+    messages = (
+        db.query(AgentMessage)
+        .filter(AgentMessage.conversation_id == conversation_id)
+        .order_by(AgentMessage.created_at.desc())
+        .limit(history_limit)
+        .all()
+    )
+
+    return list(reversed(messages))
+
+
+def serialize_history(
+    messages: Sequence[Any], history_limit: int
+) -> list[dict[str, str]]:
+    """Convert message models into role/content pairs for LLM context."""
+    if history_limit <= 0:
+        return []
+
+    recent_messages = list(messages)[-history_limit:]
+    return [
+        {
+            "role": str(getattr(message, "role", "")),
+            "content": str(getattr(message, "content", "")),
+        }
+        for message in recent_messages
+    ]
 
 
 def build_tool_wrappers(
@@ -216,6 +268,13 @@ async def agent_endpoint(
             agent_request.message,
         )
         record_agent_message(db, conversation, "user", agent_request.message)
+        history_limit = get_history_limit()
+        history_messages = fetch_recent_messages(
+            db,
+            cast(uuid.UUID, conversation.id),
+            history_limit,
+        )
+        history_payload = serialize_history(history_messages, history_limit)
 
         # Initialize DSPY inference module with tools
         inference_module = DSPYInference(
@@ -229,6 +288,7 @@ async def agent_endpoint(
             user_id=user_id,
             message=agent_request.message,
             context=agent_request.context or "No additional context provided",
+            history=history_payload,
         )
 
         record_agent_message(db, conversation, "assistant", result.response)
@@ -314,6 +374,13 @@ async def agent_stream_endpoint(
         agent_request.message,
     )
     record_agent_message(db, conversation, "user", agent_request.message)
+    history_limit = get_history_limit()
+    history_messages = fetch_recent_messages(
+        db,
+        cast(uuid.UUID, conversation.id),
+        history_limit,
+    )
+    history_payload = serialize_history(history_messages, history_limit)
 
     async def stream_generator():
         """Generate streaming response chunks."""
@@ -340,6 +407,7 @@ async def agent_stream_endpoint(
                     user_id=user_id,
                     message=agent_request.message,
                     context=agent_request.context or "No additional context provided",
+                    history=history_payload,
                 ):
                     # Accumulate full response so we can persist it after streaming
                     response_chunks.append(chunk)
