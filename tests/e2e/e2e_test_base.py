@@ -118,9 +118,9 @@ class E2ETestBase(TestTemplate):
         db.query(AgentMessage).filter(
             AgentMessage.conversation_id.in_(conversation_ids_subquery)
         ).delete(synchronize_session=False)
-        db.query(AgentConversation).filter(AgentConversation.user_id == self.user_id).delete(
-            synchronize_session=False
-        )
+        db.query(AgentConversation).filter(
+            AgentConversation.user_id == self.user_id
+        ).delete(synchronize_session=False)
 
         subscription = (
             db.query(UserSubscriptions)

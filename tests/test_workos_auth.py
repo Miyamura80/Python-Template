@@ -147,7 +147,9 @@ class TestWorkOSAuth(TestTemplate):
         fake_workos_client = FakeWorkOSClient()
         _ = fake_workos_client.user_management
 
-        monkeypatch.setattr(workos_auth, "get_workos_client", lambda: fake_workos_client)
+        monkeypatch.setattr(
+            workos_auth, "get_workos_client", lambda: fake_workos_client
+        )
 
         user = await workos_auth.get_current_workos_user(request)
 
