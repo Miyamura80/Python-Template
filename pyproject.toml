@@ -16,7 +16,7 @@ dependencies = [
     "vulture>=2.14",
     "dspy==3.0.3",
     "langfuse>=2.60.5,<3.0.0",
-    "litellm>=1.70.0",
+    "litellm>=1.79.1",
     "tenacity>=9.1.2",
     "pillow>=11.2.1",
     "google-genai>=1.15.0",
