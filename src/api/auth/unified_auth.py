@@ -41,7 +41,13 @@ async def get_authenticated_user_id(request: Request, db_session: Session) -> st
     if auth_header and auth_header.lower().startswith("bearer "):
         try:
             workos_user = await get_current_workos_user(request)
-            logger.info(f"User authenticated via WorkOS JWT: {workos_user.id}")
+            logger.info(
+                "User authenticated via WorkOS JWT | id=%s | email=%s | path=%s | method=%s",
+                workos_user.id,
+                workos_user.email,
+                request.url.path,
+                request.method,
+            )
             return workos_user.id
         except HTTPException as e:
             logger.warning(f"WorkOS JWT authentication failed: {e.detail}")
@@ -55,7 +61,12 @@ async def get_authenticated_user_id(request: Request, db_session: Session) -> st
     if api_key:
         try:
             user_id = await get_current_user_from_api_key_header(request, db_session)
-            logger.info(f"User authenticated via API key: {user_id}")
+            logger.info(
+                "User authenticated via API key | user_id=%s | path=%s | method=%s",
+                user_id,
+                request.url.path,
+                request.method,
+            )
             return user_id
         except HTTPException as e:
             logger.warning(f"API key authentication failed: {e.detail}")
