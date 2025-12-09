@@ -14,8 +14,8 @@
   <a href="#requirements">Requirements</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#configuration-options">Configuration</a> •
-  <a href="#credits">Credits</a>
-  <a href="#related">Related</a>
+  <a href="#credits">Credits</a> •
+  <a href="#related">Related</a> •
   <a href="#about-the-core-contributors">About the Core Contributors</a>
 </p>
 
