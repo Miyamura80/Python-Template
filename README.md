@@ -24,7 +24,6 @@
 <p align="center">
   <img alt="Project Version" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fpyproject.toml&query=%24.project.version&label=version&color=blue">
   <img alt="Python Version" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fpyproject.toml&query=%24.project['requires-python']&label=python&logo=python&color=blue">
-  <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
   <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/Miyamura80/Python-Template">
   <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Miyamura80/Python-Template/test_target_tests.yaml?branch=main">
 
@@ -92,12 +91,11 @@ This software uses the following tools:
 - [DSPY: Pytorch for LLM Inference](https://dspy.ai/)
 - [LangFuse: LLM Observability Tool](https://langfuse.com/)
 
-## Related
+## About the Core Contributors
 
-Coming soon...
+<a href="https://github.com/Miyamura80/Python-Template/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Miyamura80/Python-Template" />
+</a>
 
-## You may also like...
-
-Coming soon...
-
+Made with [contrib.rocks](https://contrib.rocks).
 
