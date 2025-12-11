@@ -1,19 +1,61 @@
 """Stripe webhook handlers."""
 
 import json
-from fastapi import APIRouter, HTTPException, Request, Depends
-import stripe
-from common import global_config
-from loguru import logger
-from src.db.models.stripe.user_subscriptions import UserSubscriptions
-from sqlalchemy.orm import Session
-from src.db.database import get_db_session
-from src.db.utils.db_transaction import db_transaction
 from datetime import datetime, timezone
-from src.api.routes.payments.stripe_config import INCLUDED_UNITS
+from typing import Iterable
+
+import stripe
+from fastapi import APIRouter, Depends, HTTPException, Request
+from loguru import logger
+from sqlalchemy.orm import Session
+
+from common import global_config
 from src.api.auth.utils import user_uuid_from_str
+from src.api.routes.payments.stripe_config import INCLUDED_UNITS
+from src.db.database import get_db_session
+from src.db.models.stripe.user_subscriptions import UserSubscriptions
+from src.db.utils.db_transaction import db_transaction
 
 router = APIRouter()
+
+
+def _try_construct_event(payload: bytes, sig_header: str | None) -> dict:
+    """
+    Verify and construct the Stripe event using available secrets.
+
+    Uses the environment-appropriate secret first, then falls back to the
+    alternate secret if verification fails (helps when env vars are swapped).
+    """
+
+    def _secrets() -> Iterable[str]:
+        primary = (
+            global_config.STRIPE_WEBHOOK_SECRET
+            if global_config.DEV_ENV == "prod"
+            else global_config.STRIPE_TEST_WEBHOOK_SECRET
+        )
+        secondary = (
+            global_config.STRIPE_TEST_WEBHOOK_SECRET
+            if global_config.DEV_ENV == "prod"
+            else global_config.STRIPE_WEBHOOK_SECRET
+        )
+        if primary:
+            yield primary
+        if secondary and secondary != primary:
+            yield secondary
+
+    if not sig_header:
+        raise HTTPException(status_code=400, detail="Missing stripe-signature header")
+
+    last_error: Exception | None = None
+    for secret in _secrets():
+        try:
+            return stripe.Webhook.construct_event(payload, sig_header, secret)
+        except Exception as exc:  # noqa: B902
+            last_error = exc
+            continue
+
+    logger.error(f"Failed to verify Stripe webhook signature: {last_error}")
+    raise HTTPException(status_code=400, detail="Invalid signature")
 
 
 @router.post("/webhook/usage-reset")
@@ -31,26 +73,8 @@ async def handle_usage_reset_webhook(
         payload = await request.body()
         sig_header = request.headers.get("stripe-signature")
 
-        # Verify webhook signature
-        # Use test webhook secret in dev, production secret in prod
-        webhook_secret = (
-            global_config.STRIPE_WEBHOOK_SECRET
-            if global_config.DEV_ENV == "prod"
-            else global_config.STRIPE_TEST_WEBHOOK_SECRET
-        )
-
-        if webhook_secret:
-            try:
-                event = stripe.Webhook.construct_event(
-                    payload, sig_header, webhook_secret
-                )
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid payload")
-            except stripe.SignatureVerificationError:
-                raise HTTPException(status_code=400, detail="Invalid signature")
-        else:
-            # If no webhook secret configured, parse payload directly (dev mode)
-            event = json.loads(payload)
+        # Verify webhook signature (tries primary, then alternate secret)
+        event = _try_construct_event(payload, sig_header)
 
         # Handle invoice.payment_succeeded event
         if event.get("type") == "invoice.payment_succeeded":
@@ -105,26 +129,8 @@ async def handle_subscription_webhook(
         payload = await request.body()
         sig_header = request.headers.get("stripe-signature")
 
-        # Verify webhook signature
-        # Use test webhook secret in dev, production secret in prod
-        webhook_secret = (
-            global_config.STRIPE_WEBHOOK_SECRET
-            if global_config.DEV_ENV == "prod"
-            else global_config.STRIPE_TEST_WEBHOOK_SECRET
-        )
-
-        if webhook_secret:
-            try:
-                event = stripe.Webhook.construct_event(
-                    payload, sig_header, webhook_secret
-                )
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid payload")
-            except stripe.SignatureVerificationError:
-                raise HTTPException(status_code=400, detail="Invalid signature")
-        else:
-            # If no webhook secret configured, parse payload directly (dev mode)
-            event = json.loads(payload)
+        # Verify webhook signature (tries primary, then alternate secret)
+        event = _try_construct_event(payload, sig_header)
 
         event_type = event.get("type")
         subscription_data = event["data"]["object"]
