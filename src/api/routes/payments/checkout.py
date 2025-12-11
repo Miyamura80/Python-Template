@@ -11,6 +11,7 @@ from src.db.utils.db_transaction import db_transaction
 from datetime import datetime, timezone
 from src.api.auth.workos_auth import get_current_workos_user
 from src.api.routes.payments.stripe_config import STRIPE_PRICE_ID
+from src.api.auth.utils import user_uuid_from_str
 
 router = APIRouter()
 
@@ -27,6 +28,7 @@ async def create_checkout(request: Request, authorization: str = Header(None)):
         email = workos_user.email
         user_id = workos_user.id
         logger.debug(f"Authenticated user: {email} (ID: {user_id})")
+        user_uuid = user_uuid_from_str(user_id)
 
         if not email:
             raise HTTPException(status_code=400, detail="No email found for user")
@@ -135,6 +137,7 @@ async def cancel_subscription(
         workos_user = await get_current_workos_user(request)
         email = workos_user.email
         user_id = workos_user.id
+        user_uuid = user_uuid_from_str(user_id)
 
         if not email:
             raise HTTPException(status_code=400, detail="No email found for user")
@@ -170,7 +173,7 @@ async def cancel_subscription(
         # Update subscription in database
         subscription = (
             db.query(UserSubscriptions)
-            .filter(UserSubscriptions.user_id == user_id)
+            .filter(UserSubscriptions.user_id == user_uuid)
             .first()
         )
 

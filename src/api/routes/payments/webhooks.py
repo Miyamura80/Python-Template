@@ -11,7 +11,7 @@ from src.db.database import get_db_session
 from src.db.utils.db_transaction import db_transaction
 from datetime import datetime, timezone
 from src.api.routes.payments.stripe_config import INCLUDED_UNITS
-from src.api.routes.agent.utils import user_uuid_from_str
+from src.api.auth.utils import user_uuid_from_str
 
 router = APIRouter()
 

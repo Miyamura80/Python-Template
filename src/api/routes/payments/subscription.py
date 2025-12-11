@@ -19,6 +19,7 @@ from src.api.routes.payments.stripe_config import (
     OVERAGE_UNIT_AMOUNT,
     UNIT_LABEL,
 )
+from src.api.auth.utils import user_uuid_from_str
 
 router = APIRouter()
 
@@ -38,6 +39,7 @@ async def get_subscription_status(
         workos_user = await get_current_workos_user(request)
         email = workos_user.email
         user_id = workos_user.id
+        user_uuid = user_uuid_from_str(user_id)
 
         if not email:
             raise HTTPException(status_code=400, detail="No email found for user")
@@ -69,7 +71,7 @@ async def get_subscription_status(
                 # Update database with subscription info
                 db_subscription = (
                     db.query(UserSubscriptions)
-                    .filter(UserSubscriptions.user_id == user_id)
+                    .filter(UserSubscriptions.user_id == user_uuid)
                     .first()
                 )
 
@@ -95,6 +97,50 @@ async def get_subscription_status(
                             if db_subscription.is_active
                             else SubscriptionTier.FREE.value
                         )
+                        db_subscription.subscription_start_date = datetime.fromtimestamp(
+                            subscription.start_date, tz=timezone.utc
+                        )
+                        db_subscription.subscription_end_date = datetime.fromtimestamp(
+                            subscription.current_period_end, tz=timezone.utc
+                        )
+                        db_subscription.renewal_date = datetime.fromtimestamp(
+                            subscription.current_period_end, tz=timezone.utc
+                        )
+                else:
+                    with db_transaction(db):
+                        db_subscription = UserSubscriptions(
+                            user_id=user_uuid,
+                            stripe_subscription_id=subscription.id,
+                            stripe_subscription_item_id=subscription_item_id,
+                            billing_period_start=datetime.fromtimestamp(
+                                subscription.current_period_start, tz=timezone.utc
+                            ),
+                            billing_period_end=datetime.fromtimestamp(
+                                subscription.current_period_end, tz=timezone.utc
+                            ),
+                            included_units=INCLUDED_UNITS,
+                            is_active=subscription.status
+                            in [
+                                "active",
+                                "trialing",
+                            ],
+                            subscription_tier=(
+                                SubscriptionTier.PLUS.value
+                                if subscription.status in ["active", "trialing"]
+                                else SubscriptionTier.FREE.value
+                            ),
+                            subscription_start_date=datetime.fromtimestamp(
+                                subscription.start_date, tz=timezone.utc
+                            ),
+                            subscription_end_date=datetime.fromtimestamp(
+                                subscription.current_period_end, tz=timezone.utc
+                            ),
+                            renewal_date=datetime.fromtimestamp(
+                                subscription.current_period_end, tz=timezone.utc
+                            ),
+                            current_period_usage=0,
+                        )
+                        db.add(db_subscription)
 
                 # Determine payment status
                 payment_status = (
@@ -161,7 +207,7 @@ async def get_subscription_status(
         # Fallback to database check if no Stripe subscription found
         db_subscription = (
             db.query(UserSubscriptions)
-            .filter(UserSubscriptions.user_id == user_id)
+            .filter(UserSubscriptions.user_id == user_uuid)
             .first()
         )
 

@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session, selectinload
 
 from src.api.auth.unified_auth import get_authenticated_user_id
-from src.api.routes.agent.utils import user_uuid_from_str
+from src.api.auth.utils import user_uuid_from_str
 from src.db.database import get_db_session
 from src.db.models.public.agent_conversations import AgentConversation
 from src.utils.logging_config import setup_logging

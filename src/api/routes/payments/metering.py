@@ -15,6 +15,7 @@ from src.api.routes.payments.stripe_config import (
     INCLUDED_UNITS,
     OVERAGE_UNIT_AMOUNT,
 )
+from src.api.auth.utils import user_uuid_from_str
 
 router = APIRouter()
 
@@ -59,11 +60,12 @@ async def report_usage(
         # User authentication using WorkOS
         workos_user = await get_current_workos_user(request)
         user_id = workos_user.id
+        user_uuid = user_uuid_from_str(user_id)
 
         # Get subscription from database
         subscription = (
             db.query(UserSubscriptions)
-            .filter(UserSubscriptions.user_id == user_id)
+            .filter(UserSubscriptions.user_id == user_uuid)
             .first()
         )
 
@@ -152,11 +154,12 @@ async def get_current_usage(
         # User authentication using WorkOS
         workos_user = await get_current_workos_user(request)
         user_id = workos_user.id
+        user_uuid = user_uuid_from_str(user_id)
 
         # Get subscription from database
         subscription = (
             db.query(UserSubscriptions)
-            .filter(UserSubscriptions.user_id == user_id)
+            .filter(UserSubscriptions.user_id == user_uuid)
             .first()
         )
 
