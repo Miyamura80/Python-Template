@@ -10,10 +10,10 @@ alwaysApply: false
 Please follow the following for commit message convention:
 
 - 🏗️ {msg} : initial first pass implementation 
-- 🐛 {msg} : bugfix
-- ✨ {msg} : code formatting/linting fix/cleanup
-- 📝 {msg} : update documentation (incl cursorrules/AGENT.md)
 - 🔨 {msg} : make feature changes to code, not fully tested
+- 🐛 {msg} : bugfix based on an initial user reported error/debugging, not fully tested
+- ✨ {msg} : code formatting/linting fix/cleanup. Only use when nothing has changed functionally.
+- 📝 {msg} : update documentation (incl cursorrules/AGENT.md)
 - ✅ {msg} : fetaure implemented, E2E tests written, tests passing
 - ⚙️ {msg} : configurations changed (not source code, more like config files)
 - 👀 {msg} : logging/debugging prints/observability added
