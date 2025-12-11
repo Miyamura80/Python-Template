@@ -5,6 +5,7 @@ import stripe
 from common import global_config
 from loguru import logger
 from src.db.models.stripe.user_subscriptions import UserSubscriptions
+from src.db.models.public.profiles import Profiles
 from sqlalchemy.orm import Session
 from src.db.database import get_db_session
 from src.db.utils.db_transaction import db_transaction
@@ -15,6 +16,21 @@ from src.api.auth.utils import user_uuid_from_str
 from src.db.models.stripe.subscription_types import SubscriptionTier
 
 router = APIRouter()
+
+
+def _ensure_profile_exists(db: Session, user_uuid, email: str | None) -> None:
+    """Guarantee a Profiles row for the user to satisfy FK constraints."""
+    profile = db.query(Profiles).filter(Profiles.user_id == user_uuid).first()
+    if profile:
+        return
+    with db_transaction(db):
+        db.add(
+            Profiles(
+                user_id=user_uuid,
+                email=email,
+                is_approved=True,
+            )
+        )
 
 
 @router.post("/checkout/create")
@@ -34,6 +50,9 @@ async def create_checkout(
         user_id = workos_user.id
         logger.debug(f"Authenticated user: {email} (ID: {user_id})")
         user_uuid = user_uuid_from_str(user_id)
+
+        # Ensure profile exists for FK consistency before subscription writes
+        _ensure_profile_exists(db, user_uuid, email)
 
         if not email:
             raise HTTPException(status_code=400, detail="No email found for user")
