@@ -48,6 +48,23 @@ class AgentRequest(BaseModel):
     )
 
 
+class ConversationMessage(BaseModel):
+    """Single message within a conversation snapshot."""
+
+    role: str
+    content: str
+    created_at: datetime
+
+
+class ConversationPayload(BaseModel):
+    """Conversation snapshot containing title and ordered messages."""
+
+    id: uuid.UUID
+    title: str
+    updated_at: datetime
+    conversation: list[ConversationMessage]
+
+
 class AgentResponse(BaseModel):
     """Response model for agent endpoint."""
 
@@ -58,6 +75,12 @@ class AgentResponse(BaseModel):
     user_id: str = Field(..., description="Authenticated user ID")
     conversation_id: uuid.UUID = Field(
         ..., description="Conversation identifier for the interaction"
+    )
+    conversation: ConversationPayload | None = Field(
+        None,
+        description=(
+            "Snapshot of the conversation including title and back-and-forth messages"
+        ),
     )
 
 
@@ -168,6 +191,32 @@ def _conversation_title_from_message(message: str) -> str:
     if len(condensed) > 80:
         return f"{condensed[:80]}..."
     return condensed
+
+
+def build_conversation_payload(
+    conversation: AgentConversation,
+    messages: Sequence[AgentMessage],
+    history_limit: int,
+) -> ConversationPayload:
+    """Create a conversation payload limited to the configured history window."""
+    if history_limit <= 0:
+        trimmed_messages: list[AgentMessage] = []
+    else:
+        trimmed_messages = list(messages)[-history_limit:]
+
+    return ConversationPayload(
+        id=cast(uuid.UUID, conversation.id),
+        title=conversation.title or "Untitled chat",
+        updated_at=cast(datetime, conversation.updated_at),
+        conversation=[
+            ConversationMessage(
+                role=cast(str, message.role),
+                content=cast(str, message.content),
+                created_at=cast(datetime, message.created_at),
+            )
+            for message in trimmed_messages
+        ],
+    )
 
 
 def get_or_create_conversation_record(
@@ -291,7 +340,16 @@ async def agent_endpoint(
             history=history_payload,
         )
 
-        record_agent_message(db, conversation, "assistant", result.response)
+        assistant_message = record_agent_message(
+            db,
+            conversation,
+            "assistant",
+            result.response,
+        )
+        history_with_assistant = [*history_messages, assistant_message]
+        conversation_snapshot = build_conversation_payload(
+            conversation, history_with_assistant, history_limit
+        )
         log.info(
             f"Agent response generated for user {user_id} in conversation {conversation.id}"
         )
@@ -300,6 +358,7 @@ async def agent_endpoint(
             response=result.response,
             user_id=user_id,
             conversation_id=cast(uuid.UUID, conversation.id),
+            conversation=conversation_snapshot,
             reasoning=None,  # DSPY ReAct doesn't expose reasoning in the result
         )
 
@@ -312,7 +371,10 @@ async def agent_endpoint(
             else agent_request.conversation_id or uuid.uuid4()
         )
         return AgentResponse(
-            response="I apologize, but I encountered an error processing your request. Please try again or contact support if the issue persists.",
+            response=(
+                "I apologize, but I encountered an error processing your request. "
+                "Please try again or contact support if the issue persists."
+            ),
             user_id=user_id,
             conversation_id=conversation_id,
             reasoning=f"Error: {str(e)}",
@@ -381,6 +443,7 @@ async def agent_stream_endpoint(
         history_limit,
     )
     history_payload = serialize_history(history_messages, history_limit)
+    conversation_title = conversation.title or "Untitled chat"
 
     async def stream_generator():
         """Generate streaming response chunks."""
@@ -389,9 +452,23 @@ async def agent_stream_endpoint(
             tool_functions = build_tool_wrappers(user_id, tools=raw_tools)
             tool_names = [tool_name(tool) for tool in raw_tools]
             response_chunks: list[str] = []
+            token_emitted = False
 
             # Send initial metadata (include tool info for transparency)
-            yield f"data: {json.dumps({'type': 'start', 'user_id': user_id, 'conversation_id': str(conversation.id), 'tools_enabled': bool(tool_functions), 'tool_names': tool_names})}\n\n"
+            yield (
+                "data: "
+                + json.dumps(
+                    {
+                        "type": "start",
+                        "user_id": user_id,
+                        "conversation_id": str(conversation.id),
+                        "conversation_title": conversation_title,
+                        "tools_enabled": bool(tool_functions),
+                        "tool_names": tool_names,
+                    }
+                )
+                + "\n\n"
+            )
 
             async def stream_with_inference(tools: list):
                 """Stream using DSPY with the provided tools list."""
@@ -411,7 +488,12 @@ async def agent_stream_endpoint(
                 ):
                     # Accumulate full response so we can persist it after streaming
                     response_chunks.append(chunk)
-                    yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+                    token_emitted = True
+                    yield (
+                        "data: "
+                        + json.dumps({"type": "token", "content": chunk})
+                        + "\n\n"
+                    )
 
             full_response: str | None = None
             try:
@@ -429,7 +511,17 @@ async def agent_stream_endpoint(
                     "Tool-enabled streaming encountered an issue. "
                     "Continuing without tools for this response."
                 )
-                yield f"data: {json.dumps({'type': 'warning', 'code': 'tool_fallback', 'message': warning_msg})}\n\n"
+                yield (
+                    "data: "
+                    + json.dumps(
+                        {
+                            "type": "warning",
+                            "code": "tool_fallback",
+                            "message": warning_msg,
+                        }
+                    )
+                    + "\n\n"
+                )
 
                 # Fallback path: stream without tools to still deliver a response
                 async for token_chunk in stream_with_inference([]):
@@ -437,7 +529,69 @@ async def agent_stream_endpoint(
                 full_response = "".join(response_chunks)
 
             if full_response:
-                record_agent_message(db, conversation, "assistant", full_response)
+                assistant_message = record_agent_message(
+                    db, conversation, "assistant", full_response
+                )
+                history_messages.append(assistant_message)
+                conversation_snapshot = build_conversation_payload(
+                    conversation, history_messages, history_limit
+                )
+                yield (
+                    "data: "
+                    + json.dumps(
+                        {
+                            "type": "conversation",
+                            "conversation": conversation_snapshot.model_dump(
+                                mode="json"
+                            ),
+                        }
+                    )
+                    + "\n\n"
+                )
+            else:
+                # Ensure at least one token is emitted even if streaming produced none
+                log.warning(
+                    "Streaming produced no tokens for user %s; running non-streaming fallback",
+                    user_id,
+                )
+                fallback_inference = DSPYInference(
+                    pred_signature=AgentSignature,
+                    tools=tool_functions,
+                    observe=True,
+                )
+                result = await fallback_inference.run(
+                    user_id=user_id,
+                    message=agent_request.message,
+                    context=agent_request.context
+                    or "No additional context provided",
+                    history=history_payload,
+                )
+                full_response = result.response
+                token_emitted = True
+                yield (
+                    "data: "
+                    + json.dumps({"type": "token", "content": full_response})
+                    + "\n\n"
+                )
+                assistant_message = record_agent_message(
+                    db, conversation, "assistant", full_response
+                )
+                history_messages.append(assistant_message)
+                conversation_snapshot = build_conversation_payload(
+                    conversation, history_messages, history_limit
+                )
+                yield (
+                    "data: "
+                    + json.dumps(
+                        {
+                            "type": "conversation",
+                            "conversation": conversation_snapshot.model_dump(
+                                mode="json"
+                            ),
+                        }
+                    )
+                    + "\n\n"
+                )
 
             # Send completion signal
             yield f"data: {json.dumps({'type': 'done'})}\n\n"

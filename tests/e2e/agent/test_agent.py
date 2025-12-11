@@ -179,6 +179,10 @@ class TestAgent(E2ETestBase):
         assert "response" in data
         assert "user_id" in data
         assert "conversation_id" in data
+        assert "conversation" in data
+        assert data["conversation"]["title"]
+        assert len(data["conversation"]["conversation"]) >= 2
+        assert data["conversation"]["conversation"][0]["role"] == "user"
 
         # Verify response is substantial for a complex query
         assert len(data["response"]) > 50
@@ -205,16 +209,17 @@ class TestAgent(E2ETestBase):
         assert history_response.status_code == 200
         history_data = history_response.json()
 
-        assert "conversations" in history_data
-        assert len(history_data["conversations"]) >= 1
+        assert "history" in history_data
+        assert len(history_data["history"]) >= 1
 
         matching_conversation = next(
-            (c for c in history_data["conversations"] if c["id"] == conversation_id),
+            (c for c in history_data["history"] if c["id"] == conversation_id),
             None,
         )
         assert matching_conversation is not None
-        assert len(matching_conversation["messages"]) >= 2
-        assert matching_conversation["messages"][0]["role"] == "user"
+        assert matching_conversation["title"]
+        assert len(matching_conversation["conversation"]) >= 2
+        assert matching_conversation["conversation"][0]["role"] == "user"
 
     def test_agent_stream_requires_authentication(self):
         """Test that agent streaming endpoint requires authentication"""
@@ -258,6 +263,7 @@ class TestAgent(E2ETestBase):
                     assert "user_id" in data
                     assert data["user_id"] == self.user_id
                     assert "conversation_id" in data
+                    assert data.get("conversation_title")
                     assert data.get("tools_enabled") is not None
                     assert isinstance(data.get("tool_names"), list)
                 elif data["type"] == "token":
@@ -373,12 +379,12 @@ class TestAgent(E2ETestBase):
         assert history_response.status_code == 200
         history_data = history_response.json()
         conversation = next(
-            (c for c in history_data["conversations"] if c["id"] == conversation_id),
+            (c for c in history_data["history"] if c["id"] == conversation_id),
             None,
         )
 
         assert conversation is not None
-        assert len(conversation["messages"]) >= 2
-        assert conversation["messages"][0]["role"] == "user"
-        assert conversation["messages"][-1]["role"] == "assistant"
-        assert conversation["messages"][-1]["content"] == full_response
+        assert len(conversation["conversation"]) >= 2
+        assert conversation["conversation"][0]["role"] == "user"
+        assert conversation["conversation"][-1]["role"] == "assistant"
+        assert conversation["conversation"][-1]["content"] == full_response
