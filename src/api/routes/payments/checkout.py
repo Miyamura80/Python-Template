@@ -10,14 +10,19 @@ from src.db.database import get_db_session
 from src.db.utils.db_transaction import db_transaction
 from datetime import datetime, timezone
 from src.api.auth.workos_auth import get_current_workos_user
-from src.api.routes.payments.stripe_config import STRIPE_PRICE_ID
+from src.api.routes.payments.stripe_config import STRIPE_PRICE_ID, INCLUDED_UNITS
 from src.api.auth.utils import user_uuid_from_str
+from src.db.models.stripe.subscription_types import SubscriptionTier
 
 router = APIRouter()
 
 
 @router.post("/checkout/create")
-async def create_checkout(request: Request, authorization: str = Header(None)):
+async def create_checkout(
+    request: Request,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db_session),
+):
     """Create a Stripe checkout session for subscription."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="No valid authorization header")
@@ -73,6 +78,74 @@ async def create_checkout(request: Request, authorization: str = Header(None)):
             logger.debug(f"Found existing subscription with status: {sub['status']}")
             if sub["status"] in ["active", "trialing"]:
                 logger.debug(f"Subscription already exists and is {sub['status']}")
+                # Ensure local subscription record is up to date so limits use the correct tier
+                subscription_item_id = None
+                for item in sub.get("items", {}).get("data", []):
+                    subscription_item_id = item.get("id")
+                    break
+
+                existing_subscription = (
+                    db.query(UserSubscriptions)
+                    .filter(UserSubscriptions.user_id == user_uuid)
+                    .first()
+                )
+
+                if existing_subscription:
+                    with db_transaction(db):
+                        existing_subscription.stripe_subscription_id = sub["id"]
+                        existing_subscription.stripe_subscription_item_id = (
+                            subscription_item_id
+                        )
+                        existing_subscription.is_active = True
+                        existing_subscription.subscription_tier = (
+                            SubscriptionTier.PLUS.value
+                        )
+                        existing_subscription.billing_period_start = datetime.fromtimestamp(
+                            sub["current_period_start"], tz=timezone.utc
+                        )
+                        existing_subscription.billing_period_end = datetime.fromtimestamp(
+                            sub["current_period_end"], tz=timezone.utc
+                        )
+                        existing_subscription.subscription_start_date = datetime.fromtimestamp(
+                            sub["start_date"], tz=timezone.utc
+                        )
+                        existing_subscription.subscription_end_date = datetime.fromtimestamp(
+                            sub["current_period_end"], tz=timezone.utc
+                        )
+                        existing_subscription.renewal_date = datetime.fromtimestamp(
+                            sub["current_period_end"], tz=timezone.utc
+                        )
+                        existing_subscription.included_units = INCLUDED_UNITS
+                        if existing_subscription.current_period_usage is None:
+                            existing_subscription.current_period_usage = 0
+                else:
+                    with db_transaction(db):
+                        new_subscription = UserSubscriptions(
+                            user_id=user_uuid,
+                            stripe_subscription_id=sub["id"],
+                            stripe_subscription_item_id=subscription_item_id,
+                            is_active=True,
+                            subscription_tier=SubscriptionTier.PLUS.value,
+                            billing_period_start=datetime.fromtimestamp(
+                                sub["current_period_start"], tz=timezone.utc
+                            ),
+                            billing_period_end=datetime.fromtimestamp(
+                                sub["current_period_end"], tz=timezone.utc
+                            ),
+                            subscription_start_date=datetime.fromtimestamp(
+                                sub["start_date"], tz=timezone.utc
+                            ),
+                            subscription_end_date=datetime.fromtimestamp(
+                                sub["current_period_end"], tz=timezone.utc
+                            ),
+                            renewal_date=datetime.fromtimestamp(
+                                sub["current_period_end"], tz=timezone.utc
+                            ),
+                            included_units=INCLUDED_UNITS,
+                            current_period_usage=0,
+                        )
+                        db.add(new_subscription)
+
                 raise HTTPException(
                     status_code=400,
                     detail={
