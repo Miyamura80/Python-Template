@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from common import global_config
 from src.api.auth.unified_auth import get_authenticated_user_id
 from src.api.routes.agent.tools import alert_admin
-from src.api.routes.agent.utils import user_uuid_from_str
+from src.api.auth.utils import user_uuid_from_str
 from src.api.limits import ensure_daily_limit
 from src.db.database import get_db_session
 from src.db.utils.db_transaction import db_transaction
