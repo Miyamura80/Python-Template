@@ -56,7 +56,8 @@ class TestDailyLimits(TestTemplate):
         assert status_snapshot.remaining == 0
         detail = status_snapshot.to_error_detail()
         assert detail["code"] == "daily_limit_exceeded"
-        assert "limit reached" in detail["message"].lower()
+        detail_message = cast(str, detail["message"])
+        assert "limit reached" in detail_message.lower()
 
     def test_exceeding_limit_can_be_enforced(self, monkeypatch):
         """Should still allow enforcement to raise 402 when explicitly requested."""

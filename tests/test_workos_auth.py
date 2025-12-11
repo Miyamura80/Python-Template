@@ -138,7 +138,7 @@ class TestWorkOSAuth(TestTemplate):
                 return FakeRemoteUser()
 
         fake_user_management = FakeUserManagement()
-        _ = fake_user_management.get_user(payload["sub"])
+        _ = fake_user_management.get_user(str(payload["sub"]))
 
         class FakeWorkOSClient:
             def __init__(self):

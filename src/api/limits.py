@@ -114,7 +114,10 @@ def _count_today_user_messages(db: Session, user_uuid: uuid.UUID) -> int:
 
 
 def ensure_daily_limit(
-    db: Session, user_uuid: uuid.UUID, limit_name: str = DEFAULT_LIMIT_NAME
+    db: Session,
+    user_uuid: uuid.UUID,
+    limit_name: str = DEFAULT_LIMIT_NAME,
+    enforce: bool = False,
 ) -> LimitStatus:
     """
     Ensure the user is within their daily quota for the specified limit.
@@ -146,10 +149,11 @@ def ensure_daily_limit(
             limit_value,
             tier_key,
         )
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail=status_snapshot.to_error_detail(),
-        )
+        if enforce:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=status_snapshot.to_error_detail(),
+            )
 
     log.debug(
         "User %s within %s limit: %s/%s (%s remaining, tier=%s)",

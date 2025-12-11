@@ -206,7 +206,7 @@ def build_conversation_payload(
 
     return ConversationPayload(
         id=cast(uuid.UUID, conversation.id),
-        title=conversation.title or "Untitled chat",
+        title=str(conversation.title) if conversation.title else "Untitled chat",
         updated_at=cast(datetime, conversation.updated_at),
         conversation=[
             ConversationMessage(
@@ -297,7 +297,7 @@ async def agent_endpoint(
     user_uuid = user_uuid_from_str(user_id)
     langfuse_context.update_current_observation(name=f"agent-{user_id}")
 
-    limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid)
+    limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid, enforce=True)
     log.info(
         f"Agent request from user {user_id}: {agent_request.message[:100]}...",
     )
@@ -417,7 +417,7 @@ async def agent_stream_endpoint(
     user_uuid = user_uuid_from_str(user_id)
     langfuse_context.update_current_observation(name=f"agent-stream-{user_id}")
 
-    limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid)
+    limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid, enforce=True)
     log.debug(
         f"Agent streaming request from user {user_id}: {agent_request.message[:100]}..."
     )

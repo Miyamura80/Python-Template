@@ -53,7 +53,7 @@ def map_conversation_to_history_unit(
 
     return ChatHistoryUnit(
         id=conversation_id,
-        title=conversation.title or "Untitled chat",
+        title=str(conversation.title) if conversation.title else "Untitled chat",
         updated_at=updated_at,
         conversation=[
             ChatMessageModel(
