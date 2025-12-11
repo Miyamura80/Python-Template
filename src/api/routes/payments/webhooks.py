@@ -11,6 +11,7 @@ from src.db.database import get_db_session
 from src.db.utils.db_transaction import db_transaction
 from datetime import datetime, timezone
 from src.api.routes.payments.stripe_config import INCLUDED_UNITS
+from src.api.routes.agent.utils import user_uuid_from_str
 
 router = APIRouter()
 
@@ -138,7 +139,14 @@ async def handle_subscription_webhook(
             metadata = subscription_data.get("metadata", {})
             user_id = metadata.get("user_id")
 
-            if user_id:
+            if not user_id:
+                logger.warning(
+                    "Subscription created event missing user_id metadata for subscription %s",
+                    subscription_id,
+                )
+            else:
+                user_uuid = user_uuid_from_str(user_id)
+
                 # Extract subscription item ID (single item)
                 subscription_item_id = None
                 for item in subscription_data.get("items", {}).get("data", []):
@@ -148,7 +156,7 @@ async def handle_subscription_webhook(
                 # Update or create subscription record
                 subscription = (
                     db.query(UserSubscriptions)
-                    .filter(UserSubscriptions.user_id == user_id)
+                    .filter(UserSubscriptions.user_id == user_uuid)
                     .first()
                 )
 
@@ -167,12 +175,12 @@ async def handle_subscription_webhook(
                             subscription_data.get("current_period_end"), tz=timezone.utc
                         )
                         subscription.current_period_usage = 0
-                    logger.info(f"Updated subscription for user {user_id}")
+                    logger.info(f"Updated subscription for user {user_uuid}")
                 else:
                     # Create new subscription record
                     trial_start = subscription_data.get("trial_start")
                     new_subscription = UserSubscriptions(
-                        user_id=user_id,
+                        user_id=user_uuid,
                         stripe_subscription_id=subscription_id,
                         stripe_subscription_item_id=subscription_item_id,
                         is_active=True,
@@ -194,7 +202,7 @@ async def handle_subscription_webhook(
                     )
                     with db_transaction(db):
                         db.add(new_subscription)
-                    logger.info(f"Created subscription for user {user_id}")
+                    logger.info(f"Created subscription for user {user_uuid}")
 
         elif event_type == "customer.subscription.deleted":
             # Handle subscription cancellation
