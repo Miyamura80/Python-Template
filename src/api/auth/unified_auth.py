@@ -41,7 +41,7 @@ async def get_authenticated_user_id(request: Request, db_session: Session) -> st
     if auth_header and auth_header.lower().startswith("bearer "):
         try:
             workos_user = await get_current_workos_user(request)
-            logger.info(
+            logger.debug(
                 "User authenticated via WorkOS JWT | id=%s | email=%s | path=%s | method=%s",
                 workos_user.id,
                 workos_user.email,

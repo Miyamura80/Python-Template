@@ -97,8 +97,10 @@ async def get_subscription_status(
                             if db_subscription.is_active
                             else SubscriptionTier.FREE.value
                         )
-                        db_subscription.subscription_start_date = datetime.fromtimestamp(
-                            subscription.start_date, tz=timezone.utc
+                        db_subscription.subscription_start_date = (
+                            datetime.fromtimestamp(
+                                subscription.start_date, tz=timezone.utc
+                            )
                         )
                         db_subscription.subscription_end_date = datetime.fromtimestamp(
                             subscription.current_period_end, tz=timezone.utc

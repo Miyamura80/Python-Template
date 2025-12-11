@@ -119,17 +119,23 @@ async def create_checkout(
                         existing_subscription.subscription_tier = (
                             SubscriptionTier.PLUS.value
                         )
-                        existing_subscription.billing_period_start = datetime.fromtimestamp(
-                            sub["current_period_start"], tz=timezone.utc
+                        existing_subscription.billing_period_start = (
+                            datetime.fromtimestamp(
+                                sub["current_period_start"], tz=timezone.utc
+                            )
                         )
-                        existing_subscription.billing_period_end = datetime.fromtimestamp(
-                            sub["current_period_end"], tz=timezone.utc
+                        existing_subscription.billing_period_end = (
+                            datetime.fromtimestamp(
+                                sub["current_period_end"], tz=timezone.utc
+                            )
                         )
-                        existing_subscription.subscription_start_date = datetime.fromtimestamp(
-                            sub["start_date"], tz=timezone.utc
+                        existing_subscription.subscription_start_date = (
+                            datetime.fromtimestamp(sub["start_date"], tz=timezone.utc)
                         )
-                        existing_subscription.subscription_end_date = datetime.fromtimestamp(
-                            sub["current_period_end"], tz=timezone.utc
+                        existing_subscription.subscription_end_date = (
+                            datetime.fromtimestamp(
+                                sub["current_period_end"], tz=timezone.utc
+                            )
                         )
                         existing_subscription.renewal_date = datetime.fromtimestamp(
                             sub["current_period_end"], tz=timezone.utc
