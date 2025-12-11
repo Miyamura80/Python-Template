@@ -21,48 +21,42 @@ setup_logging()
 router = APIRouter()
 
 
-class AgentMessageModel(BaseModel):
-    """Response model for individual chat messages."""
+class ChatMessageModel(BaseModel):
+    """Single chat message within a conversation."""
 
-    id: uuid.UUID
     role: str
     content: str
     created_at: datetime
 
 
-class AgentConversationModel(BaseModel):
-    """Response model for conversations with embedded messages."""
+class ChatHistoryUnit(BaseModel):
+    """A single unit of chat history."""
 
     id: uuid.UUID
-    title: str | None = None
-    created_at: datetime
+    title: str
     updated_at: datetime
-    messages: list[AgentMessageModel]
+    conversation: list[ChatMessageModel]
 
 
 class AgentHistoryResponse(BaseModel):
     """Response model for chat history."""
 
-    conversations: list[AgentConversationModel]
+    history: list[ChatHistoryUnit]
 
 
-def map_conversation_to_model(
+def map_conversation_to_history_unit(
     conversation: AgentConversation,
-) -> AgentConversationModel:
-    """Map ORM conversation with messages to response model."""
+) -> ChatHistoryUnit:
+    """Map ORM conversation with messages to a history unit."""
     conversation_id = cast(uuid.UUID, conversation.id)
-    title = cast(str | None, conversation.title)
-    created_at = cast(datetime, conversation.created_at)
     updated_at = cast(datetime, conversation.updated_at)
 
-    return AgentConversationModel(
+    return ChatHistoryUnit(
         id=conversation_id,
-        title=title,
-        created_at=created_at,
+        title=conversation.title or "Untitled chat",
         updated_at=updated_at,
-        messages=[
-            AgentMessageModel(
-                id=cast(uuid.UUID, message.id),
+        conversation=[
+            ChatMessageModel(
                 role=cast(str, message.role),
                 content=cast(str, message.content),
                 created_at=cast(datetime, message.created_at),
@@ -83,6 +77,9 @@ async def agent_history_endpoint(
 
     This endpoint returns all conversations for the authenticated user,
     including ordered messages within each conversation.
+
+    A unit of history now contains the chat title and the full back-and-forth
+    conversation messages.
     """
 
     user_id = await get_authenticated_user_id(request, db)
@@ -104,5 +101,5 @@ async def agent_history_endpoint(
     )
 
     return AgentHistoryResponse(
-        conversations=[map_conversation_to_model(conv) for conv in conversations]
+        history=[map_conversation_to_history_unit(conv) for conv in conversations]
     )

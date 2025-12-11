@@ -34,8 +34,32 @@ class TestDailyLimits(TestTemplate):
         assert status_snapshot.used_today == 3
         assert status_snapshot.remaining == 2
 
-    def test_exceeding_limit_raises_payment_required(self, monkeypatch):
-        """Should raise 402 when usage exceeds the configured limit."""
+    def test_exceeding_limit_returns_status_without_enforcement(self, monkeypatch):
+        """Should warn but not raise when over limit unless enforcement is enabled."""
+        db_stub = cast(Session, None)
+        monkeypatch.setattr(
+            daily_limits, "_resolve_tier_for_user", lambda db, user_uuid: "plus_tier"
+        )
+        monkeypatch.setattr(
+            daily_limits, "_count_today_user_messages", lambda db, user_uuid: 30
+        )
+
+        status_snapshot = daily_limits.ensure_daily_limit(
+            db=db_stub,
+            user_uuid=uuid.uuid4(),
+            limit_name=daily_limits.DEFAULT_LIMIT_NAME,
+        )
+
+        assert not status_snapshot.is_within_limit
+        assert status_snapshot.limit_value == 25
+        assert status_snapshot.used_today == 30
+        assert status_snapshot.remaining == 0
+        detail = status_snapshot.to_error_detail()
+        assert detail["code"] == "daily_limit_exceeded"
+        assert "limit reached" in detail["message"].lower()
+
+    def test_exceeding_limit_can_be_enforced(self, monkeypatch):
+        """Should still allow enforcement to raise 402 when explicitly requested."""
         db_stub = cast(Session, None)
         monkeypatch.setattr(
             daily_limits, "_resolve_tier_for_user", lambda db, user_uuid: "plus_tier"
@@ -49,6 +73,7 @@ class TestDailyLimits(TestTemplate):
                 db=db_stub,
                 user_uuid=uuid.uuid4(),
                 limit_name=daily_limits.DEFAULT_LIMIT_NAME,
+                enforce=True,
             )
 
         error = cast(HTTPException, exc_info.value)
