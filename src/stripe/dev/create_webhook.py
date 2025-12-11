@@ -2,6 +2,7 @@ import yaml
 import stripe
 from loguru import logger as log
 from common import global_config
+from src.api.routes.payments.stripe_config import STRIPE_PRICE_ID  # noqa: F401
 from src.utils.logging_config import setup_logging
 
 setup_logging()
@@ -14,7 +15,13 @@ with open("src/stripe/dev/env_config.yaml", "r") as file:
 def create_or_update_webhook_endpoint():
     """Create a new webhook endpoint or update existing one with subscription and invoice event listeners."""
 
-    stripe.api_key = global_config.STRIPE_SECRET_KEY
+    # Use the same key selection logic as the app (test key in dev, live in prod)
+    stripe.api_key = (
+        global_config.STRIPE_SECRET_KEY
+        if global_config.DEV_ENV == "prod"
+        else global_config.STRIPE_TEST_SECRET_KEY
+    )
+    stripe.api_version = global_config.stripe.api_version
 
     try:
         webhook_config = config["webhook"]
