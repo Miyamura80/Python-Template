@@ -418,7 +418,7 @@ async def agent_stream_endpoint(
     langfuse_context.update_current_observation(name=f"agent-stream-{user_id}")
 
     limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid)
-    log.info(
+    log.debug(
         f"Agent streaming request from user {user_id}: {agent_request.message[:100]}..."
     )
     log.debug(
@@ -452,7 +452,6 @@ async def agent_stream_endpoint(
             tool_functions = build_tool_wrappers(user_id, tools=raw_tools)
             tool_names = [tool_name(tool) for tool in raw_tools]
             response_chunks: list[str] = []
-            token_emitted = False
 
             # Send initial metadata (include tool info for transparency)
             yield (
@@ -488,7 +487,6 @@ async def agent_stream_endpoint(
                 ):
                     # Accumulate full response so we can persist it after streaming
                     response_chunks.append(chunk)
-                    token_emitted = True
                     yield (
                         "data: "
                         + json.dumps({"type": "token", "content": chunk})
@@ -562,12 +560,10 @@ async def agent_stream_endpoint(
                 result = await fallback_inference.run(
                     user_id=user_id,
                     message=agent_request.message,
-                    context=agent_request.context
-                    or "No additional context provided",
+                    context=agent_request.context or "No additional context provided",
                     history=history_payload,
                 )
                 full_response = result.response
-                token_emitted = True
                 yield (
                     "data: "
                     + json.dumps({"type": "token", "content": full_response})
@@ -596,7 +592,7 @@ async def agent_stream_endpoint(
             # Send completion signal
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
-            log.info(f"Agent streaming response completed for user {user_id}")
+            log.debug(f"Agent streaming response completed for user {user_id}")
 
         except Exception as e:
             log.error(

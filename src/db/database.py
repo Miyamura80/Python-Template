@@ -4,9 +4,13 @@ Database connection and session management
 
 from contextlib import contextmanager
 from typing import Generator
+
+from fastapi import HTTPException
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
+
 from loguru import logger as log
+
 from common import global_config
 
 # Database engine
@@ -32,7 +36,10 @@ def get_db_session() -> Generator[Session, None, None]:
     try:
         yield db_session
     except Exception as e:
-        log.error(f"Database session error: {e}")
+        if isinstance(e, HTTPException) and e.status_code == 402:
+            log.warning(f"Database session raised HTTP 402: {e.detail}")
+        else:
+            log.error(f"Database session error: {e}")
         db_session.rollback()
         raise
     finally:

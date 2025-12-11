@@ -94,7 +94,7 @@ async def agent_history_endpoint(
         .all()
     )
 
-    log.info(
+    log.debug(
         "Fetched %s conversations for user %s",
         len(conversations),
         user_id,

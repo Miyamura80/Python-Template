@@ -1,6 +1,5 @@
 """Stripe webhook handlers."""
 
-import json
 from datetime import datetime, timezone
 from typing import Iterable
 
@@ -165,7 +164,9 @@ async def handle_subscription_webhook(
 
             if customer_id:
                 try:
-                    customer = stripe.Customer.retrieve(customer_id, api_key=stripe.api_key)
+                    customer = stripe.Customer.retrieve(
+                        customer_id, api_key=stripe.api_key
+                    )
                     customer_email = customer.get("email")
                 except Exception as exc:  # noqa: B902
                     logger.warning(

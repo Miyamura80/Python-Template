@@ -138,7 +138,7 @@ def ensure_daily_limit(
     )
 
     if not status_snapshot.is_within_limit:
-        log.info(
+        log.warning(
             "User %s exceeded %s limit: used %s of %s (%s tier)",
             user_uuid,
             limit_name,
