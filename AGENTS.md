@@ -2,7 +2,7 @@
 
 Before running the project, you need to set the required environment variables. These are defined in `common/global_config.py`.
 
-Create a `.env` file in the root of the project and add the environment variables defined in `common/global_config.py`. You can find the required keys in the `REQUIRED_ENV_VARS` list within the `Config` class.
+Create a `.env` file in the root of the project and add the environment variables defined in `common/global_config.py`. You can find the required keys as fields in the `Config` class (any field with type `str` that looks like an API key).
 
 Before submitting any PR, it should always run `make ci` first so that it can see the CI outputs and fix any issues that come up
 
@@ -18,14 +18,20 @@ This document provides instructions for you, the AI agent, on how to work with t
 
 ## Global Configuration
 
-This project uses a centralized system for managing global configuration, including hyperparameters and secrets.
+This project uses a centralized system for managing global configuration, including hyperparameters and secrets. The configuration is powered by **pydantic-settings**, which provides automatic validation and type checking.
+
+**Configuration Files:**
+- `common/global_config.yaml` - Base configuration values
+- `common/config_models.py` - Pydantic models defining the structure and validation
+- `common/global_config.py` - Main Config class using BaseSettings
+- `.env` - Environment variables and secrets (git-ignored)
 
 ## Dependency Management
 
 Never use `uv pip`. Instead, run `uv --help` to see the available commands for dependency management.
 
--   **Hyperparameters:** Add any hyperparameters that apply across the entire codebase to `common/global_config.yaml`. Do not define them as constants in the code. Examples include `MAX_RETRIES` and `MODEL_NAME`.
--   **Secrets:** Store private keys and other secrets in a `.env` file in the root of the project. These will be loaded automatically. Examples include `OPENAI_API_KEY` and `GITHUB_PERSONAL_ACCESS_TOKEN`. To autoload environment variables, add their names to the `_ENV` class member in `common/global_config.py`.
+-   **Hyperparameters:** Add any hyperparameters that apply across the entire codebase to `common/global_config.yaml`. Do not define them as constants in the code. Examples include `MAX_RETRIES` and `MODEL_NAME`. If you need to add a new hyperparameter with a nested structure, define the corresponding Pydantic model in `common/config_models.py` first.
+-   **Secrets:** Store private keys and other secrets in a `.env` file in the root of the project. These will be loaded automatically. Examples include `OPENAI_API_KEY` and `GITHUB_PERSONAL_ACCESS_TOKEN`. These are defined as required fields in the `Config` class in `common/global_config.py`.
 
 You can access configuration values in your Python code like this:
 
