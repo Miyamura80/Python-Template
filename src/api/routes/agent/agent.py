@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from common import global_config
-from src.api.auth.unified_auth import get_authenticated_user_id
+from src.api.auth.unified_auth import get_authenticated_user
 from src.api.routes.agent.tools import alert_admin
 from src.api.auth.utils import user_uuid_from_str
 from src.api.limits import ensure_daily_limit
@@ -293,9 +293,11 @@ async def agent_endpoint(
         HTTPException: If authentication fails (401)
     """
     # Authenticate user - will raise 401 if auth fails
-    user_id = await get_authenticated_user_id(request, db)
+    auth_user = await get_authenticated_user(request, db)
+    user_id = auth_user.id
     user_uuid = user_uuid_from_str(user_id)
-    langfuse_context.update_current_observation(name=f"agent-{user_id}")
+    span_name = f"agent-{auth_user.email}" if auth_user.email else f"agent-{user_id}"
+    langfuse_context.update_current_observation(name=span_name)
 
     limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid, enforce=True)
     log.info(
@@ -413,9 +415,15 @@ async def agent_stream_endpoint(
         HTTPException: If authentication fails (401)
     """
     # Authenticate user - will raise 401 if auth fails
-    user_id = await get_authenticated_user_id(request, db)
+    auth_user = await get_authenticated_user(request, db)
+    user_id = auth_user.id
     user_uuid = user_uuid_from_str(user_id)
-    langfuse_context.update_current_observation(name=f"agent-stream-{user_id}")
+    span_name = (
+        f"agent-stream-{auth_user.email}"
+        if auth_user.email
+        else f"agent-stream-{user_id}"
+    )
+    langfuse_context.update_current_observation(name=span_name)
 
     limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid, enforce=True)
     log.debug(

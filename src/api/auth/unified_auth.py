@@ -9,6 +9,7 @@ The authentication logic tries JWT first, then falls back to API key authenticat
 """
 
 from fastapi import HTTPException, Request
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from loguru import logger
 
@@ -18,6 +19,13 @@ from src.utils.logging_config import setup_logging
 
 # Setup logging at module import
 setup_logging()
+
+
+class AuthenticatedUser(BaseModel):
+    """Authenticated user with ID and optional email."""
+
+    id: str
+    email: str | None = None
 
 
 async def get_authenticated_user_id(request: Request, db_session: Session) -> str:
@@ -68,6 +76,72 @@ async def get_authenticated_user_id(request: Request, db_session: Session) -> st
                 request.method,
             )
             return user_id
+        except HTTPException as e:
+            logger.warning(f"API key authentication failed: {e.detail}")
+        except Exception as e:
+            logger.warning(f"Unexpected error in API key authentication: {e}")
+
+    # If we get here, authentication failed
+    raise HTTPException(
+        status_code=401,
+        detail=(
+            "Authentication required. Provide "
+            "'Authorization: Bearer <workos_token>' or 'X-API-KEY' header"
+        ),
+    )
+
+
+async def get_authenticated_user(
+    request: Request, db_session: Session
+) -> AuthenticatedUser:
+    """
+    Flexible authentication that returns user ID and email.
+
+    Tries JWT authentication first (Authorization header), then falls back to API key (X-API-KEY header).
+
+    Args:
+        request: FastAPI request object
+        db_session: Database session (for future use with API keys)
+
+    Returns:
+        AuthenticatedUser with id and optional email
+
+    Raises:
+        HTTPException: If authentication fails
+    """
+    # Try WorkOS JWT authentication first
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.lower().startswith("bearer "):
+        try:
+            workos_user = await get_current_workos_user(request)
+            logger.debug(
+                "User authenticated via WorkOS JWT | id=%s | email=%s | path=%s | method=%s",
+                workos_user.id,
+                workos_user.email,
+                request.url.path,
+                request.method,
+            )
+            return AuthenticatedUser(id=workos_user.id, email=workos_user.email)
+        except HTTPException as e:
+            logger.warning(f"WorkOS JWT authentication failed: {e.detail}")
+            # Continue to try API key authentication if implemented
+        except Exception as e:
+            logger.warning(f"Unexpected error in WorkOS JWT authentication: {e}")
+            # Continue to try API key authentication if implemented
+
+    # Try API key authentication (if header is present)
+    api_key = request.headers.get("X-API-KEY")
+    if api_key:
+        try:
+            user_id = await get_current_user_from_api_key_header(request, db_session)
+            logger.info(
+                "User authenticated via API key | user_id=%s | path=%s | method=%s",
+                user_id,
+                request.url.path,
+                request.method,
+            )
+            # API key auth doesn't provide email
+            return AuthenticatedUser(id=user_id, email=None)
         except HTTPException as e:
             logger.warning(f"API key authentication failed: {e.detail}")
         except Exception as e:
