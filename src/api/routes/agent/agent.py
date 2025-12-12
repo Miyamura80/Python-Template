@@ -15,6 +15,7 @@ from typing import Any, Callable, Iterable, Optional, Protocol, Sequence, cast
 import dspy
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
+from langfuse import Langfuse
 from langfuse.decorators import observe, langfuse_context
 from loguru import logger as log
 from pydantic import BaseModel, Field
@@ -384,7 +385,6 @@ async def agent_endpoint(
 
 
 @router.post("/agent/stream")  # noqa
-@observe()
 async def agent_stream_endpoint(
     agent_request: AgentRequest,
     request: Request,
@@ -423,7 +423,6 @@ async def agent_stream_endpoint(
         if auth_user.email
         else f"agent-stream-{user_id}"
     )
-    langfuse_context.update_current_observation(name=span_name)
 
     limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid, enforce=True)
     log.debug(
@@ -455,6 +454,12 @@ async def agent_stream_endpoint(
 
     async def stream_generator():
         """Generate streaming response chunks."""
+        # Create a Langfuse trace for the entire streaming operation
+        # This trace will contain all LLM calls nested under the email-named span
+        langfuse_client = Langfuse()
+        trace = langfuse_client.trace(name=span_name, user_id=user_id)
+        trace_id = trace.id
+
         try:
             raw_tools = get_agent_tools()
             tool_functions = build_tool_wrappers(user_id, tools=raw_tools)
@@ -484,6 +489,7 @@ async def agent_stream_endpoint(
                     pred_signature=AgentSignature,
                     tools=tools,
                     observe=True,  # Enable LangFuse observability
+                    trace_id=trace_id,  # Pass trace context for proper nesting
                 )
 
                 async for chunk in inference_module.run_streaming(
@@ -564,6 +570,7 @@ async def agent_stream_endpoint(
                     pred_signature=AgentSignature,
                     tools=tool_functions,
                     observe=True,
+                    trace_id=trace_id,  # Pass trace context for proper nesting
                 )
                 result = await fallback_inference.run(
                     user_id=user_id,
@@ -602,6 +609,14 @@ async def agent_stream_endpoint(
 
             log.debug(f"Agent streaming response completed for user {user_id}")
 
+            # Finalize the trace with success status
+            trace.update(
+                output={
+                    "status": "completed",
+                    "response_length": len(full_response or ""),
+                }
+            )
+
         except Exception as e:
             log.error(
                 f"Error processing agent streaming request for user {user_id}: {str(e)}"
@@ -610,7 +625,12 @@ async def agent_stream_endpoint(
                 "I apologize, but I encountered an error processing your request. "
                 "Please try again or contact support if the issue persists."
             )
+            # Update trace with error status
+            trace.update(output={"status": "error", "error": str(e)})
             yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
+        finally:
+            # Ensure Langfuse flushes the trace
+            langfuse_client.flush()
 
     return StreamingResponse(
         stream_generator(),

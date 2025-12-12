@@ -43,7 +43,12 @@ NOTE: We use contextvars to store the current state of the callback, so it is th
 
 # 1. Define a custom callback class that extends BaseCallback class
 class LangFuseDSPYCallback(BaseCallback):  # noqa
-    def __init__(self, signature: type[dspy_Signature]) -> None:
+    def __init__(
+        self,
+        signature: type[dspy_Signature],
+        trace_id: Optional[str] = None,
+        parent_observation_id: Optional[str] = None,
+    ) -> None:
         super().__init__()
         # Use contextvars for per-call state
         self.current_system_prompt = contextvars.ContextVar[str](
@@ -66,6 +71,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         # Initialize Langfuse client
         self.langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
+        # Store explicit trace context for when langfuse_context is not available
+        self._explicit_trace_id = trace_id
+        self._explicit_parent_observation_id = parent_observation_id
 
     def on_module_start(  # noqa
         self,  # noqa
@@ -135,8 +143,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.current_system_prompt.set(system_prompt)
         self.current_prompt.set(user_input)
         self.model_name_at_span_creation.set(model_name)
-        trace_id = langfuse_context.get_current_trace_id()
-        parent_observation_id = langfuse_context.get_current_observation_id()
+        # Use explicit trace context if provided, otherwise fall back to langfuse_context
+        trace_id = langfuse_context.get_current_trace_id() or self._explicit_trace_id
+        parent_observation_id = (
+            langfuse_context.get_current_observation_id()
+            or self._explicit_parent_observation_id
+        )
         span_obj: Optional[StatefulGenerationClient] = None
         if trace_id:
             span_obj = self.langfuse.generation(  # type: ignore (Langfuse fails the type check in this function, grr...)
@@ -395,8 +407,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
 
         log.debug(f"Tool call started: {tool_name} with args: {tool_args}")
 
-        trace_id = langfuse_context.get_current_trace_id()
-        parent_observation_id = langfuse_context.get_current_observation_id()
+        # Use explicit trace context if provided, otherwise fall back to langfuse_context
+        trace_id = langfuse_context.get_current_trace_id() or self._explicit_trace_id
+        parent_observation_id = (
+            langfuse_context.get_current_observation_id()
+            or self._explicit_parent_observation_id
+        )
 
         if trace_id:
             # Create a span for the tool call

@@ -24,6 +24,8 @@ class DSPYInference:
         temperature: float = global_config.default_llm.default_temperature,
         max_tokens: int = global_config.default_llm.default_max_tokens,
         max_iters: int = 5,
+        trace_id: str | None = None,
+        parent_observation_id: str | None = None,
     ) -> None:
         if tools is None:
             tools = []
@@ -39,7 +41,11 @@ class DSPYInference:
         self.observe = observe
         if observe:
             # Initialize a LangFuseDSPYCallback for generation tracing
-            self.callback = LangFuseDSPYCallback(pred_signature)
+            self.callback = LangFuseDSPYCallback(
+                pred_signature,
+                trace_id=trace_id,
+                parent_observation_id=parent_observation_id,
+            )
         else:
             self.callback = None
 
