@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+
+After major changes always run:
+- `make fmt`
+- `make ruff`
+- `make vulture` 
+
+And if any issues rise, make sure you address them.
