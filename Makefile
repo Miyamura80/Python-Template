@@ -143,7 +143,7 @@ vulture: install_tools
 	@uv tool run vulture .
 	@echo "$(GREEN)✅Vulture completed.$(RESET)"
 
-ty:
+ty: install_tools
 	@echo "$(YELLOW)🔍Running Typer...$(RESET)"
 	@uv run ty check
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
