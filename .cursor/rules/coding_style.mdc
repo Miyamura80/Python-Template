@@ -10,3 +10,4 @@ alwaysApply: true
 - Use all uppercase for constants
 - Use 4 spaces for indentation
 - Use double quotes for strings
+- Don't make markdown docs/references unless explicitly told
