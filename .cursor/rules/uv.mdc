@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+## Running a Python File
+
+`uv run python -m path_to.python_file.python_file_name` (<-- Importantly without the `.py` file extension)
+
+## Running Tests (Pytest)
+
+Run all tests in the file:
+`uv run pytest path/to/pytest/file.py`
