@@ -33,6 +33,7 @@ dependencies = [
     "stripe>=13.0.1",
     "workos>=4.0.0",
     "httpx>=0.27.0",
+    "pydantic-settings>=2.12.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -60,7 +61,7 @@ exclude = [
     "tests/e2e/payments/test_stripe.py",
     "tests/e2e/agent/tools/test_alert_admin.py",
     "utils/llm/",
-    "common/global_config.py",
+    "common/",
     "src/utils/logging_config.py",
     "src/utils/context.py",
     "tests/conftest.py",
