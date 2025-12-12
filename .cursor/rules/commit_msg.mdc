@@ -2,10 +2,6 @@
 description: when commiting changes
 alwaysApply: false
 ---
----
-description: when commiting changes
-alwaysApply: false
----
 
 Please follow the following for commit message convention:
 
