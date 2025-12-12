@@ -1,0 +1,137 @@
+name: Update Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.github/workflows/**'
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  update-docs:
+    # Only run on merged PRs or direct pushes to main
+    if: >-
+      ${{ github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged == true) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if significant code changes occurred
+        id: check-changes
+        run: |
+          # Get the comparison base
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Count changed lines in non-docs files
+          CHANGED_LINES=$(git diff --numstat "$BASE_SHA" "$HEAD_SHA" | \
+            grep -v "^[0-9]* [0-9]* docs/" | \
+            awk '{sum += $1 + $2} END {print sum}')
+
+          echo "changed_lines=$CHANGED_LINES" >> $GITHUB_OUTPUT
+
+          # Check if public-facing modules changed (from .cursor/docs-scope.yml)
+          # Public modules that should trigger docs updates: common/, src/api/
+          PUBLIC_MODULE_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -q "^common/"; then
+            PUBLIC_MODULE_CHANGED=true
+            echo "Public module 'common/' was modified"
+          fi
+          # Add more public module checks as needed
+          # if echo "$CHANGED_FILES" | grep -q "^src/api/"; then
+          #   PUBLIC_MODULE_CHANGED=true
+          # fi
+
+          # Check for critical file patterns
+          CRITICAL_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -qE "(/__init__\.py$|global_config\.|README\.md$)"; then
+            CRITICAL_CHANGED=true
+            echo "Critical file pattern detected"
+          fi
+
+          # Consider it "significant" if:
+          # 1. More than 50 lines changed outside docs, OR
+          # 2. A public module changed, OR
+          # 3. A critical file pattern changed
+          if [ "$CHANGED_LINES" -gt 50 ] || [ "$PUBLIC_MODULE_CHANGED" = true ] || [ "$CRITICAL_CHANGED" = true ]; then
+            echo "significant=true" >> $GITHUB_OUTPUT
+            echo "Documentation update triggered (lines: $CHANGED_LINES, public: $PUBLIC_MODULE_CHANGED, critical: $CRITICAL_CHANGED)"
+          else
+            echo "significant=false" >> $GITHUB_OUTPUT
+            echo "No significant changes requiring docs update"
+          fi
+
+      - name: Install Cursor CLI
+        if: steps.check-changes.outputs.significant == 'true'
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+
+      - name: Configure git identity
+        if: steps.check-changes.outputs.significant == 'true'
+        run: |
+          git config user.name "Cursor Agent"
+          git config user.email "cursoragent@cursor.com"
+
+      - name: Update documentation
+        if: steps.check-changes.outputs.significant == 'true'
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          MODEL: gpt-5
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_PREFIX: docs-update
+        run: |
+          cursor-agent -p "Update /docs for recent codebase changes.
+
+          Context: ${{ github.repository }}, branch: ${{ github.ref_name }}, changed lines: ${{ steps.check-changes.outputs.changed_lines }}
+
+          CRITICAL SETUP:
+          1. Read \`.cursor/docs-scope.yml\` - defines public vs private modules
+          2. Read \`.cursor/rules/documentation.mdc\` - documentation standards
+
+          SCOPE RULES:
+          - Document in /docs: \`public_modules\` from docs-scope.yml (e.g., common/), exported APIs, \`# Public API\` markers
+          - Skip /docs: \`private_modules\` (utils/, tests/), underscore-prefixed code, \`# Internal only\` markers
+          - Never document: Paths in \`exclude_from_docs\`
+
+          RESTRICTIONS (CRITICAL):
+          - ONLY modify files in /docs/** - NEVER touch code, configs, or CI files
+          - ONLY document public-facing APIs - NEVER over-document private/internal code
+          - Use \`git add docs/\` before committing
+
+          WORKFLOW:
+          1. Review code changes via \`git diff\`
+          2. Filter for public module changes only (check against docs-scope.yml)
+          3. Update relevant /docs files (docs/api/, docs/guides/, etc.)
+          4. Create branch: ${{ env.BRANCH_PREFIX }}-<timestamp>
+          5. Commit and push
+          6. Create PR: \`gh pr create --title 'docs: Update for codebase changes' --body '<list modules documented>'\`
+
+          If no public API changes, exit without creating PR.
+          " --force --model "$MODEL" --output-format=text
