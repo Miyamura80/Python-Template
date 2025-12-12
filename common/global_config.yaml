@@ -9,6 +9,8 @@ example_parent:
 ########################################################
 default_llm:
   default_model: cerebras/gpt-oss-120b
+  fast_model: cerebras/gpt-oss-120b
+  cheap_model: gemini/gemini-2.5-flash
   default_temperature: 0.5
   default_max_tokens: 100000
 
