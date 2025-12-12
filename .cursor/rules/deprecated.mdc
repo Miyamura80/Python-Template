@@ -1,0 +1,21 @@
+---
+description: whenever working with deprecated modules.
+alwaysApply: false
+---
+This is a reminder on deprecated modules you should be careful about.
+
+## Datetime
+
+datetime.datetime.utcnow() is deprecated. Use timezone-aware objects to represent datetimes in UTC.
+
+Example:
+
+```python
+from datetime import datetime, timezone
+
+print(datetime.now(timezone.utc))
+```
+
+## Deprecation Warnings
+
+Deprecation warnings are a pain to deal with, if they cannot be dealt with in the codebase, please use `pytest.ini` to ignore them.
