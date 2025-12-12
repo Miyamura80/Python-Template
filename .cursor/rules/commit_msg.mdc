@@ -10,8 +10,8 @@ Please follow the following for commit message convention:
 - 🐛 {msg} : bugfix based on an initial user reported error/debugging, not fully tested
 - ✨ {msg} : code formatting/linting fix/cleanup. Only use when nothing has changed functionally.
 - 📝 {msg} : update documentation or cursor rules (incl `.mdc` files/AGENT.md)
-- ✅ {msg} : fetaure implemented, E2E tests written, tests passing
-- ⚙️ {msg} : configurations changed (not source code, e.g. `.toml`, `.yaml` files)
+- ✅ {msg} : fetaure changed, E2E tests written & committed together
+- ⚙️ {msg} : configurations changed (not source code, e.g. `.toml`, `.yaml`, `.lock` files)
 - 👀 {msg} : logging/debugging prints/observability added/modified
 - 💽 {msg} : updates to DB schema/DB migrations
 - ⚠️ {msg} : non-reverting change
