@@ -11,7 +11,6 @@ from tenacity import (
 )
 from utils.llm.dspy_langfuse import LangFuseDSPYCallback
 from litellm.exceptions import ServiceUnavailableError
-from langfuse.decorators import observe  # type: ignore
 
 
 class DSPYInference:
@@ -71,7 +70,6 @@ class DSPYInference:
             self._inference_module_async = dspy.asyncify(self._inference_module)
         return self._inference_module, self._inference_module_async
 
-    @observe()
     @retry(
         retry=retry_if_exception_type(ServiceUnavailableError),
         stop=stop_after_attempt(global_config.llm_config.retry.max_attempts),
@@ -104,7 +102,6 @@ class DSPYInference:
             raise
         return result
 
-    @observe()
     async def run_streaming(
         self,
         stream_field: str = "response",

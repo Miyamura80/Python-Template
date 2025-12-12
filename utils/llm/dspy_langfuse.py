@@ -99,9 +99,15 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         outputs: Optional[Any],
         exception: Optional[Exception] = None,  # noqa
     ) -> None:
+        # Only update observation if one exists in the current context
+        # (i.e., when using @observe decorator, not explicit trace_id)
+        current_obs_id = langfuse_context.get_current_observation_id()
+        if not current_obs_id:
+            return
+
         metadata = {
             "existing_trace_id": langfuse_context.get_current_trace_id(),
-            "parent_observation_id": langfuse_context.get_current_observation_id(),
+            "parent_observation_id": current_obs_id,
         }
         outputs_extracted = {}  # Default to empty dict
         if outputs is not None:
@@ -143,11 +149,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.current_system_prompt.set(system_prompt)
         self.current_prompt.set(user_input)
         self.model_name_at_span_creation.set(model_name)
-        # Use explicit trace context if provided, otherwise fall back to langfuse_context
-        trace_id = langfuse_context.get_current_trace_id() or self._explicit_trace_id
+        # Prefer explicit trace context if provided, otherwise fall back to langfuse_context
+        # This ensures manual trace creation takes precedence over @observe() decorators
+        trace_id = self._explicit_trace_id or langfuse_context.get_current_trace_id()
         parent_observation_id = (
-            langfuse_context.get_current_observation_id()
-            or self._explicit_parent_observation_id
+            self._explicit_parent_observation_id
+            or langfuse_context.get_current_observation_id()
         )
         span_obj: Optional[StatefulGenerationClient] = None
         if trace_id:
@@ -407,11 +414,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
 
         log.debug(f"Tool call started: {tool_name} with args: {tool_args}")
 
-        # Use explicit trace context if provided, otherwise fall back to langfuse_context
-        trace_id = langfuse_context.get_current_trace_id() or self._explicit_trace_id
+        # Prefer explicit trace context if provided, otherwise fall back to langfuse_context
+        # This ensures manual trace creation takes precedence over @observe() decorators
+        trace_id = self._explicit_trace_id or langfuse_context.get_current_trace_id()
         parent_observation_id = (
-            langfuse_context.get_current_observation_id()
-            or self._explicit_parent_observation_id
+            self._explicit_parent_observation_id
+            or langfuse_context.get_current_observation_id()
         )
 
         if trace_id:
