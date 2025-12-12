@@ -15,7 +15,7 @@ Please follow the following for commit message convention:
 - ✨ {msg} : code formatting/linting fix/cleanup. Only use when nothing has changed functionally.
 - 📝 {msg} : update documentation (incl cursorrules/AGENT.md)
 - ✅ {msg} : fetaure implemented, E2E tests written, tests passing
-- ⚙️ {msg} : configurations changed (not source code, more like config files)
+- ⚙️ {msg} : configurations changed (not source code, e.g. `.toml`, `.yaml` files)
 - 👀 {msg} : logging/debugging prints/observability added/modified
 - 💽 {msg} : updates to DB schema/DB migrations
 - ⚠️ {msg} : non-reverting change
