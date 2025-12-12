@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import cast
 
 from fastapi import APIRouter, Depends, Request
-from langfuse.decorators import observe, langfuse_context
 from loguru import logger as log
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, selectinload
@@ -66,8 +65,7 @@ def map_conversation_to_history_unit(
     )
 
 
-@router.get("/agent/history", response_model=AgentHistoryResponse)  # noqa
-@observe()
+@router.get("/agent/history", response_model=AgentHistoryResponse)
 async def agent_history_endpoint(
     request: Request,
     db: Session = Depends(get_db_session),
@@ -84,7 +82,6 @@ async def agent_history_endpoint(
 
     user_id = await get_authenticated_user_id(request, db)
     user_uuid = user_uuid_from_str(user_id)
-    langfuse_context.update_current_observation(name=f"agent-history-{user_id}")
 
     conversations = (
         db.query(AgentConversation)
