@@ -60,6 +60,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.input_field_values = contextvars.ContextVar[dict[str, Any]](
             "input_field_values"
         )
+        self.current_tool_span = contextvars.ContextVar[Optional[Any]](
+            "current_tool_span"
+        )
         # Initialize Langfuse client
         self.langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
@@ -360,3 +363,87 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
 
         if level == "DEFAULT" and completion_content is not None:
             self.current_completion.set(completion_content)
+
+    # Internal DSPy tools that should not be traced
+    INTERNAL_TOOLS = {"finish", "Finish"}
+
+    def on_tool_start(  # noqa
+        self,  # noqa
+        call_id: str,  # noqa
+        instance: Any,
+        inputs: dict[str, Any],
+    ) -> None:
+        """Called when a tool execution starts."""
+        tool_name = getattr(instance, "__name__", None) or getattr(
+            instance, "name", None
+        ) or str(type(instance).__name__)
+        
+        # Skip internal DSPy tools
+        if tool_name in self.INTERNAL_TOOLS:
+            self.current_tool_span.set(None)
+            return
+        
+        # Extract tool arguments
+        tool_args = inputs.get("args", {})
+        if not tool_args:
+            # Try to get kwargs directly
+            tool_args = {k: v for k, v in inputs.items() if k not in ["call_id", "instance"]}
+        
+        log.debug(f"Tool call started: {tool_name} with args: {tool_args}")
+        
+        trace_id = langfuse_context.get_current_trace_id()
+        parent_observation_id = langfuse_context.get_current_observation_id()
+        
+        if trace_id:
+            # Create a span for the tool call
+            tool_span = self.langfuse.span(
+                name=f"tool:{tool_name}",
+                trace_id=trace_id,
+                parent_observation_id=parent_observation_id,
+                input=tool_args,
+                metadata={
+                    "tool_name": tool_name,
+                    "tool_type": "function",
+                },
+            )
+            self.current_tool_span.set(tool_span)
+
+    def on_tool_end(  # noqa
+        self,  # noqa
+        call_id: str,  # noqa
+        outputs: Optional[Any],
+        exception: Optional[Exception] = None,
+    ) -> None:
+        """Called when a tool execution ends."""
+        tool_span = self.current_tool_span.get(None)
+        
+        if tool_span:
+            level: Literal["DEFAULT", "WARNING", "ERROR"] = "DEFAULT"
+            status_message: Optional[str] = None
+            output_value: Any = None
+            
+            if exception:
+                level = "ERROR"
+                status_message = str(exception)
+                output_value = {"error": str(exception)}
+            elif outputs is not None:
+                try:
+                    if isinstance(outputs, str):
+                        output_value = outputs
+                    elif isinstance(outputs, dict):
+                        output_value = outputs
+                    elif hasattr(outputs, "__dict__"):
+                        output_value = outputs.__dict__
+                    else:
+                        output_value = str(outputs)
+                except Exception as e:
+                    output_value = {"serialization_error": str(e), "raw": str(outputs)}
+            
+            tool_span.end(
+                output=output_value,
+                level=level,
+                status_message=status_message,
+            )
+            self.current_tool_span.set(None)
+            
+            log.debug(f"Tool call ended with output: {str(output_value)[:100]}...")
