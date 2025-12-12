@@ -1,0 +1,28 @@
+---
+description: when commiting changes
+alwaysApply: false
+---
+
+Please follow the following for commit message convention:
+
+- 🏗️ {msg} : initial first pass implementation 
+- 🔨 {msg} : make feature changes to code, not fully tested
+- 🐛 {msg} : bugfix based on an initial user reported error/debugging, not fully tested
+- ✨ {msg} : code formatting/linting fix/cleanup. Only use when nothing has changed functionally.
+- 📝 {msg} : update documentation or cursor rules (incl `.mdc` files/AGENT.md)
+- ✅ {msg} : fetaure implemented, E2E tests written, tests passing
+- ⚙️ {msg} : configurations changed (not source code, e.g. `.toml`, `.yaml` files)
+- 👀 {msg} : logging/debugging prints/observability added/modified
+- 💽 {msg} : updates to DB schema/DB migrations
+- ⚠️ {msg} : non-reverting change
+
+
+Please use multiple emojis for larger commits, to emphasize the size of the commits. For example:
+
+- 🏗️🏗️🏗️ {msg} : Multiple new files written (5+)
+- 🏗️🏗️ {msg} : A few new files written (3-5)
+- 🏗️ {msg} : 1-2 new files written
+- 🐛🐛🐛 {msg} : Large number of files modified to fix a bug (8+)
+- 🐛🐛 {msg} : Multiple files modified to fix a bug (4-7)
+- 🐛 {msg} : Few files modified to fix a bug (1-3)
+
