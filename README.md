@@ -14,19 +14,15 @@
   <a href="#requirements">Requirements</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#configuration-options">Configuration</a> •
-  <a href="#credits">Credits</a>
-  <a href="#related">Related</a>
+  <a href="#credits">Credits</a> •
   <a href="#about-the-core-contributors">About the Core Contributors</a>
 </p>
 
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fpyproject.toml&query=%24.project.name&label=Project Name&color=purple" alt="Dynamic TOML Badge">
   <img alt="Project Version" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fpyproject.toml&query=%24.project.version&label=version&color=blue">
   <img alt="Python Version" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fpyproject.toml&query=%24.project['requires-python']&label=python&logo=python&color=blue">
-  <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
-  <img alt="Dynamic YAML Badge" src="https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2FMiyamura80%2FPython-Template%2Fmain%2Fcommon%2Fglobal_config.yaml&query=%24%5B%27model_name%27%5D&label=Model in Use&color=yellow">
   <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/Miyamura80/Python-Template">
   <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Miyamura80/Python-Template/test_target_tests.yaml?branch=main">
 
@@ -64,8 +60,16 @@
 
 ## Configuration Options
 
-1. Global config: [`common/global_config.yaml`](common/global_config.yaml)
-2. Environment Variables: Store environmnent variables in `.env` (Create this if not exists) and `common/global_config.py`  will read those out automatically. Then, you can import them as follows:
+This project uses **pydantic-settings** for configuration management, providing automatic validation and type checking.
+
+**Configuration Files:**
+- `common/global_config.yaml` - Base configuration values
+- `common/config_models.py` - Pydantic models for validation
+- `common/global_config.py` - Main Config class
+- `.env` - Environment variables and secrets (create this file)
+
+1. **Global config:** [`common/global_config.yaml`](common/global_config.yaml) - Add hyperparameters here
+2. **Environment Variables:** Store environment variables in `.env` (git-ignored) and `common/global_config.py` will read them automatically with validation:
 
     `.env` file:
     ```env
@@ -86,12 +90,8 @@ This software uses the following tools:
 - [DSPY: Pytorch for LLM Inference](https://dspy.ai/)
 - [LangFuse: LLM Observability Tool](https://langfuse.com/)
 
-## Related
-
-Coming soon...
-
-## You may also like...
-
-Coming soon...
-
-
+## About the Core Contributors
+<a href="https://github.com/Miyamura80/Python-Template/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Miyamura80/Python-Template" />
+</a>
+Made with [contrib.rocks](https://contrib.rocks).
