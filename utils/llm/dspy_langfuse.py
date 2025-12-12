@@ -6,7 +6,6 @@ from typing import Optional, Any, Literal
 from pydantic import BaseModel, ValidationError, Field
 from dspy.adapters import Image as dspy_Image
 from dspy.signatures import Signature as dspy_Signature
-from pydantic import ConfigDict
 import contextvars
 from loguru import logger as log
 
@@ -33,7 +32,8 @@ class _ModelOutputPayload(BaseModel):
     )  # Corrected usage: List to list
     usage: Optional[_UsagePayload] = None
 
-    model_config = ConfigDict(extra="allow")
+    class Config:
+        extra = "allow"  # Allow other fields in the dict not defined in model # noqa
 
 
 """
@@ -60,15 +60,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.input_field_values = contextvars.ContextVar[dict[str, Any]](
             "input_field_values"
         )
+        self.current_tool_span = contextvars.ContextVar[Optional[Any]](
+            "current_tool_span"
+        )
         # Initialize Langfuse client
         self.langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
-        for _, input_field in signature.input_fields.items():
-            if (
-                input_field.annotation == Optional[dspy_Image]
-                or input_field.annotation == dspy_Image
-            ):
-                pass  # TODO: We need to handle media.
 
     def on_module_start(  # noqa
         self,  # noqa
@@ -80,7 +77,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         input_field_values: dict[str, Any] = {}
         for input_field_name in self.input_field_names:
             if input_field_name in extracted_args:
-                input_field_values[input_field_name] = extracted_args[input_field_name]
+                input_value = extracted_args[input_field_name]
+                # Handle dspy.Image by extracting the data URI or URL
+                if isinstance(input_value, dspy_Image) and hasattr(input_value, "url"):
+                    input_field_values[input_field_name] = input_value.url
+                else:
+                    input_field_values[input_field_name] = input_value
         self.input_field_values.set(input_field_values)
 
     def on_module_end(  # noqa
@@ -102,7 +104,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
             except Exception as e:
                 outputs_extracted = {"error_extracting_module_output": str(e)}
         langfuse_context.update_current_observation(
-            input=self.input_field_values.get({}),
+            input=self.input_field_values.get(None) or {},
             output=outputs_extracted,
             metadata=metadata,
         )
@@ -122,10 +124,13 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         temperature = lm_dict.get("kwargs", {}).get("temperature")
         max_tokens = lm_dict.get("kwargs", {}).get("max_tokens")
         messages = inputs.get("messages")
-        assert messages is not None, "Messages must be provided"
-        assert messages[0].get("role") == "system"
+        if messages is None:
+            raise ValueError("Messages must be provided")
+        if not messages or messages[0].get("role") != "system":
+            raise ValueError("First message must be a system message")
         system_prompt = messages[0].get("content")
-        assert messages[1].get("role") == "user"
+        if len(messages) < 2 or messages[1].get("role") != "user":
+            raise ValueError("Second message must be a user message")
         user_input = messages[1].get("content")
         self.current_system_prompt.set(system_prompt)
         self.current_prompt.set(user_input)
@@ -358,3 +363,87 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
 
         if level == "DEFAULT" and completion_content is not None:
             self.current_completion.set(completion_content)
+
+    # Internal DSPy tools that should not be traced
+    INTERNAL_TOOLS = {"finish", "Finish"}
+
+    def on_tool_start(  # noqa
+        self,  # noqa
+        call_id: str,  # noqa
+        instance: Any,
+        inputs: dict[str, Any],
+    ) -> None:
+        """Called when a tool execution starts."""
+        tool_name = getattr(instance, "__name__", None) or getattr(
+            instance, "name", None
+        ) or str(type(instance).__name__)
+        
+        # Skip internal DSPy tools
+        if tool_name in self.INTERNAL_TOOLS:
+            self.current_tool_span.set(None)
+            return
+        
+        # Extract tool arguments
+        tool_args = inputs.get("args", {})
+        if not tool_args:
+            # Try to get kwargs directly
+            tool_args = {k: v for k, v in inputs.items() if k not in ["call_id", "instance"]}
+        
+        log.debug(f"Tool call started: {tool_name} with args: {tool_args}")
+        
+        trace_id = langfuse_context.get_current_trace_id()
+        parent_observation_id = langfuse_context.get_current_observation_id()
+        
+        if trace_id:
+            # Create a span for the tool call
+            tool_span = self.langfuse.span(
+                name=f"tool:{tool_name}",
+                trace_id=trace_id,
+                parent_observation_id=parent_observation_id,
+                input=tool_args,
+                metadata={
+                    "tool_name": tool_name,
+                    "tool_type": "function",
+                },
+            )
+            self.current_tool_span.set(tool_span)
+
+    def on_tool_end(  # noqa
+        self,  # noqa
+        call_id: str,  # noqa
+        outputs: Optional[Any],
+        exception: Optional[Exception] = None,
+    ) -> None:
+        """Called when a tool execution ends."""
+        tool_span = self.current_tool_span.get(None)
+        
+        if tool_span:
+            level: Literal["DEFAULT", "WARNING", "ERROR"] = "DEFAULT"
+            status_message: Optional[str] = None
+            output_value: Any = None
+            
+            if exception:
+                level = "ERROR"
+                status_message = str(exception)
+                output_value = {"error": str(exception)}
+            elif outputs is not None:
+                try:
+                    if isinstance(outputs, str):
+                        output_value = outputs
+                    elif isinstance(outputs, dict):
+                        output_value = outputs
+                    elif hasattr(outputs, "__dict__"):
+                        output_value = outputs.__dict__
+                    else:
+                        output_value = str(outputs)
+                except Exception as e:
+                    output_value = {"serialization_error": str(e), "raw": str(outputs)}
+            
+            tool_span.end(
+                output=output_value,
+                level=level,
+                status_message=status_message,
+            )
+            self.current_tool_span.set(None)
+            
+            log.debug(f"Tool call ended with output: {str(output_value)[:100]}...")
