@@ -449,7 +449,6 @@ async def agent_stream_endpoint(
     Raises:
         HTTPException: If authentication fails (401)
     """
-    log.info("[STREAM-DEBUG] Starting agent_stream_endpoint")
     # Authenticate user - will raise 401 if auth fails
     auth_user = await get_authenticated_user(request, db)
     user_id = auth_user.id
@@ -472,7 +471,6 @@ async def agent_stream_endpoint(
         limit_status.tier,
     )
 
-    log.info("[STREAM-DEBUG] Performing database operations BEFORE streaming")
     conversation = get_or_create_conversation_record(
         db,
         user_uuid,
@@ -492,9 +490,7 @@ async def agent_stream_endpoint(
     
     # IMPORTANT: Close the DB session BEFORE starting the streaming generator
     # This prevents holding a DB connection during the entire streaming operation
-    log.info("[STREAM-DEBUG] Closing database session before streaming")
     db.close()
-    log.info("[STREAM-DEBUG] Database session closed")
 
     async def stream_generator():
         """Generate streaming response chunks.
@@ -502,14 +498,10 @@ async def agent_stream_endpoint(
         Note: This generator opens a NEW database session only when needed
         to avoid holding connections during long streaming operations.
         """
-        log.info(f"[STREAM-DEBUG] Starting stream_generator for user {user_id}")
         # Create a Langfuse trace for the entire streaming operation
-        # This trace will contain all LLM calls nested under the email-named span
-        log.info("[STREAM-DEBUG] Initializing Langfuse client")
         langfuse_client = Langfuse()
         trace = langfuse_client.trace(name=span_name, user_id=user_id)
         trace_id = trace.id
-        log.info(f"[STREAM-DEBUG] Langfuse trace created: {trace_id}")
 
         # Track last activity time for heartbeat mechanism
         last_activity_time = asyncio.get_event_loop().time()
@@ -523,20 +515,16 @@ async def agent_stream_endpoint(
                 # SSE comments (lines starting with ':') are ignored by clients
                 # but keep the connection alive
                 last_activity_time = current_time
-                log.debug("[STREAM-DEBUG] Sending heartbeat to keep connection alive")
                 return ": heartbeat\n\n"
             return None
 
         try:
-            log.info(f"[STREAM-DEBUG] Building tool wrappers for user {user_id}")
             raw_tools = get_agent_tools()
             tool_functions = build_tool_wrappers(user_id, tools=raw_tools)
             tool_names = [tool_name(tool) for tool in raw_tools]
             response_chunks: list[str] = []
-            log.info(f"[STREAM-DEBUG] Tools wrapped: {tool_names}")
 
             # Send initial metadata (include tool info for transparency)
-            log.info("[STREAM-DEBUG] Sending initial metadata")
             yield (
                 "data: "
                 + json.dumps(
@@ -552,20 +540,16 @@ async def agent_stream_endpoint(
                 + "\n\n"
             )
             last_activity_time = asyncio.get_event_loop().time()  # Reset after sending data
-            log.info("[STREAM-DEBUG] Initial metadata sent")
 
             async def stream_with_inference(tools: list):
                 """Stream using DSPY with the provided tools list."""
-                log.info(f"[STREAM-DEBUG] Starting stream_with_inference with {len(tools)} tools")
                 response_chunks.clear()
-                log.info("[STREAM-DEBUG] Creating DSPYInference module")
                 inference_module = DSPYInference(
                     pred_signature=AgentSignature,
                     tools=tools,
                     observe=True,  # Enable LangFuse observability
                     trace_id=trace_id,  # Pass trace context for proper nesting
                 )
-                log.info("[STREAM-DEBUG] DSPYInference module created, starting streaming")
 
                 chunk_count = 0
                 async for chunk in inference_module.run_streaming(
@@ -581,8 +565,6 @@ async def agent_stream_endpoint(
                         yield heartbeat
                     
                     chunk_count += 1
-                    if chunk_count == 1:
-                        log.info("[STREAM-DEBUG] First chunk received")
                     # Accumulate full response so we can persist it after streaming
                     response_chunks.append(chunk)
                     yield (
@@ -591,7 +573,6 @@ async def agent_stream_endpoint(
                         + "\n\n"
                     )
                     last_activity_time = asyncio.get_event_loop().time()  # Reset after activity
-                log.info(f"[STREAM-DEBUG] Streaming completed with {chunk_count} chunks")
 
             full_response: str | None = None
             try:
@@ -627,7 +608,6 @@ async def agent_stream_endpoint(
                 full_response = "".join(response_chunks)
 
             if full_response:
-                log.info("[STREAM-DEBUG] Recording assistant message to database with NEW session")
                 # Open a NEW database session just for this write operation
                 with scoped_session() as write_db:
                     # Fetch the conversation again in this new session
@@ -640,17 +620,13 @@ async def agent_stream_endpoint(
                         assistant_message = record_agent_message(
                             write_db, conversation_obj, "assistant", full_response
                         )
-                        log.info("[STREAM-DEBUG] Building conversation snapshot")
                         history_messages.append(assistant_message)
                         conversation_snapshot = build_conversation_payload(
                             conversation_obj, history_messages, history_limit
                         )
                     else:
-                        log.error(f"[STREAM-DEBUG] Conversation {conversation_id} not found!")
-                        # Build a minimal snapshot without the conversation
+                        log.error(f"Conversation {conversation_id} not found after streaming!")
                         conversation_snapshot = None
-                        
-                log.info("[STREAM-DEBUG] Sending conversation snapshot")
                 if conversation_snapshot:
                     yield (
                         "data: "
@@ -667,7 +643,7 @@ async def agent_stream_endpoint(
             else:
                 # Ensure at least one token is emitted even if streaming produced none
                 log.warning(
-                    "[STREAM-DEBUG] Streaming produced no tokens for user %s; running non-streaming fallback",
+                    "Streaming produced no tokens for user %s; running non-streaming fallback",
                     user_id,
                 )
                 fallback_inference = DSPYInference(
@@ -689,7 +665,6 @@ async def agent_stream_endpoint(
                     + "\n\n"
                 )
                 
-                log.info("[STREAM-DEBUG] Recording fallback response to database with NEW session")
                 # Open a NEW database session just for this write operation
                 with scoped_session() as write_db:
                     # Fetch the conversation again in this new session
@@ -719,54 +694,47 @@ async def agent_stream_endpoint(
                             + "\n\n"
                         )
                     else:
-                        log.error(f"[STREAM-DEBUG] Conversation {conversation_id} not found in fallback!")
+                        log.error(f"Conversation {conversation_id} not found in fallback!")
 
             # Send completion signal
-            log.info("[STREAM-DEBUG] Sending completion signal")
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
-            log.info(f"[STREAM-DEBUG] Agent streaming response completed for user {user_id}")
+            log.debug(f"Agent streaming response completed for user {user_id}")
 
             # Finalize the trace with success status
-            log.info("[STREAM-DEBUG] Updating Langfuse trace")
             trace.update(
                 output={
                     "status": "completed",
                     "response_length": len(full_response or ""),
                 }
             )
-            log.info("[STREAM-DEBUG] Langfuse trace updated")
 
         except Exception as e:
             log.error(
-                f"[STREAM-DEBUG] Error processing agent streaming request for user {user_id}: {str(e)}"
+                f"Error processing agent streaming request for user {user_id}: {str(e)}"
             )
             error_msg = (
                 "I apologize, but I encountered an error processing your request. "
                 "Please try again or contact support if the issue persists."
             )
             # Update trace with error status
-            log.info("[STREAM-DEBUG] Updating trace with error status")
             trace.update(output={"status": "error", "error": str(e)})
             yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
         finally:
             # Ensure Langfuse flushes the trace in the background
             # We run this in a background task to avoid blocking the response
-            log.info("[STREAM-DEBUG] Scheduling Langfuse flush in background")
-            
             async def flush_langfuse():
                 """Flush Langfuse in a background task to avoid blocking."""
                 try:
                     # Run the blocking flush in a thread pool to avoid blocking event loop
                     loop = asyncio.get_event_loop()
                     await loop.run_in_executor(None, langfuse_client.flush)
-                    log.info("[STREAM-DEBUG] Langfuse flush completed in background")
+                    log.debug("Langfuse flush completed in background")
                 except Exception as e:
-                    log.error(f"[STREAM-DEBUG] Error flushing Langfuse: {e}")
+                    log.error(f"Error flushing Langfuse: {e}")
             
             # Schedule the flush but don't wait for it
             asyncio.create_task(flush_langfuse())
-            log.info("[STREAM-DEBUG] Langfuse flush scheduled, continuing")
 
     return StreamingResponse(
         stream_generator(),
