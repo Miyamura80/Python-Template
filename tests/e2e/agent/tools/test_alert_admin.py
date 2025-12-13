@@ -210,3 +210,39 @@ class TestAdminAgentTools(E2ETestBase):
 
         # Delete the test message
         self._delete_test_message(message_id)
+
+    def test_alert_admin_markdown_special_characters(self, db):
+        """Test admin alert handles Markdown special characters correctly."""
+        log.info(
+            "Testing admin alert with special Markdown characters - sending real message to Telegram"
+        )
+
+        # Test with message containing special characters that could break Markdown parsing
+        issue_description = (
+            "[TEST] User has issues with product_name (item #123) - "
+            "error: 'failed to connect' [code: 500] using backend-api.example.com!"
+        )
+        user_context = (
+            "[TEST] User tried these steps: 1) Login with *email* 2) Navigate to "
+            "settings_page 3) Click `Update Profile` button - Still shows error: "
+            'Connection_timeout (30s). User mentioned: "Why isn\'t this working?"'
+        )
+
+        result = alert_admin(
+            user_id=self.user_id,
+            issue_description=issue_description,
+            user_context=user_context,
+        )
+
+        # Verify result and get message ID
+        message_id = self._verify_alert_result(result)
+
+        log.info(
+            f"✅ Admin alert with special characters sent successfully with message ID: {message_id}"
+        )
+        log.info(
+            "✅ MarkdownV2 escaping is working correctly - special chars didn't break parsing"
+        )
+
+        # Delete the test message
+        self._delete_test_message(message_id)

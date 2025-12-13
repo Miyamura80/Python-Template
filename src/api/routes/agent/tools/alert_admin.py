@@ -4,6 +4,22 @@ from loguru import logger as log
 from typing import Optional
 from datetime import datetime, timezone
 from src.api.auth.utils import user_uuid_from_str
+import re
+
+
+def escape_markdown_v2(text: str) -> str:
+    """
+    Escape special characters for Telegram MarkdownV2.
+
+    Args:
+        text: The text to escape
+
+    Returns:
+        str: Escaped text safe for MarkdownV2
+    """
+    # Characters that need to be escaped in MarkdownV2
+    special_chars = r"_*[]()~`>#+-=|{}.!"
+    return re.sub(f"([{re.escape(special_chars)}])", r"\\\1", text)
 
 
 def alert_admin(
@@ -38,21 +54,29 @@ def alert_admin(
             if user_profile.organization_id:
                 user_info += f"\nOrganization ID: {user_profile.organization_id}"
 
-        # Construct the alert message
+        # Escape all dynamic content for MarkdownV2
+        escaped_issue = escape_markdown_v2(issue_description)
+        escaped_user_info = escape_markdown_v2(user_info)
+        escaped_context = escape_markdown_v2(user_context or "None provided")
+        timestamp = escape_markdown_v2(
+            datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        )
+
+        # Construct the alert message using MarkdownV2
         alert_message = f"""🚨 *Agent Escalation Alert* 🚨
 
-*Issue:* {issue_description}
+*Issue:* {escaped_issue}
 
 *User Context:*
-{user_info}
+{escaped_user_info}
 
 *Additional Context:*
-{user_context or 'None provided'}
+{escaped_context}
 
-*Timestamp:* {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
+*Timestamp:* {timestamp}
 
----
-_This alert was generated when the agent could not resolve a user's request with available tools and context._"""
+\\-\\-\\-
+_This alert was generated when the agent could not resolve a user's request with available tools and context\\._"""
 
         # Send Telegram alert
         telegram = Telegram()
@@ -63,7 +87,7 @@ _This alert was generated when the agent could not resolve a user's request with
         chat_name = "test" if is_testing else "admin_alerts"
 
         message_id = telegram.send_message_to_chat(
-            chat_name=chat_name, text=alert_message
+            chat_name=chat_name, text=alert_message, parse_mode="MarkdownV2"
         )
 
         if message_id:
