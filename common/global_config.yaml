@@ -59,7 +59,7 @@ logging:
       show_for_warning: true
       show_for_error: true
   levels:
-    debug: true   # Enable debug logs to see [STREAM-DEBUG] messages
+    debug: false  # Disable debug logs
     info: true    # Show info logs
     warning: true # Show warning logs
     error: true   # Show error logs
