@@ -219,7 +219,7 @@ class Config(BaseSettings):
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
-        _file_secret_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         """
         Customize the priority order of settings sources.
