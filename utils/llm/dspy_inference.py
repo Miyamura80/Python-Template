@@ -1,3 +1,4 @@
+import asyncio
 from typing import Callable, Any, AsyncGenerator
 import dspy
 from common import global_config
@@ -118,19 +119,24 @@ class DSPYInference:
             str: Chunks of streamed text as they are generated
         """
         try:
+            log.info(f"[DSPY-STREAM-DEBUG] Starting run_streaming for field: {stream_field}")
             # Get inference module (lazy init) - use sync version for streamify
             inference_module, _ = self._get_inference_module()
+            log.info(f"[DSPY-STREAM-DEBUG] Inference module initialized")
 
             # Use dspy.context() for async-safe configuration
             context_kwargs = {"lm": self.lm}
             if self.observe and self.callback:
                 context_kwargs["callbacks"] = [self.callback]
 
+            log.info(f"[DSPY-STREAM-DEBUG] Creating dspy context with callbacks: {self.observe}")
             with dspy.context(**context_kwargs):
                 # Create a streaming version of the inference module
+                log.info(f"[DSPY-STREAM-DEBUG] Creating StreamListener")
                 stream_listener = dspy.streaming.StreamListener(  # type: ignore
                     signature_field_name=stream_field
                 )
+                log.info(f"[DSPY-STREAM-DEBUG] Wrapping module with streamify")
                 stream_module = dspy.streamify(
                     inference_module,
                     stream_listeners=[stream_listener],
@@ -140,29 +146,44 @@ class DSPYInference:
                 # Convert kwargs to match the signature's input fields as positional args
                 # Since streamify expects the same signature as the original module,
                 # we pass kwargs which should match the input fields
+                log.info(f"[DSPY-STREAM-DEBUG] Executing stream_module - THIS IS WHERE IT MIGHT HANG")
                 output_stream = stream_module(**kwargs)  # type: ignore
+                log.info(f"[DSPY-STREAM-DEBUG] Stream module executed, checking generator type")
 
                 # Yield chunks as they arrive
                 # Check if it's an async generator by checking for __aiter__ method
                 if hasattr(output_stream, "__aiter__"):
                     # It's an async generator, iterate asynchronously
+                    log.info(f"[DSPY-STREAM-DEBUG] Detected async generator")
+                    chunk_count = 0
                     async for chunk in output_stream:  # type: ignore
+                        chunk_count += 1
+                        if chunk_count == 1:
+                            log.info(f"[DSPY-STREAM-DEBUG] First chunk received from async generator")
                         if isinstance(chunk, dspy.streaming.StreamResponse):  # type: ignore
                             yield chunk.chunk
                         elif isinstance(chunk, dspy.Prediction):
                             # Final prediction received, streaming complete
-                            log.debug("Streaming completed")
+                            log.info(f"[DSPY-STREAM-DEBUG] Final prediction received after {chunk_count} chunks")
                 else:
                     # It's a sync generator, iterate synchronously
-                    # Note: This will block the event loop, but dspy.streamify typically
-                    # returns sync generators that yield quickly
+                    # To avoid blocking the event loop, we yield control periodically
+                    log.warning("[DSPY-STREAM-DEBUG] Detected SYNC generator - using async-safe iteration")
+                    chunk_count = 0
                     for chunk in output_stream:  # type: ignore
+                        # Yield control back to the event loop to prevent blocking
+                        # This allows other coroutines to run (e.g., heartbeat checks)
+                        await asyncio.sleep(0)
+                        
+                        chunk_count += 1
+                        if chunk_count == 1:
+                            log.info("[DSPY-STREAM-DEBUG] First chunk received from sync generator")
                         if isinstance(chunk, dspy.streaming.StreamResponse):  # type: ignore
                             yield chunk.chunk
                         elif isinstance(chunk, dspy.Prediction):
                             # Final prediction received, streaming complete
-                            log.debug("Streaming completed")
+                            log.info(f"[DSPY-STREAM-DEBUG] Final prediction received after {chunk_count} chunks")
 
         except Exception as e:
-            log.error(f"Error in run_streaming: {str(e)}")
+            log.error(f"[DSPY-STREAM-DEBUG] Error in run_streaming: {str(e)}")
             raise e

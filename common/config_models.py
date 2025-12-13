@@ -32,11 +32,19 @@ class RetryConfig(BaseModel):
     max_wait_seconds: int
 
 
+class TimeoutConfig(BaseModel):
+    """Timeout configuration for LLM API requests."""
+
+    api_timeout_seconds: int
+    connect_timeout_seconds: int
+
+
 class LlmConfig(BaseModel):
     """LLM configuration including caching and retry settings."""
 
     cache_enabled: bool
     retry: RetryConfig
+    timeout: TimeoutConfig
 
 
 class LoggingLocationConfig(BaseModel):
@@ -78,10 +86,19 @@ class LoggingConfig(BaseModel):
     levels: LoggingLevelsConfig
 
 
+class StreamingConfig(BaseModel):
+    """Streaming configuration for agent chat."""
+
+    heartbeat_interval_seconds: int
+    first_token_timeout_seconds: int
+    max_streaming_duration_seconds: int
+
+
 class AgentChatConfig(BaseModel):
     """Agent chat configuration."""
 
     history_message_limit: int
+    streaming: StreamingConfig
 
 
 class StripePriceIdsConfig(BaseModel):

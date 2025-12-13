@@ -20,12 +20,25 @@ llm_config:
     max_attempts: 3
     min_wait_seconds: 1
     max_wait_seconds: 5
+  timeout:
+    # API request timeout (seconds) - how long to wait for LLM API response
+    api_timeout_seconds: 120
+    # Connection timeout (seconds) - how long to wait to establish connection
+    connect_timeout_seconds: 10
 
 ########################################################
 # Agent chat
 ########################################################
 agent_chat:
   history_message_limit: 20
+  # Streaming configuration
+  streaming:
+    # Send heartbeat comments every N seconds to prevent client timeout
+    heartbeat_interval_seconds: 15
+    # Maximum time to wait for first token from LLM (seconds)
+    first_token_timeout_seconds: 60
+    # Maximum time for entire streaming operation (seconds)
+    max_streaming_duration_seconds: 300
 
 ########################################################
 # Debugging
@@ -46,7 +59,7 @@ logging:
       show_for_warning: true
       show_for_error: true
   levels:
-    debug: false  # Suppress all debug logs
+    debug: true   # Enable debug logs to see [STREAM-DEBUG] messages
     info: true    # Show info logs
     warning: true # Show warning logs
     error: true   # Show error logs
