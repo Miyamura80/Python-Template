@@ -20,7 +20,7 @@ def db_transaction(db: Session, timeout_seconds: int = 300):
     """
     start_time = time.time()
 
-    def timeout_handler(signum, frame):
+    def timeout_handler(_signum, _frame):
         db.rollback()
         raise HTTPException(
             status_code=408,

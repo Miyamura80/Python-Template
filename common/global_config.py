@@ -107,7 +107,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
         return config_data
 
-    def get_field_value(self, field: Any, field_name: str) -> tuple[Any, str, bool]:
+    def get_field_value(self, _field: Any, field_name: str) -> tuple[Any, str, bool]:
         """Get field value from YAML data."""
         field_value = self.yaml_data.get(field_name)
         return field_value, field_name, False
@@ -190,7 +190,7 @@ class Config(BaseSettings):
         is_local = os.getenv("GITHUB_ACTIONS") != "true"
         return "🖥️  local" if is_local else "☁️  CI"
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, _context: Any) -> None:
         """Post-initialization to set computed fields that depend on other fields."""
         # Resolve database URI using the db_uri_resolver
         railway_domain = os.environ.get("RAILWAY_PRIVATE_DOMAIN")
@@ -219,7 +219,7 @@ class Config(BaseSettings):
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
-        file_secret_settings: PydanticBaseSettingsSource,
+        _file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         """
         Customize the priority order of settings sources.
