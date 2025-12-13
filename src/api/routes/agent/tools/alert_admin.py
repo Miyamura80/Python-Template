@@ -2,8 +2,8 @@ from src.db.database import get_db_session
 from src.utils.integration.telegram import Telegram
 from loguru import logger as log
 from typing import Optional
-import uuid
 from datetime import datetime, timezone
+from src.api.auth.utils import user_uuid_from_str
 
 
 def alert_admin(
@@ -25,7 +25,7 @@ def alert_admin(
     try:
         # Get user information for context
         db = next(get_db_session())
-        user_uuid = uuid.UUID(user_id)
+        user_uuid = user_uuid_from_str(user_id)
 
         from src.db.models.public.profiles import Profiles
 
