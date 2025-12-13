@@ -9,7 +9,6 @@ import inspect
 import json
 import uuid
 from datetime import datetime, timezone
-from functools import partial
 from typing import Any, Callable, Iterable, Optional, Protocol, Sequence, cast
 
 import dspy
@@ -163,14 +162,37 @@ def build_tool_wrappers(
     This allows us to return a list of tools, and keeps the wrapping logic
     centralized for both streaming and non-streaming endpoints. Accepts an
     iterable of raw tool functions; defaults to the agent's configured tools.
+
+    IMPORTANT: We use functools.wraps to preserve __name__ and __doc__ attributes
+    so that DSPY's ReAct can properly identify and describe the tools to the LLM.
+    Without this, partial() creates a callable named "partial" with no docstring,
+    making the tool invisible to the agent.
     """
+    from functools import wraps
 
     raw_tools = list(tools) if tools is not None else get_agent_tools()
 
     def _wrap_tool(tool: Callable[..., Any]) -> Callable[..., Any]:
         signature = inspect.signature(tool)
         if "user_id" in signature.parameters:
-            return partial(tool, user_id=user_id)
+            # Create a wrapper that preserves metadata instead of using partial
+            @wraps(tool)
+            def wrapped_tool(*args: Any, **kwargs: Any) -> Any:
+                kwargs["user_id"] = user_id
+                return tool(*args, **kwargs)
+
+            # Explicitly copy over important attributes that DSPY looks for
+            # Note: @wraps copies these, but we ensure they're set for DSPY introspection
+            wrapped_tool.__name__ = getattr(tool, "__name__", "unknown_tool")  # type: ignore[attr-defined]
+            wrapped_tool.__doc__ = getattr(tool, "__doc__", None)  # type: ignore[attr-defined]
+
+            # Update the signature to remove user_id (it's now injected)
+            new_params = [
+                p for name, p in signature.parameters.items() if name != "user_id"
+            ]
+            wrapped_tool.__signature__ = signature.replace(parameters=new_params)  # type: ignore[attr-defined]
+
+            return wrapped_tool
         return tool
 
     return [_wrap_tool(tool) for tool in raw_tools]
