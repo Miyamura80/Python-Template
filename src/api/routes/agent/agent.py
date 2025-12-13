@@ -169,6 +169,7 @@ def build_tool_wrappers(
     making the tool invisible to the agent.
     """
     from functools import wraps
+    import re
 
     raw_tools = list(tools) if tools is not None else get_agent_tools()
 
@@ -184,7 +185,21 @@ def build_tool_wrappers(
             # Explicitly copy over important attributes that DSPY looks for
             # Note: @wraps copies these, but we ensure they're set for DSPY introspection
             wrapped_tool.__name__ = getattr(tool, "__name__", "unknown_tool")  # type: ignore[attr-defined]
-            wrapped_tool.__doc__ = getattr(tool, "__doc__", None)  # type: ignore[attr-defined]
+            
+            # Modify the docstring to remove user_id parameter documentation
+            # This prevents the LLM from being confused about whether to pass user_id
+            original_doc = getattr(tool, "__doc__", None)
+            if original_doc:
+                # Remove the user_id line from Args section
+                modified_doc = re.sub(
+                    r'\s*user_id:.*?\n', 
+                    '', 
+                    original_doc, 
+                    flags=re.IGNORECASE
+                )
+                wrapped_tool.__doc__ = modified_doc  # type: ignore[attr-defined]
+            else:
+                wrapped_tool.__doc__ = None  # type: ignore[attr-defined]
 
             # Update the signature to remove user_id (it's now injected)
             new_params = [
