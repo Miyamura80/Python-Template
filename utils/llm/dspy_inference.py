@@ -31,12 +31,18 @@ class DSPYInference:
             tools = []
 
         api_key = global_config.llm_api_key(model_name)
+        
+        # Build timeout configuration for LiteLLM (used by DSPY)
+        # Format: (connect_timeout, read_timeout) or single timeout value
+        timeout = global_config.llm_config.timeout.api_timeout_seconds
+        
         self.lm = dspy.LM(
             model=model_name,
             api_key=api_key,
             cache=global_config.llm_config.cache_enabled,
             temperature=temperature,
             max_tokens=max_tokens,
+            timeout=timeout,  # Add timeout to prevent hanging
         )
         self.observe = observe
         if observe:

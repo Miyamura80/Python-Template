@@ -8,8 +8,8 @@ example_parent:
 # LLMs
 ########################################################
 default_llm:
-  default_model: cerebras/gpt-oss-120b
-  fast_model: cerebras/gpt-oss-120b
+  default_model: gemini/gemini-2.5-flash  # Switched from Cerebras for testing
+  fast_model: gemini/gemini-2.5-flash
   cheap_model: gemini/gemini-2.5-flash
   default_temperature: 0.5
   default_max_tokens: 100000
