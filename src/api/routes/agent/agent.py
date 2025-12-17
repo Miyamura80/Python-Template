@@ -487,14 +487,14 @@ async def agent_stream_endpoint(
     history_payload = serialize_history(history_messages, history_limit)
     conversation_title = conversation.title or "Untitled chat"
     conversation_id = cast(uuid.UUID, conversation.id)
-    
+
     # IMPORTANT: Close the DB session BEFORE starting the streaming generator
     # This prevents holding a DB connection during the entire streaming operation
     db.close()
 
     async def stream_generator():
         """Generate streaming response chunks.
-        
+
         Note: This generator opens a NEW database session only when needed
         to avoid holding connections during long streaming operations.
         """
@@ -505,7 +505,9 @@ async def agent_stream_endpoint(
 
         # Track last activity time for heartbeat mechanism
         last_activity_time = asyncio.get_event_loop().time()
-        heartbeat_interval = global_config.agent_chat.streaming.heartbeat_interval_seconds
+        heartbeat_interval = (
+            global_config.agent_chat.streaming.heartbeat_interval_seconds
+        )
 
         async def maybe_send_heartbeat():
             """Send heartbeat if enough time has passed since last activity."""
@@ -539,10 +541,13 @@ async def agent_stream_endpoint(
                 )
                 + "\n\n"
             )
-            last_activity_time = asyncio.get_event_loop().time()  # Reset after sending data
+            last_activity_time = (
+                asyncio.get_event_loop().time()
+            )  # Reset after sending data
 
             async def stream_with_inference(tools: list):
                 """Stream using DSPY with the provided tools list."""
+                nonlocal last_activity_time
                 response_chunks.clear()
                 inference_module = DSPYInference(
                     pred_signature=AgentSignature,
@@ -563,7 +568,7 @@ async def agent_stream_endpoint(
                     heartbeat = await maybe_send_heartbeat()
                     if heartbeat:
                         yield heartbeat
-                    
+
                     chunk_count += 1
                     # Accumulate full response so we can persist it after streaming
                     response_chunks.append(chunk)
@@ -572,7 +577,9 @@ async def agent_stream_endpoint(
                         + json.dumps({"type": "token", "content": chunk})
                         + "\n\n"
                     )
-                    last_activity_time = asyncio.get_event_loop().time()  # Reset after activity
+                    last_activity_time = (
+                        asyncio.get_event_loop().time()
+                    )  # Reset after activity
 
             full_response: str | None = None
             try:
@@ -625,7 +632,9 @@ async def agent_stream_endpoint(
                             conversation_obj, history_messages, history_limit
                         )
                     else:
-                        log.error(f"Conversation {conversation_id} not found after streaming!")
+                        log.error(
+                            f"Conversation {conversation_id} not found after streaming!"
+                        )
                         conversation_snapshot = None
                 if conversation_snapshot:
                     yield (
@@ -664,7 +673,7 @@ async def agent_stream_endpoint(
                     + json.dumps({"type": "token", "content": full_response})
                     + "\n\n"
                 )
-                
+
                 # Open a NEW database session just for this write operation
                 with scoped_session() as write_db:
                     # Fetch the conversation again in this new session
@@ -694,7 +703,9 @@ async def agent_stream_endpoint(
                             + "\n\n"
                         )
                     else:
-                        log.error(f"Conversation {conversation_id} not found in fallback!")
+                        log.error(
+                            f"Conversation {conversation_id} not found in fallback!"
+                        )
 
             # Send completion signal
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
@@ -732,7 +743,7 @@ async def agent_stream_endpoint(
                     log.debug("Langfuse flush completed in background")
                 except Exception as e:
                     log.error(f"Error flushing Langfuse: {e}")
-            
+
             # Schedule the flush but don't wait for it
             asyncio.create_task(flush_langfuse())
 
