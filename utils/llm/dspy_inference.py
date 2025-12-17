@@ -31,11 +31,11 @@ class DSPYInference:
             tools = []
 
         api_key = global_config.llm_api_key(model_name)
-        
+
         # Build timeout configuration for LiteLLM (used by DSPY)
         # Format: (connect_timeout, read_timeout) or single timeout value
         timeout = global_config.llm_config.timeout.api_timeout_seconds
-        
+
         self.lm = dspy.LM(
             model=model_name,
             api_key=api_key,
@@ -163,7 +163,7 @@ class DSPYInference:
                         # Yield control back to the event loop to prevent blocking
                         # This allows other coroutines to run (e.g., heartbeat checks)
                         await asyncio.sleep(0)
-                        
+
                         if isinstance(chunk, dspy.streaming.StreamResponse):  # type: ignore
                             yield chunk.chunk
                         elif isinstance(chunk, dspy.Prediction):
