@@ -68,6 +68,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.current_tool_span = contextvars.ContextVar[Optional[Any]](
             "current_tool_span"
         )
+        self.current_tool_call_id = contextvars.ContextVar[Optional[str]](
+            "current_tool_call_id"
+        )
         # Initialize Langfuse client
         self.langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
@@ -402,6 +405,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         # Skip internal DSPy tools
         if tool_name in self.INTERNAL_TOOLS:
             self.current_tool_span.set(None)
+            self.current_tool_call_id.set(None)
             return
 
         # Extract tool arguments
@@ -435,6 +439,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 },
             )
             self.current_tool_span.set(tool_span)
+            self.current_tool_call_id.set(call_id)
 
     def on_tool_end(  # noqa
         self,  # noqa
@@ -444,6 +449,16 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
     ) -> None:
         """Called when a tool execution ends."""
         tool_span = self.current_tool_span.get(None)
+        expected_call_id = self.current_tool_call_id.get(None)
+        
+        # Only process if this is the matching tool call (prevents duplicate processing
+        # when DSPy's internal tools like "Finish" trigger on_tool_end without on_tool_start)
+        if call_id != expected_call_id:
+            log.debug(
+                f"Skipping on_tool_end for call_id={call_id} "
+                f"(expected={expected_call_id}, likely internal DSPy tool)"
+            )
+            return
 
         if tool_span:
             level: Literal["DEFAULT", "WARNING", "ERROR"] = "DEFAULT"
@@ -473,5 +488,6 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 status_message=status_message,
             )
             self.current_tool_span.set(None)
+            self.current_tool_call_id.set(None)
 
             log.debug(f"Tool call ended with output: {str(output_value)[:100]}...")
