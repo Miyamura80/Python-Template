@@ -77,7 +77,7 @@ class TestDailyLimits(TestTemplate):
                 enforce=True,
             )
 
-        error = cast(HTTPException, exc_info.value)
+        error = exc_info.value
         assert error.status_code == status.HTTP_402_PAYMENT_REQUIRED
         detail = cast(dict[str, Any], error.detail)
         assert detail["code"] == "daily_limit_exceeded"

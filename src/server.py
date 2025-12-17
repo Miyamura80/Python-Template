@@ -14,8 +14,8 @@ setup_logging()
 app = FastAPI()
 
 # Add CORS middleware with specific allowed origins
-app.add_middleware(
-    CORSMiddleware,
+app.add_middleware(  # type: ignore[call-overload]
+    CORSMiddleware,  # type: ignore[arg-type]
     allow_origins=[
         "http://localhost:8080",
     ],
@@ -25,8 +25,8 @@ app.add_middleware(
 )
 
 # Add session middleware (required for OAuth flow)
-app.add_middleware(
-    SessionMiddleware,
+app.add_middleware(  # type: ignore[call-overload]
+    SessionMiddleware,  # type: ignore[arg-type]
     secret_key=global_config.SESSION_SECRET_KEY,
     same_site="none",
     https_only=True,

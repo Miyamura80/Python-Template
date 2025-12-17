@@ -8,6 +8,7 @@ from typing import Any
 from dotenv import load_dotenv, dotenv_values
 from loguru import logger
 from pydantic import Field, field_validator
+from pydantic.fields import FieldInfo
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
@@ -107,7 +108,9 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
         return config_data
 
-    def get_field_value(self, _field: Any, field_name: str) -> tuple[Any, str, bool]:
+    def get_field_value(
+        self, field: FieldInfo, field_name: str
+    ) -> tuple[Any, str, bool]:
         """Get field value from YAML data."""
         field_value = self.yaml_data.get(field_name)
         return field_value, field_name, False

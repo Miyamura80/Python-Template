@@ -255,7 +255,7 @@ async def cancel_subscription(
         )
 
         if not subscriptions["data"] or not any(
-            sub["status"] in ["active", "trialing"] for sub in subscriptions["data"]
+            sub["status"] in ["active", "trialing"] for sub in subscriptions["data"]  # type: ignore[index]
         ):
             logger.debug(
                 f"No active or trialing subscription found for customer: {customer_id}, {email}"
@@ -281,7 +281,7 @@ async def cancel_subscription(
                 subscription.auto_renew = False
                 subscription.subscription_tier = "free"
                 subscription.subscription_end_date = datetime.fromtimestamp(
-                    cancelled_subscription.current_period_end, tz=timezone.utc
+                    cancelled_subscription.current_period_end, tz=timezone.utc  # type: ignore[attr-defined]
                 )
                 # Reset usage tracking
                 subscription.current_period_usage = 0

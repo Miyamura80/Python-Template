@@ -24,6 +24,10 @@ setup_logging(debug=True)
 class E2ETestBase(TestTemplate):
     """Base class for E2E tests with common fixtures and utilities using WorkOS authentication"""
 
+    # Type hints for instance variables set by fixtures
+    auth_headers: dict[str, str]
+    user_id: str
+
     @pytest.fixture(autouse=True)
     def setup_test(self, setup):  # noqa
         """Setup test client"""

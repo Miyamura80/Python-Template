@@ -93,14 +93,14 @@ async def report_usage(
         }
 
         if usage_request.idempotency_key:
-            stripe.SubscriptionItem.create_usage_record(
+            stripe.SubscriptionItem.create_usage_record(  # type: ignore[attr-defined]
                 subscription.stripe_subscription_item_id,
                 **usage_record_params,
                 api_key=stripe.api_key,
                 idempotency_key=usage_request.idempotency_key,
             )
         else:
-            stripe.SubscriptionItem.create_usage_record(
+            stripe.SubscriptionItem.create_usage_record(  # type: ignore[attr-defined]
                 subscription.stripe_subscription_item_id,
                 **usage_record_params,
                 api_key=stripe.api_key,
