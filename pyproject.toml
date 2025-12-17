@@ -14,7 +14,7 @@ dependencies = [
     "termcolor>=2.4.0",
     "loguru>=0.7.3",
     "vulture>=2.14",
-    "dspy==3.0.3",
+    "dspy==3.0.4",
     "langfuse>=2.60.5,<3.0.0",
     "litellm>=1.79.1",
     "tenacity>=9.1.2",
@@ -70,5 +70,6 @@ exclude = [
     "src/api/routes/",
     "src/api/auth/",
     "src/utils/integration/",
-    "src/stripe/"
+    "src/stripe/",
+    "scripts/"
 ]
