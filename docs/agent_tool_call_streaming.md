@@ -45,6 +45,7 @@ This matters because “real-time progress” implies the frontend should receiv
 - **R4: Safe payloads**: don’t leak secrets or large blobs; support truncation/redaction.
 - **R5: Correlatable**: include a stable `tool_call_id` so UI can group start/end.
 - **R6: Works with Langfuse**: keep existing Langfuse tracing; do not break observability.
+- **R7: Human-readable progress**: optionally include a UI-friendly `display` string for tool calls, provided by tools via a lightweight decorator.
 
 
 ## Proposed SSE event schema (additive)
@@ -58,6 +59,7 @@ All events remain `data: <json>\n\n`.
   "type": "tool_start",
   "tool_call_id": "<string>",
   "tool_name": "alert_admin",
+  "display": "Escalating to an admin for help…",
   "args": { "issue_description": "..." },
   "ts": "2025-12-20T12:34:56.123Z"
 }
@@ -69,6 +71,7 @@ All events remain `data: <json>\n\n`.
   "type": "tool_end",
   "tool_call_id": "<string>",
   "tool_name": "alert_admin",
+  "display": "Escalating to an admin for help…",
   "status": "success",
   "duration_ms": 1234,
   "result": { "status": "success", "message": "..." },
@@ -82,6 +85,7 @@ All events remain `data: <json>\n\n`.
   "type": "tool_error",
   "tool_call_id": "<string>",
   "tool_name": "alert_admin",
+  "display": "Escalating to an admin for help…",
   "status": "error",
   "duration_ms": 1234,
   "error": {
@@ -95,7 +99,41 @@ All events remain `data: <json>\n\n`.
 ### Notes
 - `tool_call_id` should map to DSPy’s callback `call_id` when available; otherwise generate a UUID.
 - `args` and `result` must be **sanitized** (see Safety section).
+- `display` is optional; when absent, the frontend can fall back to `tool_name` (and/or a mapping).
 - Keep existing events unchanged.
+
+
+## Optional tool decorator for human-readable progress (recommended)
+We want tool call events to include a human-friendly string the UI can show (e.g., “Searching GitHub issues…”, “Notifying an admin…”). This should be opt-in per tool, without changing DSPy’s tool discovery (name/docstring) behavior.
+
+### Proposed decorator API
+Introduce a decorator that attaches metadata to the tool function:
+
+```python
+@tool_display("Escalating to an admin for help…")
+def alert_admin(...):
+    ...
+```
+
+And optionally support dynamic display strings based on arguments:
+
+```python
+@tool_display(lambda args: f\"Searching for '{args.get('query', '')}'…\")
+def web_search(query: str) -> str:
+    ...
+```
+
+### Implementation details
+- Store metadata on the function object as a private attribute (e.g. `__tool_display__`), so it survives wrapping.
+- Ensure `build_tool_wrappers(...)` preserves attributes via `functools.wraps` (it already does).
+- In `ToolStreamingCallback`, compute `display` by:
+  - checking `getattr(instance, \"__tool_display__\", None)` (string or callable)
+  - if callable, call it with the sanitized args dict (and guard with try/except)
+  - if missing/invalid, omit `display`
+
+### Why a decorator (vs docstrings)
+- Tool docstrings are optimized for LLM tool selection; UI strings are optimized for humans.
+- A decorator avoids parsing docstrings and avoids coupling UI to prompt/tool schema.
 
 
 ## Approaches considered (with trade-offs)
@@ -196,6 +234,10 @@ This makes streaming tool events reusable across routes.
 ### 2) `utils/llm/tool_streaming_callback.py` (new)
 - New DSPy callback that emits sanitized `tool_*` events to a provided sink (queue).
 - Keep this separate from Langfuse to avoid mixing concerns.
+
+### 2b) `utils/llm/tool_display.py` (new)
+- Decorator (e.g. `tool_display(...)`) that attaches an optional human-readable display string (or callable) to a tool function.
+- Must be safe to apply to any tool and must not interfere with DSPy tool introspection.
 
 ### 3) `src/api/routes/agent/agent.py`
 - Update `/agent/stream` implementation to use worker+queue and emit tool lifecycle events.
