@@ -450,7 +450,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         """Called when a tool execution ends."""
         tool_span = self.current_tool_span.get(None)
         expected_call_id = self.current_tool_call_id.get(None)
-        
+
         # Only process if this is the matching tool call (prevents duplicate processing
         # when DSPy's internal tools like "Finish" trigger on_tool_end without on_tool_start)
         if call_id != expected_call_id:
