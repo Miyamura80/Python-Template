@@ -4,14 +4,7 @@ import dspy
 from common import global_config
 
 from loguru import logger as log
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
 from utils.llm.dspy_langfuse import LangFuseDSPYCallback
-from litellm.exceptions import ServiceUnavailableError
 
 
 class DSPYInference:
@@ -43,6 +36,10 @@ class DSPYInference:
             temperature=temperature,
             max_tokens=max_tokens,
             timeout=timeout,  # Add timeout to prevent hanging
+            # Use LiteLLM's built-in retry mechanism instead of tenacity @retry decorator.
+            # This retries only the LLM API calls, NOT tool executions, preventing
+            # duplicate side effects when tools are called during ReAct inference.
+            num_retries=global_config.llm_config.retry.max_attempts,
         )
         self.observe = observe
         if observe:
@@ -77,17 +74,6 @@ class DSPYInference:
             self._inference_module_async = dspy.asyncify(self._inference_module)
         return self._inference_module, self._inference_module_async
 
-    @retry(
-        retry=retry_if_exception_type(ServiceUnavailableError),
-        stop=stop_after_attempt(global_config.llm_config.retry.max_attempts),
-        wait=wait_exponential(
-            multiplier=global_config.llm_config.retry.min_wait_seconds,
-            max=global_config.llm_config.retry.max_wait_seconds,
-        ),
-        before_sleep=lambda retry_state: log.warning(
-            f"Retrying due to ServiceUnavailableError. Attempt {retry_state.attempt_number}"
-        ),
-    )
     async def run(
         self,
         **kwargs: Any,
