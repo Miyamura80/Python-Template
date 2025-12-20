@@ -146,7 +146,7 @@ class TestAgent(E2ETestBase):
 
         response = self.client.post(
             "/agent",
-            data="not valid json",
+            content="not valid json",
             headers=self.auth_headers,
         )
 

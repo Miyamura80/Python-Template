@@ -76,13 +76,13 @@ class TestSubscriptionE2E(E2ETestBase):
             # Continue with the test even if cleanup fails
 
     @pytest.mark.asyncio
-    async def test_create_checkout_session_e2e(self, db: Session, auth_headers):
+    async def test_create_checkout_session_e2e(self, db: Session, get_auth_headers):
         """Test creating a checkout session"""
-        await self.cleanup_existing_subscription(auth_headers)
+        await self.cleanup_existing_subscription(get_auth_headers)
 
         response = self.client.post(
             "/checkout/create",
-            headers={**auth_headers, "origin": "http://localhost:3000"},
+            headers={**get_auth_headers, "origin": "http://localhost:3000"},
         )
 
         assert response.status_code == 200
@@ -91,15 +91,15 @@ class TestSubscriptionE2E(E2ETestBase):
 
     @pytest.mark.asyncio
     async def test_get_subscription_status_no_subscription_e2e(
-        self, db: Session, auth_headers
+        self, db: Session, get_auth_headers
     ):
         """Test getting subscription status when no subscription exists"""
         # Clean up any existing subscriptions first, passing the db session
-        await self.cleanup_existing_subscription(auth_headers, db)
+        await self.cleanup_existing_subscription(get_auth_headers, db)
         db.commit()
 
         # Add debug logging to see what's in the database
-        token = auth_headers["Authorization"].split(" ")[1]
+        token = get_auth_headers["Authorization"].split(" ")[1]
         decoded = jwt.decode(token, options={"verify_signature": False})
         user_id = decoded.get("sub")
 
@@ -113,7 +113,7 @@ class TestSubscriptionE2E(E2ETestBase):
                 f"Current DB state: active={db_subscription.is_active}, tier={db_subscription.subscription_tier}"
             )
 
-        response = self.client.get("/subscription/status", headers=auth_headers)
+        response = self.client.get("/subscription/status", headers=get_auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -126,20 +126,20 @@ class TestSubscriptionE2E(E2ETestBase):
 
     @pytest.mark.asyncio
     @pytest.mark.order(after="*")
-    async def test_subscription_webhook_flow_e2e(self, db: Session, auth_headers):
+    async def test_subscription_webhook_flow_e2e(self, db: Session, get_auth_headers):
         """Test the complete subscription flow through webhooks"""
         # Clean up any existing subscriptions first
-        await self.cleanup_existing_subscription(auth_headers, db)
+        await self.cleanup_existing_subscription(get_auth_headers, db)
 
         # First create a customer in Stripe
         response = self.client.post(
             "/checkout/create",
-            headers={**auth_headers, "origin": "http://localhost:3000"},
+            headers={**get_auth_headers, "origin": "http://localhost:3000"},
         )
         assert response.status_code == 200
 
         # Get user info from auth headers
-        user = self.get_user_from_token(auth_headers["Authorization"].split(" ")[1])
+        user = self.get_user_from_token(get_auth_headers["Authorization"].split(" ")[1])
 
         # Create a test subscription
         customer = stripe.Customer.list(email=user["email"], limit=1).data[0]
@@ -224,7 +224,7 @@ class TestSubscriptionE2E(E2ETestBase):
         assert db_subscription.trial_start_date is not None
 
         # Check subscription status endpoint
-        status_response = self.client.get("/subscription/status", headers=auth_headers)
+        status_response = self.client.get("/subscription/status", headers=get_auth_headers)
 
         assert status_response.status_code == 200
         status_data = status_response.json()
@@ -234,23 +234,23 @@ class TestSubscriptionE2E(E2ETestBase):
         assert status_data["source"] == "stripe"
 
     @pytest.mark.asyncio
-    async def test_cancel_subscription_e2e(self, db: Session, auth_headers):
+    async def test_cancel_subscription_e2e(self, db: Session, get_auth_headers):
         """Test cancelling a subscription"""
         # Clean up first to ensure we start fresh
-        await self.cleanup_existing_subscription(auth_headers, db)
+        await self.cleanup_existing_subscription(get_auth_headers, db)
         db.commit()
 
         # Now create new subscription
-        await self.test_subscription_webhook_flow_e2e(db, auth_headers)
+        await self.test_subscription_webhook_flow_e2e(db, get_auth_headers)
 
         # Then test cancellation
-        response = self.client.post("/cancel_subscription", headers=auth_headers)
+        response = self.client.post("/cancel_subscription", headers=get_auth_headers)
 
         assert response.status_code == 200
         assert response.json()["status"] == "success"
 
         # Verify subscription status
-        status_response = self.client.get("/subscription/status", headers=auth_headers)
+        status_response = self.client.get("/subscription/status", headers=get_auth_headers)
 
         assert status_response.status_code == 200
         status_data = status_response.json()

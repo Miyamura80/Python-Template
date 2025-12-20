@@ -44,7 +44,7 @@ class E2ETestBase(TestTemplate):
             db.close()
 
     @pytest_asyncio.fixture
-    async def auth_headers(self, db: Session):
+    async def get_auth_headers(self, db: Session):
         """
         Get authentication token for test user and approve them.
 
@@ -98,7 +98,7 @@ class E2ETestBase(TestTemplate):
         return {"Authorization": f"Bearer {token}"}
 
     @pytest_asyncio.fixture(autouse=True)
-    async def setup_test_user(self, db, auth_headers):
+    async def setup_test_user(self, db, get_auth_headers):
         """
         Set up test user with auth headers for authenticated E2E tests.
 
@@ -109,9 +109,9 @@ class E2ETestBase(TestTemplate):
             self.user_id: The authenticated user's ID
             self.auth_headers: The authentication headers dict
         """
-        user_info = self.get_user_from_auth_headers(auth_headers)
+        user_info = self.get_user_from_auth_headers(get_auth_headers)
         self.user_id = user_info["id"]
-        self.auth_headers = auth_headers
+        self.auth_headers = get_auth_headers
 
         # Ensure generous test quota and clean slate before each test run
         conversation_ids_subquery = (
