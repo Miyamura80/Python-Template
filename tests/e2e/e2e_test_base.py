@@ -43,8 +43,8 @@ class E2ETestBase(TestTemplate):
         finally:
             db.close()
 
-    @pytest_asyncio.fixture
-    async def auth_headers(self, db: Session):
+    @pytest_asyncio.fixture(name="auth_headers")
+    async def auth_headers_fixture(self, db: Session):
         """
         Get authentication token for test user and approve them.
 

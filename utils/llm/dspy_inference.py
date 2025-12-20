@@ -19,6 +19,7 @@ class DSPYInference:
         max_iters: int = 5,
         trace_id: str | None = None,
         parent_observation_id: str | None = None,
+        extra_callbacks: list[Any] | None = None,
     ) -> None:
         if tools is None:
             tools = []
@@ -51,6 +52,7 @@ class DSPYInference:
             )
         else:
             self.callback = None
+        self.extra_callbacks = extra_callbacks or []
 
         # Store tools and signature for lazy initialization
         self.tools = tools
@@ -84,8 +86,12 @@ class DSPYInference:
 
             # Use dspy.context() for async-safe configuration
             context_kwargs = {"lm": self.lm}
+            callbacks: list[Any] = []
             if self.observe and self.callback:
-                context_kwargs["callbacks"] = [self.callback]
+                callbacks.append(self.callback)
+            callbacks.extend(self.extra_callbacks)
+            if callbacks:
+                context_kwargs["callbacks"] = callbacks
 
             with dspy.context(**context_kwargs):
                 result = await inference_module_async(**kwargs, lm=self.lm)
@@ -116,8 +122,12 @@ class DSPYInference:
 
             # Use dspy.context() for async-safe configuration
             context_kwargs = {"lm": self.lm}
+            callbacks: list[Any] = []
             if self.observe and self.callback:
-                context_kwargs["callbacks"] = [self.callback]
+                callbacks.append(self.callback)
+            callbacks.extend(self.extra_callbacks)
+            if callbacks:
+                context_kwargs["callbacks"] = callbacks
 
             with dspy.context(**context_kwargs):
                 # Create a streaming version of the inference module
