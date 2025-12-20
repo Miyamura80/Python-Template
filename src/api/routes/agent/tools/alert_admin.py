@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from src.api.auth.utils import user_uuid_from_str
 import re
 
+from utils.llm.tool_display import tool_display
+
 
 def escape_markdown_v2(text: str) -> str:
     """
@@ -22,6 +24,7 @@ def escape_markdown_v2(text: str) -> str:
     return re.sub(f"([{re.escape(special_chars)}])", r"\\\1", text)
 
 
+@tool_display("Escalating to an admin for help…")
 def alert_admin(
     user_id: str, issue_description: str, user_context: Optional[str] = None
 ) -> dict:
