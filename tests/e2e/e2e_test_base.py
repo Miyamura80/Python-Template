@@ -43,8 +43,14 @@ class E2ETestBase(TestTemplate):
         finally:
             db.close()
 
-    @pytest_asyncio.fixture
-    async def auth_headers(self, db: Session):
+    # NOTE:
+    # This fixture must be named `auth_headers` for existing tests, but we avoid
+    # defining a method named `auth_headers` because it conflicts with the
+    # instance attribute `self.auth_headers` that tests use. Some type checkers
+    # (e.g. ty) otherwise infer `self.auth_headers` as a union of a dict and a
+    # bound method.
+    @pytest_asyncio.fixture(name="auth_headers")
+    async def _auth_headers(self, db: Session) -> dict[str, str]:
         """
         Get authentication token for test user and approve them.
 
