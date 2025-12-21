@@ -108,3 +108,14 @@ telegram:
   chat_ids:
     admin_alerts: "1560836485"
     test: "1560836485" 
+
+########################################################
+# Referrals
+########################################################
+referrals:
+  # Length of generated referral codes (upper-case, unambiguous alphabet)
+  code_length: 10
+  # Optional credits award when a referral is claimed
+  credit_award:
+    referrer: 0
+    referee: 0

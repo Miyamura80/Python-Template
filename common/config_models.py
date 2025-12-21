@@ -161,3 +161,17 @@ class TelegramConfig(BaseModel):
     """Telegram configuration."""
 
     chat_ids: TelegramChatIdsConfig
+
+
+class ReferralCreditAwardConfig(BaseModel):
+    """Credits to award on successful referral claim."""
+
+    referrer: int
+    referee: int
+
+
+class ReferralsConfig(BaseModel):
+    """Referral system configuration."""
+
+    code_length: int
+    credit_award: ReferralCreditAwardConfig

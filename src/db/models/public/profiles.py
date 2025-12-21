@@ -31,7 +31,16 @@ class Profiles(Base):
             ondelete="SET NULL",
             use_alter=True,  # Defer foreign key creation to break circular dependency
         ),
+        ForeignKeyConstraint(
+            ["referred_by_user_id"],
+            ["public.profiles.user_id"],
+            name="profiles_referred_by_user_id_fkey",
+            ondelete="SET NULL",
+            use_alter=True,  # Self-referential FK; defer to avoid dependency issues
+        ),
         Index("idx_profiles_organization_id", "organization_id"),
+        Index("idx_profiles_referral_code", "referral_code"),
+        Index("idx_profiles_referred_by_user_id", "referred_by_user_id"),
         {"schema": "public"},
     )
 
@@ -53,6 +62,12 @@ class Profiles(Base):
 
     # Credits system
     credits = Column(Integer, nullable=False, default=0)
+
+    # Referral system
+    # Unique per user; generated lazily on first request.
+    referral_code = Column(String, nullable=True, unique=True)
+    referred_by_user_id = Column(UUID(as_uuid=True), nullable=True)
+    referred_at = Column(DateTime(timezone=True), nullable=True)
 
     # New fields for waitlist system
     is_approved = Column(Boolean, nullable=False, default=False)
