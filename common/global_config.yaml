@@ -107,4 +107,15 @@ stripe:
 telegram:
   chat_ids:
     admin_alerts: "1560836485"
-    test: "1560836485" 
+    test: "1560836485"
+
+########################################################
+# Referral
+########################################################
+referral:
+  # Credits awarded to the referrer when a referral is completed
+  credits_for_referrer: 100
+  # Credits awarded to the referred user when they sign up
+  credits_for_referred: 50
+  # Length of the generated referral code
+  code_length: 8

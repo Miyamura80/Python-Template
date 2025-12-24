@@ -19,6 +19,7 @@ from .payments import (
     subscription_router,
     webhooks_router,
 )
+from .referrals import router as referrals_router
 
 # List of all routers to be included in the application
 # Add new routers to this list when creating new endpoints
@@ -31,6 +32,8 @@ all_routers = [
     metering_router,
     subscription_router,
     webhooks_router,
+    # Referral router
+    referrals_router,
 ]
 
 __all__ = [
@@ -42,4 +45,5 @@ __all__ = [
     "metering_router",
     "subscription_router",
     "webhooks_router",
+    "referrals_router",
 ]
