@@ -1,15 +1,20 @@
 from sqlalchemy.orm import Session
 from src.db.models.public.profiles import Profiles, generate_referral_code
 
+
 class ReferralService:
     @staticmethod
-    def validate_referral_code(db: Session, referral_code: str) -> Profiles | None:
+    def validate_referral_code(
+        db: Session, referral_code: str | None
+    ) -> Profiles | None:
         """
         Validate a referral code and return the referrer's profile.
         """
         if not referral_code:
             return None
-        return db.query(Profiles).filter(Profiles.referral_code == referral_code).first()
+        return (
+            db.query(Profiles).filter(Profiles.referral_code == referral_code).first()
+        )
 
     @staticmethod
     def apply_referral(db: Session, user_profile: Profiles, referral_code: str) -> bool:
@@ -43,7 +48,7 @@ class ReferralService:
         Get the referral code for a profile, generating one if it doesn't exist.
         """
         if profile.referral_code:
-            return profile.referral_code
+            return str(profile.referral_code)
 
         # Lazy generation
         code = generate_referral_code()
@@ -61,4 +66,4 @@ class ReferralService:
         db.add(profile)
         db.commit()
         db.refresh(profile)
-        return code
+        return str(code)
