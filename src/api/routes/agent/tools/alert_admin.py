@@ -94,9 +94,8 @@ _This alert was generated when the agent could not resolve a user's request with
         )
 
         if message_id:
-            log.info(
-                f"Admin alert sent successfully for user {user_id}. Message ID: {message_id}"
-            )
+            email = user_profile.email if user_profile else "Unknown"
+            log.info(f"Admin alert sent successfully for user {user_id} ({email})")
             return {
                 "status": "success",
                 "message": "Administrator has been alerted about the issue.",
