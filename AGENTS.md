@@ -18,25 +18,6 @@ Before running the project, you need to set the required environment variables. 
 
 Create a `.env` file in the root of the project and add the environment variables defined in `common/global_config.py`. You can find the required keys as fields in the `Config` class (any field with type `str` that looks like an API key).
 
-## Commit Message Convention
-
-Please follow the following convention for commit messages:
-
--   🏗️ {msg} : initial first pass implementation
--   🔨 {msg} : make feature changes to code, not fully tested
--   🐛 {msg} : bugfix based on an initial user reported error/debugging, not fully tested
--   ✨ {msg} : code formatting/linting fix/cleanup. Only use when nothing has changed functionally.
--   📝 {msg} : update documentation or cursor rules (incl `.mdc` files/AGENT.md)
--   ✅ {msg} : feature changed, E2E tests written & committed together
--   ⚙️ {msg} : configurations changed (not source code, e.g. `.toml`, `.yaml`, `.lock` files)
--   👀 {msg} : logging/debugging prints/observability added/modified
--   💽 {msg} : updates to DB schema/DB migrations
--   ⚠️ {msg} : non-reverting change
-
-**Emoji Usage:** Use multiple emojis to emphasize the size of the commit:
--   🏗️🏗️🏗️ (5+ new files), 🏗️🏗️ (3-5), 🏗️ (1-2)
--   🐛🐛🐛 (8+ files modified), 🐛🐛 (4-7), 🐛 (1-3)
-
 ## Coding Style
 
 -   **Variable Naming:** Use `snake_case` for all function, file, and directory names. Use `CamelCase` for class names. Use `lowercase` for variable names and `ALL_CAPS` for constants.
@@ -92,6 +73,8 @@ setup_logging()
 
 # Use the logger as needed
 log.info("This is an info message.")
+log.error("This is an error message.")
+log.debug("This is a debug message.")
 ```
 
 -   **Configuration:** Never configure logging directly in your files. The log levels are controlled by `common/global_config.yaml`.
@@ -109,22 +92,43 @@ class ExtractInfo(dspy.Signature):
     """Extract structured information from text."""
     text: str = dspy.InputField()
     title: str = dspy.OutputField()
+    headings: list[str] = dspy.OutputField()
+    entities: list[dict[str, str]] = dspy.OutputField(desc="a list of entities and their metadata")
+
+def web_search_tool(query: str) -> str:
+    """Search the web for information."""
+    return "example search term"
 
 # Inference without tool-use
 inf_module = DSPYInference(pred_signature=ExtractInfo)
+
+# Inference with tool-use
+inf_module_with_tool_use = DSPYInference(
+    pred_signature=ExtractInfo,
+    tools=[web_search_tool],
+)
+
+result = asyncio.run(inf_module.run(
+    text="Apple Inc. announced its latest iPhone 14 today. The CEO, Tim Cook, highlighted its new features in a press release."
+))
+
+print(result.title)
+print(result.headings)
+print(result.entities)
 ```
 
 ## LLM Observability with LangFuse
 
 Use LangFuse for observability.
 
--   **Usage:** Use the `@observe` decorator for functions that contain LLM calls.
+-   **Usage:** Use the `@observe` decorator for functions that contain LLM calls. If you need a more descriptive name for the observation span, use `langfuse_context.update_current_observation`.
 
 ```python
 from langfuse.decorators import observe, langfuse_context
 
 @observe
 def function_name(...):
+    # To give the span a more descriptive name, update the observation
     langfuse_context.update_current_observation(name=f"some-descriptive-name")
 ```
 
@@ -155,10 +159,14 @@ class TestMyFeature(TestTemplate):
         # Initialize any shared attributes here
         pass
 
+    # Use decorators for slow or nondeterministic tests
     @slow_test
     def test_my_function(self):
+        # Your test code here
         assert True
 ```
+
+**E2E Tests:** For API routes, refer to `tests/e2e/e2e_test_base.py` or `.cursor/rules/routes.mdc` for templates on writing end-to-end tests.
 
 ## Type Hinting
 
@@ -172,6 +180,7 @@ class TestMyFeature(TestTemplate):
 
 For specific tasks, please refer to the detailed guidelines in the `.cursor/rules/` directory:
 
+*   **Commit Messages:** See `.cursor/rules/commit_msg.mdc` for the mandatory commit message convention and emoji usage.
 *   **API Routes:** When adding or modifying API routes (especially for authentication and adding new endpoints), refer to `.cursor/rules/routes.mdc`.
 *   **Deprecations:** Check `.cursor/rules/deprecated.mdc` for information on deprecated modules and patterns (e.g., `datetime.utcnow`).
 *   **Railway Deployment:** If dealing with deployment or build artifacts on Railway, consult `.cursor/rules/railway.mdc` regarding file handling (e.g., `.txt` vs `.md` files).
