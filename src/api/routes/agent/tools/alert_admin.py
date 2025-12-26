@@ -105,13 +105,15 @@ _This alert was generated when the agent could not resolve a user's request with
         else:
             log.error(f"Failed to send admin alert for user {user_id}")
             return {
-                "error": "Failed to send admin alert. Please contact support directly."
+                "status": "error",
+                "error": "Failed to send admin alert. Please contact support directly.",
             }
 
     except Exception as e:
         log.error(f"Error sending admin alert for user {user_id}: {str(e)}")
         return {
-            "error": f"Failed to send admin alert: {str(e)}. Please contact support directly."
+            "status": "error",
+            "error": f"Failed to send admin alert: {str(e)}. Please contact support directly.",
         }
     finally:
         if db is not None:
