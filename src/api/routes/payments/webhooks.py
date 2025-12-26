@@ -275,14 +275,6 @@ async def handle_subscription_webhook(
                     with db_transaction(db):
                         subscription.is_active = False
                         subscription.subscription_tier = "free"
-                        # Keep the stripe_subscription_id so we can track it or re-activate later?
-                        # But typically if downgraded we might want to clear it or keep it until actual cancellation.
-                        # The request says "auto-downgrade".
-                        # customer.subscription.deleted clears it.
-                        # If payment failed, the subscription might still exist in Stripe (past_due).
-                        # But locally we downgrade.
-                        # I'll keep the IDs for now but mark inactive, consistent with "downgrade".
-                        # However, to prevent further usage or confusion, setting active=False and tier=free is key.
 
                     logger.info(
                         f"Payment failed for subscription {invoice_subscription_id}. Downgraded to free."
