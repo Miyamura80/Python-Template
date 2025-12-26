@@ -259,6 +259,27 @@ async def handle_subscription_webhook(
                     subscription.current_period_usage = 0
                 logger.info(f"Deactivated subscription {subscription_id}")
 
+        elif event_type == "invoice.payment_failed":
+            # Handle payment failure -> auto-downgrade
+            invoice_obj = event["data"]["object"]
+            invoice_subscription_id = invoice_obj.get("subscription")
+
+            if invoice_subscription_id:
+                subscription = (
+                    db.query(UserSubscriptions)
+                    .filter(UserSubscriptions.stripe_subscription_id == invoice_subscription_id)
+                    .first()
+                )
+
+                if subscription:
+                    with db_transaction(db):
+                        subscription.is_active = False
+                        subscription.subscription_tier = "free"
+
+                    logger.info(
+                        f"Payment failed for subscription {invoice_subscription_id}. Downgraded to free."
+                    )
+
         return {"status": "success"}
 
     except HTTPException:
