@@ -2,7 +2,10 @@ from sqlalchemy.orm import Session
 from src.db.models.public.profiles import Profiles
 from src.db.utils.db_transaction import db_transaction
 import uuid
-from loguru import logger
+from src.utils.logging_config import setup_logging
+from loguru import logger as log
+
+setup_logging()
 
 def ensure_profile_exists(
     db: Session,
