@@ -35,13 +35,11 @@ class ReferralService:
             return False
 
         user_profile.referrer_id = referrer.user_id
+        referrer.referral_count += 1
         db.add(user_profile)
-        # Use SQL increment to avoid race condition
-        db.execute(
-            sa.text("UPDATE profiles SET referral_count = referral_count + 1 WHERE user_id = :uid"),
-            {"uid": referrer.user_id}
-        )
+        db.add(referrer)
         db.commit()
+        db.refresh(user_profile)
         return True
 
     @staticmethod
