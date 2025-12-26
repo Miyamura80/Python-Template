@@ -152,6 +152,7 @@ from tests.test_template import TestTemplate, slow_test, nondeterministic_test
 class TestMyFeature(TestTemplate):
     @pytest.fixture(autouse=True)
     def setup_shared_variables(self, setup):
+        # Initialize any shared attributes here
         pass
 
     @slow_test
