@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from src.db.models.public.profiles import Profiles, generate_referral_code
+from src.db.utils.db_transaction import db_transaction
 
 
 class ReferralService:
@@ -35,11 +36,12 @@ class ReferralService:
             # Cannot refer yourself
             return False
 
-        user_profile.referrer_id = referrer.user_id
-        referrer.referral_count += 1
-        db.add(user_profile)
-        db.add(referrer)
-        db.commit()
+        with db_transaction(db):
+            user_profile.referrer_id = referrer.user_id
+            referrer.referral_count += 1
+            db.add(user_profile)
+            db.add(referrer)
+
         db.refresh(user_profile)
         return True
 
@@ -55,6 +57,18 @@ class ReferralService:
         for _ in range(5):
             try:
                 code = generate_referral_code()
+                # Use db_transaction to ensure atomic commit/rollback on error
+                # Note: db_transaction handles commit on success and rollback on error
+                # but we need to catch IntegrityError specifically for retry
+                # So we might need nested try/except or rely on db_transaction re-raising
+
+                # Simplified approach: Just try commit.
+                # If we use db_transaction, it catches exceptions and rolls back, then re-raises 500.
+                # But we want to catch IntegrityError specifically.
+                # So maybe NOT use db_transaction here if we want custom retry logic?
+                # Or use it and catch the HTTPException(500) it raises? That's messy.
+                # I'll stick to manual commit here for the retry loop as it is specific control flow.
+
                 profile.referral_code = code
                 db.add(profile)
                 db.commit()
