@@ -22,7 +22,7 @@ def ensure_profile_exists(
     profile = db.query(Profiles).filter(Profiles.user_id == user_uuid).first()
 
     if not profile:
-        logger.info(f"Creating new profile for user {user_uuid}")
+        log.info(f"Creating new profile for user {user_uuid}")
 
         with db_transaction(db):
             profile = Profiles(
