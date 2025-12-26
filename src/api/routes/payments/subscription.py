@@ -5,7 +5,6 @@ import stripe
 from common import global_config
 from loguru import logger
 from src.db.models.stripe.user_subscriptions import UserSubscriptions
-from src.db.models.public.profiles import Profiles
 from sqlalchemy.orm import Session
 from src.db.database import get_db_session
 from src.db.utils.db_transaction import db_transaction
@@ -21,24 +20,9 @@ from src.api.routes.payments.stripe_config import (
     UNIT_LABEL,
 )
 from src.api.auth.utils import user_uuid_from_str
+from src.db.utils.users import ensure_profile_exists
 
 router = APIRouter()
-
-
-def ensure_profile_exists(db: Session, user_uuid, email: str) -> Profiles:
-    """Ensure a profile exists for the user, creating one if necessary."""
-    profile = db.query(Profiles).filter(Profiles.user_id == user_uuid).first()
-
-    if not profile:
-        logger.info(f"Creating new profile for user {user_uuid} with email {email}")
-        with db_transaction(db):
-            profile = Profiles(
-                user_id=user_uuid,
-                email=email,
-            )
-            db.add(profile)
-
-    return profile
 
 
 @router.get("/subscription/status")

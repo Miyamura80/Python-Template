@@ -7,12 +7,21 @@ from sqlalchemy import (
     Integer,
     ForeignKeyConstraint,
     Index,
+    ForeignKey,
+    UUID,
 )
-from sqlalchemy.dialects.postgresql import UUID
 from src.db.models import Base
 import uuid
 import enum
+import secrets
+import string
 from datetime import datetime, timezone
+
+
+def generate_referral_code(length: int = 8) -> str:
+    """Generate a random alphanumeric referral code."""
+    alphabet = string.ascii_uppercase + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 class WaitlistStatus(enum.Enum):
@@ -53,6 +62,21 @@ class Profiles(Base):
 
     # Credits system
     credits = Column(Integer, nullable=False, default=0)
+
+    # Referral system
+    referral_code = Column(
+        String,
+        unique=True,
+        nullable=False,
+        default=generate_referral_code,
+        index=True,
+    )
+    referrer_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("public.profiles.user_id"),
+        nullable=True,
+    )
+    referral_count = Column(Integer, nullable=False, default=0)
 
     # New fields for waitlist system
     is_approved = Column(Boolean, nullable=False, default=False)
