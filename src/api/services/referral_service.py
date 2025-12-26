@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from src.db.models.public.profiles import Profiles, generate_referral_code
 
 
@@ -50,18 +51,21 @@ class ReferralService:
         if profile.referral_code:
             return str(profile.referral_code)
 
-        # Lazy generation
-        code = generate_referral_code()
-        # Retry logic for uniqueness
-        retries = 0
-        while db.query(Profiles).filter(Profiles.referral_code == code).first():
-            code = generate_referral_code()
-            retries += 1
-            if retries > 5:
-                # Fallback to longer code
-                code = generate_referral_code(12)
-                break
+        # Lazy generation with retry on collision
+        for _ in range(5):
+            try:
+                code = generate_referral_code()
+                profile.referral_code = code
+                db.add(profile)
+                db.commit()
+                db.refresh(profile)
+                return str(code)
+            except IntegrityError:
+                db.rollback()
+                continue
 
+        # Fallback to longer code if collision persists
+        code = generate_referral_code(12)
         profile.referral_code = code
         db.add(profile)
         db.commit()
