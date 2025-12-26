@@ -2,10 +2,7 @@ from sqlalchemy.orm import Session
 from src.db.models.public.profiles import Profiles
 from src.db.utils.db_transaction import db_transaction
 import uuid
-from src.utils.logging_config import setup_logging
-from loguru import logger as log
-
-setup_logging()
+from loguru import logger
 
 def ensure_profile_exists(
     db: Session,
@@ -22,7 +19,7 @@ def ensure_profile_exists(
     profile = db.query(Profiles).filter(Profiles.user_id == user_uuid).first()
 
     if not profile:
-        log.info(f"Creating new profile for user {user_uuid}")
+        logger.info(f"Creating new profile for user {user_uuid}")
 
         with db_transaction(db):
             profile = Profiles(
