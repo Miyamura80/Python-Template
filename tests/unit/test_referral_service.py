@@ -1,28 +1,78 @@
 from src.api.services.referral_service import ReferralService
-from src.db.models.public.profiles import Profiles
+from src.db.models.public.profiles import Profiles, generate_referral_code
 import uuid
 
-def test_get_or_create_referral_code_lazy_generation(db_session):
+def test_apply_referral_success(db_session):
+    # Create referrer
+    referrer_id = uuid.uuid4()
+    referrer_code = generate_referral_code()
+    referrer = Profiles(user_id=referrer_id, email="referrer@example.com", referral_code=referrer_code)
+    db_session.add(referrer)
+
+    # Create user
     user_id = uuid.uuid4()
-    profile = Profiles(user_id=user_id, email="lazy@example.com")
-    db_session.add(profile)
+    user_code = generate_referral_code()
+    user = Profiles(user_id=user_id, email="user@example.com", referral_code=user_code)
+    db_session.add(user)
     db_session.commit()
 
-    assert profile.referral_code is None
+    # Apply referral
+    result = ReferralService.apply_referral(db_session, user, referrer_code)
 
-    code = ReferralService.get_or_create_referral_code(db_session, profile)
+    assert result is True
 
-    assert code is not None
-    assert len(code) >= 8
-    assert profile.referral_code == code
+    # Verify updates
+    db_session.refresh(user)
+    db_session.refresh(referrer)
 
-    # Call again should return same code
-    code2 = ReferralService.get_or_create_referral_code(db_session, profile)
-    assert code2 == code
+    assert user.referrer_id == referrer_id
+    assert referrer.referral_count == 1
 
-def test_validate_referral_code_with_none(db_session):
-    result = ReferralService.validate_referral_code(db_session, None)
-    assert result is None
+def test_apply_referral_self_referral_fails(db_session):
+    user_id = uuid.uuid4()
+    user_code = generate_referral_code()
+    user = Profiles(user_id=user_id, email="self@example.com", referral_code=user_code)
+    db_session.add(user)
+    db_session.commit()
 
-    result = ReferralService.validate_referral_code(db_session, "")
-    assert result is None
+    result = ReferralService.apply_referral(db_session, user, user_code)
+
+    assert result is False
+    assert user.referrer_id is None
+
+def test_apply_referral_already_referred_fails(db_session):
+    # Create referrer
+    referrer_id = uuid.uuid4()
+    referrer_code = generate_referral_code()
+    referrer = Profiles(user_id=referrer_id, referral_code=referrer_code)
+    db_session.add(referrer)
+
+    # Create user already referred
+    user_id = uuid.uuid4()
+    user_code = generate_referral_code()
+    user = Profiles(user_id=user_id, referral_code=user_code, referrer_id=referrer_id)
+    db_session.add(user)
+    db_session.commit()
+
+    # Try to refer again with different referrer
+    other_referrer_code = generate_referral_code()
+    other_referrer = Profiles(user_id=uuid.uuid4(), referral_code=other_referrer_code)
+    db_session.add(other_referrer)
+    db_session.commit()
+
+    result = ReferralService.apply_referral(db_session, user, other_referrer_code)
+
+    assert result is False
+    assert user.referrer_id == referrer_id
+
+def test_apply_referral_invalid_code_fails(db_session):
+    user_id = uuid.uuid4()
+    user_code = generate_referral_code()
+    user = Profiles(user_id=user_id, referral_code=user_code)
+    db_session.add(user)
+    db_session.commit()
+
+    result = ReferralService.apply_referral(db_session, user, "INVALIDCODE")
+
+    assert result is False
+    assert user.referrer_id is None

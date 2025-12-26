@@ -4,14 +4,13 @@ from src.db.utils.db_transaction import db_transaction
 import uuid
 from loguru import logger
 
-
 def ensure_profile_exists(
     db: Session,
     user_uuid: uuid.UUID,
     email: str | None = None,
     username: str | None = None,
     avatar_url: str | None = None,
-    is_approved: bool = False,
+    is_approved: bool = False
 ) -> Profiles:
     """
     Ensure a profile exists for the given user UUID.
@@ -28,7 +27,7 @@ def ensure_profile_exists(
                 email=email,
                 username=username,
                 avatar_url=avatar_url,
-                is_approved=is_approved,
+                is_approved=is_approved
             )
             db.add(profile)
         # No need for explicit commit/refresh as db_transaction handles commit,

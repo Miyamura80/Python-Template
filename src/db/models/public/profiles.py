@@ -67,7 +67,8 @@ class Profiles(Base):
     referral_code = Column(
         String,
         unique=True,
-        nullable=True,  # Nullable as requested
+        nullable=False,
+        default=generate_referral_code,
         index=True,
     )
     referrer_id = Column(
