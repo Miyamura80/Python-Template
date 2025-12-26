@@ -224,7 +224,9 @@ class TestSubscriptionE2E(E2ETestBase):
         assert db_subscription.trial_start_date is not None
 
         # Check subscription status endpoint
-        status_response = self.client.get("/subscription/status", headers=get_auth_headers)
+        status_response = self.client.get(
+            "/subscription/status", headers=get_auth_headers
+        )
 
         assert status_response.status_code == 200
         status_data = status_response.json()
@@ -250,7 +252,9 @@ class TestSubscriptionE2E(E2ETestBase):
         assert response.json()["status"] == "success"
 
         # Verify subscription status
-        status_response = self.client.get("/subscription/status", headers=get_auth_headers)
+        status_response = self.client.get(
+            "/subscription/status", headers=get_auth_headers
+        )
 
         assert status_response.status_code == 200
         status_data = status_response.json()

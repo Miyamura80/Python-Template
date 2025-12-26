@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, Any, AsyncGenerator
+from typing import Callable, Any, AsyncGenerator, Optional
 import dspy
 from common import global_config
 
@@ -76,6 +76,7 @@ class DSPYInference:
 
     async def run(
         self,
+        extra_callbacks: Optional[list[Any]] = None,
         **kwargs: Any,
     ) -> Any:
         try:
@@ -84,8 +85,13 @@ class DSPYInference:
 
             # Use dspy.context() for async-safe configuration
             context_kwargs = {"lm": self.lm}
+            callbacks: list[Any] = []
             if self.observe and self.callback:
-                context_kwargs["callbacks"] = [self.callback]
+                callbacks.append(self.callback)
+            if extra_callbacks:
+                callbacks.extend(extra_callbacks)
+            if callbacks:
+                context_kwargs["callbacks"] = callbacks
 
             with dspy.context(**context_kwargs):
                 result = await inference_module_async(**kwargs, lm=self.lm)
@@ -98,6 +104,7 @@ class DSPYInference:
     async def run_streaming(
         self,
         stream_field: str = "response",
+        extra_callbacks: Optional[list[Any]] = None,
         **kwargs: Any,
     ) -> AsyncGenerator[str, None]:
         """
@@ -116,8 +123,13 @@ class DSPYInference:
 
             # Use dspy.context() for async-safe configuration
             context_kwargs = {"lm": self.lm}
+            callbacks: list[Any] = []
             if self.observe and self.callback:
-                context_kwargs["callbacks"] = [self.callback]
+                callbacks.append(self.callback)
+            if extra_callbacks:
+                callbacks.extend(extra_callbacks)
+            if callbacks:
+                context_kwargs["callbacks"] = callbacks
 
             with dspy.context(**context_kwargs):
                 # Create a streaming version of the inference module

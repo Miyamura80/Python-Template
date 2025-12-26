@@ -8,6 +8,8 @@ This endpoint is protected because LLM inference costs can be expensive.
 import asyncio
 import inspect
 import json
+import queue
+import threading
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, Optional, Protocol, Sequence, cast
@@ -31,6 +33,7 @@ from src.db.utils.db_transaction import db_transaction, scoped_session
 from src.db.models.public.agent_conversations import AgentConversation, AgentMessage
 from src.utils.logging_config import setup_logging
 from utils.llm.dspy_inference import DSPYInference
+from utils.llm.tool_streaming_callback import ToolStreamingCallback
 
 setup_logging()
 
@@ -503,28 +506,10 @@ async def agent_stream_endpoint(
         trace = langfuse_client.trace(name=span_name, user_id=user_id)
         trace_id = trace.id
 
-        # Track last activity time for heartbeat mechanism
-        last_activity_time = asyncio.get_event_loop().time()
-        heartbeat_interval = (
-            global_config.agent_chat.streaming.heartbeat_interval_seconds
-        )
-
-        async def maybe_send_heartbeat():
-            """Send heartbeat if enough time has passed since last activity."""
-            nonlocal last_activity_time
-            current_time = asyncio.get_event_loop().time()
-            if current_time - last_activity_time >= heartbeat_interval:
-                # SSE comments (lines starting with ':') are ignored by clients
-                # but keep the connection alive
-                last_activity_time = current_time
-                return ": heartbeat\n\n"
-            return None
-
         try:
             raw_tools = get_agent_tools()
             tool_functions = build_tool_wrappers(user_id, tools=raw_tools)
             tool_names = [tool_name(tool) for tool in raw_tools]
-            response_chunks: list[str] = []
 
             # Send initial metadata (include tool info for transparency)
             yield (
@@ -541,78 +526,146 @@ async def agent_stream_endpoint(
                 )
                 + "\n\n"
             )
-            last_activity_time = (
-                asyncio.get_event_loop().time()
-            )  # Reset after sending data
 
-            async def stream_with_inference(tools: list):
-                """Stream using DSPY with the provided tools list."""
-                nonlocal last_activity_time
-                response_chunks.clear()
-                inference_module = DSPYInference(
-                    pred_signature=AgentSignature,
-                    tools=tools,
-                    observe=True,  # Enable LangFuse observability
-                    trace_id=trace_id,  # Pass trace context for proper nesting
-                )
+            # --- Approach C: run the whole agent execution in a worker thread ---
+            # This keeps the SSE writer responsive even if tool calls block.
+            event_queue: queue.Queue[dict[str, Any]] = queue.Queue()
 
-                chunk_count = 0
-                async for chunk in inference_module.run_streaming(
-                    stream_field="response",
-                    user_id=user_id,
-                    message=agent_request.message,
-                    context=agent_request.context or "No additional context provided",
-                    history=history_payload,
-                ):
-                    # Check if we need to send a heartbeat BEFORE processing chunk
-                    heartbeat = await maybe_send_heartbeat()
-                    if heartbeat:
-                        yield heartbeat
+            def emit(event: dict[str, Any]) -> None:
+                event_queue.put(event)
 
-                    chunk_count += 1
-                    # Accumulate full response so we can persist it after streaming
-                    response_chunks.append(chunk)
+            def worker_main() -> None:
+                async def run_worker() -> None:
+                    tool_callback = ToolStreamingCallback(emit=emit)
+                    response_chunks: list[str] = []
+
+                    async def stream_with_inference(tools: list[Callable[..., Any]]):
+                        inference_module = DSPYInference(
+                            pred_signature=AgentSignature,
+                            tools=tools,
+                            observe=True,  # keep Langfuse tracing
+                            trace_id=trace_id,
+                        )
+                        async for chunk in inference_module.run_streaming(
+                            stream_field="response",
+                            extra_callbacks=[tool_callback],
+                            user_id=user_id,
+                            message=agent_request.message,
+                            context=agent_request.context
+                            or "No additional context provided",
+                            history=history_payload,
+                        ):
+                            response_chunks.append(str(chunk))
+                            emit({"type": "token", "content": chunk})
+
+                    try:
+                        try:
+                            await stream_with_inference(tool_functions)
+                        except Exception as tool_err:
+                            log.warning(
+                                "Streaming with tools failed for user %s, falling back to streaming without tools: %s",
+                                user_id,
+                                str(tool_err),
+                            )
+                            emit(
+                                {
+                                    "type": "warning",
+                                    "code": "tool_fallback",
+                                    "message": (
+                                        "Tool-enabled streaming encountered an issue. "
+                                        "Continuing without tools for this response."
+                                    ),
+                                }
+                            )
+                            await stream_with_inference([])
+
+                        full_response = "".join(response_chunks)
+                        if not full_response:
+                            # Ensure at least one token is emitted even if streaming produced none
+                            log.warning(
+                                "Streaming produced no tokens for user %s; running non-streaming fallback",
+                                user_id,
+                            )
+                            fallback_inference = DSPYInference(
+                                pred_signature=AgentSignature,
+                                tools=tool_functions,
+                                observe=True,
+                                trace_id=trace_id,
+                            )
+                            result = await fallback_inference.run(
+                                extra_callbacks=[tool_callback],
+                                user_id=user_id,
+                                message=agent_request.message,
+                                context=agent_request.context
+                                or "No additional context provided",
+                                history=history_payload,
+                            )
+                            full_response = str(getattr(result, "response", "") or "")
+                            emit({"type": "token", "content": full_response})
+
+                        emit(
+                            {
+                                "type": "_internal_final_response",
+                                "content": full_response,
+                            }
+                        )
+                    except Exception as e:
+                        emit(
+                            {
+                                "type": "_internal_worker_error",
+                                "error": {
+                                    "message": str(e),
+                                    "kind": type(e).__name__,
+                                },
+                            }
+                        )
+                    finally:
+                        emit({"type": "_internal_worker_done"})
+
+                asyncio.run(run_worker())
+
+            worker_thread = threading.Thread(target=worker_main, daemon=True)
+            worker_thread.start()
+
+            heartbeat_interval = (
+                global_config.agent_chat.streaming.heartbeat_interval_seconds
+            )
+            full_response: str | None = None
+
+            while True:
+                try:
+                    event = await asyncio.to_thread(
+                        event_queue.get, True, heartbeat_interval
+                    )
+                except queue.Empty:
+                    # SSE comments (lines starting with ':') are ignored by clients
+                    # but keep the connection alive
+                    yield ": heartbeat\n\n"
+                    continue
+
+                event_type = str(event.get("type") or "")
+                if event_type == "_internal_final_response":
+                    full_response = str(event.get("content") or "")
+                    continue
+                if event_type == "_internal_worker_error":
+                    error_msg = (
+                        "I apologize, but I encountered an error processing your request. "
+                        "Please try again or contact support if the issue persists."
+                    )
+                    trace.update(
+                        output={"status": "error", "error": event.get("error")}
+                    )
                     yield (
                         "data: "
-                        + json.dumps({"type": "token", "content": chunk})
+                        + json.dumps({"type": "error", "message": error_msg})
                         + "\n\n"
                     )
-                    last_activity_time = (
-                        asyncio.get_event_loop().time()
-                    )  # Reset after activity
+                    return
+                if event_type == "_internal_worker_done":
+                    break
 
-            full_response: str | None = None
-            try:
-                # Primary path: stream with tools enabled
-                async for token_chunk in stream_with_inference(tool_functions):
-                    yield token_chunk
-                full_response = "".join(response_chunks)
-            except Exception as tool_err:
-                log.warning(
-                    "Streaming with tools failed for user %s, falling back to streaming without tools: %s",
-                    user_id,
-                    str(tool_err),
-                )
-                warning_msg = (
-                    "Tool-enabled streaming encountered an issue. "
-                    "Continuing without tools for this response."
-                )
-                yield (
-                    "data: "
-                    + json.dumps(
-                        {
-                            "type": "warning",
-                            "code": "tool_fallback",
-                            "message": warning_msg,
-                        }
-                    )
-                    + "\n\n"
-                )
-
-                # Fallback path: stream without tools to still deliver a response
-                async for token_chunk in stream_with_inference([]):
-                    yield token_chunk
-                full_response = "".join(response_chunks)
+                # Forward all user-visible events (token, warning, tool_*).
+                yield "data: " + json.dumps(event) + "\n\n"
 
             if full_response:
                 # Open a NEW database session just for this write operation
@@ -636,6 +689,7 @@ async def agent_stream_endpoint(
                             f"Conversation {conversation_id} not found after streaming!"
                         )
                         conversation_snapshot = None
+
                 if conversation_snapshot:
                     yield (
                         "data: "
@@ -649,63 +703,6 @@ async def agent_stream_endpoint(
                         )
                         + "\n\n"
                     )
-            else:
-                # Ensure at least one token is emitted even if streaming produced none
-                log.warning(
-                    "Streaming produced no tokens for user %s; running non-streaming fallback",
-                    user_id,
-                )
-                fallback_inference = DSPYInference(
-                    pred_signature=AgentSignature,
-                    tools=tool_functions,
-                    observe=True,
-                    trace_id=trace_id,  # Pass trace context for proper nesting
-                )
-                result = await fallback_inference.run(
-                    user_id=user_id,
-                    message=agent_request.message,
-                    context=agent_request.context or "No additional context provided",
-                    history=history_payload,
-                )
-                full_response = result.response
-                yield (
-                    "data: "
-                    + json.dumps({"type": "token", "content": full_response})
-                    + "\n\n"
-                )
-
-                # Open a NEW database session just for this write operation
-                with scoped_session() as write_db:
-                    # Fetch the conversation again in this new session
-                    conversation_obj = (
-                        write_db.query(AgentConversation)
-                        .filter(AgentConversation.id == conversation_id)
-                        .first()
-                    )
-                    if conversation_obj:
-                        assistant_message = record_agent_message(
-                            write_db, conversation_obj, "assistant", full_response
-                        )
-                        history_messages.append(assistant_message)
-                        conversation_snapshot = build_conversation_payload(
-                            conversation_obj, history_messages, history_limit
-                        )
-                        yield (
-                            "data: "
-                            + json.dumps(
-                                {
-                                    "type": "conversation",
-                                    "conversation": conversation_snapshot.model_dump(
-                                        mode="json"
-                                    ),
-                                }
-                            )
-                            + "\n\n"
-                        )
-                    else:
-                        log.error(
-                            f"Conversation {conversation_id} not found in fallback!"
-                        )
 
             # Send completion signal
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
