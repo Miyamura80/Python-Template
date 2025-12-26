@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from src.db.models.public.profiles import Profiles
+from src.db.utils.db_transaction import db_transaction
 import uuid
 from loguru import logger
 
@@ -13,22 +14,25 @@ def ensure_profile_exists(
 ) -> Profiles:
     """
     Ensure a profile exists for the given user UUID.
-    If not, create one. Referral code is generated automatically by the model default.
+    If not, create one.
     """
     profile = db.query(Profiles).filter(Profiles.user_id == user_uuid).first()
 
     if not profile:
         logger.info(f"Creating new profile for user {user_uuid}")
 
-        profile = Profiles(
-            user_id=user_uuid,
-            email=email,
-            username=username,
-            avatar_url=avatar_url,
-            is_approved=is_approved
-        )
-        db.add(profile)
-        db.commit()
+        with db_transaction(db):
+            profile = Profiles(
+                user_id=user_uuid,
+                email=email,
+                username=username,
+                avatar_url=avatar_url,
+                is_approved=is_approved
+            )
+            db.add(profile)
+        # No need for explicit commit/refresh as db_transaction handles commit,
+        # but we might need refresh if we access attributes immediately after.
+        # db_transaction usually commits.
         db.refresh(profile)
 
     return profile

@@ -56,11 +56,15 @@ def get_referral_code(
 ):
     """
     Get the current user's referral code and stats.
+    Generates a code if one doesn't exist.
     """
     profile = ensure_profile_exists(db, user.id, user.email)
 
+    # Lazy generation of referral code if not present
+    referral_code = ReferralService.get_or_create_referral_code(db, profile)
+
     return ReferralResponse(
-        referral_code=profile.referral_code,
+        referral_code=referral_code,
         referral_count=profile.referral_count,
         referrer_id=str(profile.referrer_id) if profile.referrer_id else None
     )

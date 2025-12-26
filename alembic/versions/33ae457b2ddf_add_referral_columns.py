@@ -29,11 +29,6 @@ class Profile(Base):
     referral_code = sa.Column(sa.String)
     referral_count = sa.Column(sa.Integer)
 
-def generate_referral_code(length: int = 8) -> str:
-    """Generate a random alphanumeric referral code."""
-    alphabet = string.ascii_uppercase + string.digits
-    return "".join(secrets.choice(alphabet) for _ in range(length))
-
 def upgrade() -> None:
     """Upgrade schema."""
     # 1. Add columns as nullable first
@@ -41,30 +36,22 @@ def upgrade() -> None:
     op.add_column('profiles', sa.Column('referrer_id', sa.UUID(), nullable=True))
     op.add_column('profiles', sa.Column('referral_count', sa.Integer(), nullable=True))
 
-    # 2. Backfill existing rows
+    # 2. Backfill existing rows with 0 count, but keep referral_code null if desired.
+    # User requested: "If the referral code is null, it just means that the user self signed up and we do not need to generate a default"
+    # However, existing users might want to refer others.
+    # But strictly following instructions: make it nullable, remove default generation.
+    # I will set referral_count to 0 for existing rows so it is not null.
+
     bind = op.get_bind()
     session = Session(bind=bind)
 
-    # Check if there are any profiles
-    # Note: We use execute directly to avoid issues with model definitions
-    profiles_result = session.execute(sa.text("SELECT user_id FROM profiles"))
-    profiles = profiles_result.fetchall()
-
-    for row in profiles:
-        user_id = row[0]
-        # Generate unique code (simplified check for migration script)
-        code = generate_referral_code()
-
-        # Update each row
-        session.execute(
-            sa.text("UPDATE profiles SET referral_code = :code, referral_count = 0 WHERE user_id = :uid"),
-            {"code": code, "uid": user_id}
-        )
-
+    # Initialize referral_count to 0
+    session.execute(sa.text("UPDATE profiles SET referral_count = 0"))
     session.commit()
 
-    # 3. Alter columns to be non-nullable
-    op.alter_column('profiles', 'referral_code', nullable=False)
+    # 3. Alter columns
+    # referral_code stays nullable=True
+    # referral_count becomes nullable=False
     op.alter_column('profiles', 'referral_count', nullable=False)
 
     # 4. Create unique constraint and index
