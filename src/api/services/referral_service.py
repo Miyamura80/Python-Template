@@ -104,7 +104,7 @@ class ReferralService:
 
             required_referrals = global_config.subscription.referral.referrals_required
             if referrer.referral_count == required_referrals:
-                # Cast user_id to uuid.UUID to satisfy ty type checker
+                # Cast user_id to uuid.UUID to satisfy ty
                 user_id = cast(uuid.UUID, referrer.user_id)
                 ReferralService.grant_referral_reward(db, user_id)
 

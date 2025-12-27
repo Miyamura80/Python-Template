@@ -14,18 +14,10 @@ from common.global_config import global_config
 
 class TestReferralUpgrade(TestTemplate):
 
-    @pytest.fixture(autouse=True)
-    def setup_shared_variables(self, setup):
-        # Initialize shared attributes here
-        pass
-
-    @pytest.fixture
     @pytest.fixture
     def db_session(self):
         session = create_db_session()
         yield session
-        # Clean up test data
-        session.rollback()
         session.close()
 
     def test_referral_reward_grant(self, db_session: Session):
