@@ -135,18 +135,8 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
         token = auth_header.split(" ", 1)[1]
 
         # Check if we're in test mode (skip signature verification for tests)
-        # Detect test mode by checking if pytest is running or if DEV_ENV is explicitly set to "test"
-        # We also check for 'test' in sys.argv[0] ONLY if we are NOT in production, to avoid security risks
-        # where a script named "test_something.py" could bypass auth in prod.
-        is_pytest = "pytest" in sys.modules
-        is_dev_env_test = global_config.DEV_ENV.lower() == "test"
-
-        # Only check sys.argv if we are definitely not in prod
-        is_script_test = False
-        if global_config.DEV_ENV.lower() != "prod":
-            is_script_test = "test" in sys.argv[0].lower()
-
-        is_test_mode = is_pytest or is_dev_env_test or is_script_test
+        # Detect test mode by checking if pytest is running
+        is_test_mode = "pytest" in sys.modules or "test" in sys.argv[0].lower()
 
         # Determine whether the token declares an audience so we can decide
         # whether to enforce audience verification (access tokens currently omit aud).

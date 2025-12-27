@@ -169,9 +169,3 @@ class TelegramConfig(BaseModel):
     """Telegram configuration."""
 
     chat_ids: TelegramChatIdsConfig
-
-
-class ServerConfig(BaseModel):
-    """Server configuration."""
-
-    allowed_origins: list[str]

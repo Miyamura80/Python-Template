@@ -25,7 +25,6 @@ from common.config_models import (
     SubscriptionConfig,
     StripeConfig,
     TelegramConfig,
-    ServerConfig,
 )
 from common.db_uri_resolver import resolve_db_uri
 
@@ -152,7 +151,6 @@ class Config(BaseSettings):
     subscription: SubscriptionConfig
     stripe: StripeConfig
     telegram: TelegramConfig
-    server: ServerConfig
 
     # Environment variables (required)
     DEV_ENV: str
