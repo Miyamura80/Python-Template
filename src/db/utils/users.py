@@ -21,18 +21,23 @@ def ensure_profile_exists(
     if not profile:
         logger.info(f"Creating new profile for user {user_uuid}")
 
-        with db_transaction(db):
-            profile = Profiles(
-                user_id=user_uuid,
-                email=email,
-                username=username,
-                avatar_url=avatar_url,
-                is_approved=is_approved
-            )
-            db.add(profile)
-        # No need for explicit commit/refresh as db_transaction handles commit,
-        # but we might need refresh if we access attributes immediately after.
-        # db_transaction usually commits.
-        db.refresh(profile)
+        try:
+            with db_transaction(db):
+                profile = Profiles(
+                    user_id=user_uuid,
+                    email=email,
+                    username=username,
+                    avatar_url=avatar_url,
+                    is_approved=is_approved
+                )
+                db.add(profile)
+            db.refresh(profile)
+        except HTTPException:
+            # Race condition: profile may have been created by concurrent request
+            profile = db.query(Profiles).filter(Profiles.user_id == user_uuid).first()
+            if not profile:
+                raise
+
+    return profile
 
     return profile
