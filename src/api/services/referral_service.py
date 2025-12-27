@@ -4,6 +4,7 @@ from src.db.models.public.profiles import Profiles, generate_referral_code
 from src.db.utils.db_transaction import db_transaction
 from src.db.models.stripe.user_subscriptions import UserSubscriptions
 from src.db.models.stripe.subscription_types import SubscriptionTier
+from common.global_config import global_config
 from datetime import datetime, timedelta, timezone
 from loguru import logger
 from typing import cast
@@ -27,10 +28,11 @@ class ReferralService:
     @staticmethod
     def grant_referral_reward(db: Session, user_id: uuid.UUID):
         """
-        Grant 6 months of Plus Tier to the user.
+        Grant Plus Tier to the user based on configured reward duration.
         """
         now = datetime.now(timezone.utc)
-        six_months = timedelta(days=30 * 6)
+        reward_months = global_config.subscription.referral.reward_months
+        reward_duration = timedelta(days=30 * reward_months)
 
         subscription = (
             db.query(UserSubscriptions)
@@ -46,30 +48,28 @@ class ReferralService:
             # Otherwise start from now
             current_end = subscription.subscription_end_date
             if current_end and current_end.tzinfo is None:
-                # Assuming UTC if naive, though model says TIMESTAMP which is usually naive in SQLA unless timezone=True
-                # But profiles.py uses DateTime(timezone=True). UserSubscriptions uses TIMESTAMP.
-                # Postgres TIMESTAMP without time zone vs with time zone.
-                # Let's assume naive means UTC or handle it carefully.
-                # Actually, `datetime.now(timezone.utc)` returns aware.
-                # If DB returns naive, we should probably treat it as UTC.
                 current_end = current_end.replace(tzinfo=timezone.utc)
 
             if current_end and current_end > now:
-                subscription.subscription_end_date = current_end + six_months
+                subscription.subscription_end_date = current_end + reward_duration
             else:
-                subscription.subscription_end_date = now + six_months
+                subscription.subscription_end_date = now + reward_duration
 
-            logger.info(f"Updated subscription for user {user_id} via referral reward")
+            logger.info(
+                f"Updated subscription for user {user_id} via referral reward ({reward_months} months)"
+            )
         else:
             new_subscription = UserSubscriptions(
                 user_id=user_id,
                 subscription_tier=SubscriptionTier.PLUS.value,
                 is_active=True,
                 subscription_start_date=now,
-                subscription_end_date=now + six_months,
+                subscription_end_date=now + reward_duration,
             )
             db.add(new_subscription)
-            logger.info(f"Created subscription for user {user_id} via referral reward")
+            logger.info(
+                f"Created subscription for user {user_id} via referral reward ({reward_months} months)"
+            )
 
     @staticmethod
     def apply_referral(db: Session, user_profile: Profiles, referral_code: str) -> bool:
@@ -102,9 +102,9 @@ class ReferralService:
             # Refresh referrer to get updated count and trigger reward if applicable
             db.refresh(referrer)
 
-            if referrer.referral_count == 5:
+            required_referrals = global_config.subscription.referral.referrals_required
+            if referrer.referral_count == required_referrals:
                 # Cast user_id to uuid.UUID to satisfy ty type checker
-                # SQLAlchemy models sometimes return Column types in static analysis
                 user_id = cast(uuid.UUID, referrer.user_id)
                 ReferralService.grant_referral_reward(db, user_id)
 

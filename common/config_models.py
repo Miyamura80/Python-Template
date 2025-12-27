@@ -128,6 +128,13 @@ class PaymentRetryConfig(BaseModel):
     max_attempts: int
 
 
+class ReferralConfig(BaseModel):
+    """Referral program configuration."""
+
+    referrals_required: int
+    reward_months: int
+
+
 class SubscriptionConfig(BaseModel):
     """Subscription configuration."""
 
@@ -135,6 +142,7 @@ class SubscriptionConfig(BaseModel):
     metered: MeteredConfig
     trial_period_days: int
     payment_retry: PaymentRetryConfig
+    referral: ReferralConfig
 
 
 class StripeWebhookConfig(BaseModel):

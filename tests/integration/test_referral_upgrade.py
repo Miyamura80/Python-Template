@@ -1,3 +1,4 @@
+
 import pytest
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -9,7 +10,7 @@ from src.db.models.stripe.user_subscriptions import UserSubscriptions
 from src.db.models.stripe.subscription_types import SubscriptionTier
 from tests.test_template import TestTemplate
 from src.db.database import create_db_session
-
+from common.global_config import global_config
 
 class TestReferralUpgrade(TestTemplate):
 
@@ -17,12 +18,14 @@ class TestReferralUpgrade(TestTemplate):
     def db_session(self):
         session = create_db_session()
         yield session
-        # Clean up code might be needed if transactions are not rolled back properly
-        # But for now, we'll rely on unique data
         session.close()
 
     def test_referral_reward_grant(self, db_session: Session):
-        """Test that a user gets 6 months of Plus Tier after 5 referrals."""
+        """Test that a user gets Plus Tier after required referrals."""
+
+        # Get config values
+        required_referrals = global_config.subscription.referral.referrals_required
+        reward_months = global_config.subscription.referral.reward_months
 
         # Unique referral code
         referral_code = f"REF_{uuid.uuid4().hex[:8]}"
@@ -33,16 +36,17 @@ class TestReferralUpgrade(TestTemplate):
             user_id=referrer_id,
             email=f"referrer_{referrer_id}@example.com",
             referral_code=referral_code,
-            referral_count=0,
+            referral_count=0
         )
         db_session.add(referrer)
         db_session.commit()
 
-        # 2. Process 4 Referrals (Should not trigger reward)
-        for i in range(4):
+        # 2. Process N-1 Referrals (Should not trigger reward)
+        for i in range(required_referrals - 1):
             referee_id = uuid.uuid4()
             referee = Profiles(
-                user_id=referee_id, email=f"referee_{i}_{referee_id}@example.com"
+                user_id=referee_id,
+                email=f"referee_{i}_{referee_id}@example.com"
             )
             db_session.add(referee)
             db_session.commit()
@@ -50,56 +54,54 @@ class TestReferralUpgrade(TestTemplate):
             success = ReferralService.apply_referral(db_session, referee, referral_code)
             assert success is True
 
-        # Verify referrer count is 4
+        # Verify referrer count is N-1
         db_session.refresh(referrer)
-        assert referrer.referral_count == 4
+        assert referrer.referral_count == required_referrals - 1
 
         # Verify NO subscription yet (or at least not the reward)
-        sub = (
-            db_session.query(UserSubscriptions)
-            .filter(UserSubscriptions.user_id == referrer_id)
-            .first()
-        )
+        sub = db_session.query(UserSubscriptions).filter(UserSubscriptions.user_id == referrer_id).first()
         assert sub is None
 
-        # 3. Process 5th Referral (Should trigger reward)
-        referee_5_id = uuid.uuid4()
-        referee_5 = Profiles(
-            user_id=referee_5_id, email=f"referee_5_{referee_5_id}@example.com"
+        # 3. Process Nth Referral (Should trigger reward)
+        referee_final_id = uuid.uuid4()
+        referee_final = Profiles(
+            user_id=referee_final_id,
+            email=f"referee_final_{referee_final_id}@example.com"
         )
-        db_session.add(referee_5)
+        db_session.add(referee_final)
         db_session.commit()
 
-        success = ReferralService.apply_referral(db_session, referee_5, referral_code)
+        success = ReferralService.apply_referral(db_session, referee_final, referral_code)
         assert success is True
 
-        # Verify referrer count is 5
+        # Verify referrer count is N
         db_session.refresh(referrer)
-        assert referrer.referral_count == 5
+        assert referrer.referral_count == required_referrals
 
         # Verify Subscription Granted
-        sub = (
-            db_session.query(UserSubscriptions)
-            .filter(UserSubscriptions.user_id == referrer_id)
-            .first()
-        )
+        sub = db_session.query(UserSubscriptions).filter(UserSubscriptions.user_id == referrer_id).first()
         assert sub is not None
         assert sub.subscription_tier == SubscriptionTier.PLUS.value
         assert sub.is_active is True
 
-        # Verify Duration (Approx 6 months)
+        # Verify Duration (Approx reward_months)
         now = datetime.now(timezone.utc)
-        expected_end_min = now + timedelta(days=30 * 6) - timedelta(minutes=5)
-        expected_end_max = now + timedelta(days=30 * 6) + timedelta(minutes=5)
+        expected_duration = timedelta(days=30 * reward_months)
+        expected_end_min = now + expected_duration - timedelta(minutes=5)
+        expected_end_max = now + expected_duration + timedelta(minutes=5)
 
         sub_end = sub.subscription_end_date
         if sub_end.tzinfo is None:
-            sub_end = sub_end.replace(tzinfo=timezone.utc)
+             sub_end = sub_end.replace(tzinfo=timezone.utc)
 
         assert expected_end_min <= sub_end <= expected_end_max
 
     def test_referral_reward_extension(self, db_session: Session):
         """Test that existing subscription is extended."""
+
+        # Get config values
+        required_referrals = global_config.subscription.referral.referrals_required
+        reward_months = global_config.subscription.referral.reward_months
 
         # Unique referral code
         referral_code = f"REF_{uuid.uuid4().hex[:8]}"
@@ -110,7 +112,7 @@ class TestReferralUpgrade(TestTemplate):
             user_id=referrer_id,
             email=f"referrer_ext_{referrer_id}@example.com",
             referral_code=referral_code,
-            referral_count=4,  # Start at 4 for convenience
+            referral_count=required_referrals - 1 # Start just before threshold
         )
         db_session.add(referrer)
 
@@ -121,15 +123,16 @@ class TestReferralUpgrade(TestTemplate):
             user_id=referrer_id,
             subscription_tier=SubscriptionTier.PLUS.value,
             is_active=True,
-            subscription_end_date=existing_end,
+            subscription_end_date=existing_end
         )
         db_session.add(sub)
         db_session.commit()
 
-        # 2. Process 5th Referral
+        # 2. Process Final Referral
         referee_id = uuid.uuid4()
         referee = Profiles(
-            user_id=referee_id, email=f"referee_ext_{referee_id}@example.com"
+            user_id=referee_id,
+            email=f"referee_ext_{referee_id}@example.com"
         )
         db_session.add(referee)
         db_session.commit()
@@ -141,10 +144,11 @@ class TestReferralUpgrade(TestTemplate):
         db_session.refresh(sub)
         sub_end = sub.subscription_end_date
         if sub_end.tzinfo is None:
-            sub_end = sub_end.replace(tzinfo=timezone.utc)
+             sub_end = sub_end.replace(tzinfo=timezone.utc)
 
-        # Should be existing end + 6 months
-        expected_end_min = existing_end + timedelta(days=30 * 6) - timedelta(minutes=5)
-        expected_end_max = existing_end + timedelta(days=30 * 6) + timedelta(minutes=5)
+        # Should be existing end + reward_months
+        reward_duration = timedelta(days=30 * reward_months)
+        expected_end_min = existing_end + reward_duration - timedelta(minutes=5)
+        expected_end_max = existing_end + reward_duration + timedelta(minutes=5)
 
         assert expected_end_min <= sub_end <= expected_end_max

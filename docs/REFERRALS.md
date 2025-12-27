@@ -2,9 +2,20 @@
 
 The application includes a referral system that rewards users for inviting others to the platform.
 
-## Incentive: Refer 5, Get 6 Months Free
+## Incentive: Refer 5, Get 6 Months Free (Default)
 
-When a user successfully refers **5 new users**, they are automatically rewarded with **6 months of the Plus Tier subscription for free**.
+When a user successfully refers a specific number of new users (default: **5**), they are automatically rewarded with a period of the Plus Tier subscription for free (default: **6 months**).
+
+### Configuration
+
+The referral program parameters are configurable in `common/global_config.yaml` under the `subscription.referral` section:
+
+```yaml
+subscription:
+  referral:
+    referrals_required: 5
+    reward_months: 6
+```
 
 ### How it works
 
@@ -13,10 +24,10 @@ When a user successfully refers **5 new users**, they are automatically rewarded
 3.  **Redemption**: When a new user signs up (or enters the code in their settings), they apply the referral code.
 4.  **Tracking**: The system tracks the number of successful referrals for each referrer.
 5.  **Reward Trigger**:
-    *   Once the referrer's count reaches **5**, the system automatically grants the reward.
-    *   **New Subscription**: If the referrer is on the Free tier, they are upgraded to the Plus tier for 6 months.
-    *   **Existing Subscription**: If the referrer already has a Plus tier subscription, their subscription end date is extended by 6 months.
+    *   Once the referrer's count reaches the configured `referrals_required`, the system automatically grants the reward.
+    *   **New Subscription**: If the referrer is on the Free tier, they are upgraded to the Plus tier for `reward_months`.
+    *   **Existing Subscription**: If the referrer already has a Plus tier subscription, their subscription end date is extended by `reward_months`.
 
 ### Technical Implementation
 
-The logic is handled in `src/api/services/referral_service.py` within the `apply_referral` method. When the referral count increments to 5, the `grant_referral_reward` method is called to update the `UserSubscriptions` table.
+The logic is handled in `src/api/services/referral_service.py` within the `apply_referral` method. When the referral count increments to the configured threshold, the `grant_referral_reward` method is called to update the `UserSubscriptions` table.
