@@ -28,20 +28,23 @@ def _try_construct_event(payload: bytes, sig_header: str | None) -> dict:
     """
 
     def _secrets() -> Iterable[str]:
-        primary = (
-            global_config.STRIPE_WEBHOOK_SECRET
-            if global_config.DEV_ENV == "prod"
-            else global_config.STRIPE_TEST_WEBHOOK_SECRET
-        )
-        secondary = (
-            global_config.STRIPE_TEST_WEBHOOK_SECRET
-            if global_config.DEV_ENV == "prod"
-            else global_config.STRIPE_WEBHOOK_SECRET
-        )
-        if primary:
-            yield primary
-        if secondary and secondary != primary:
-            yield secondary
+        # STRICTLY enforce secret usage based on environment
+        # Prod env MUST use Prod secret.
+        # Non-prod env MUST use Test secret.
+        # No fallbacks across environments.
+
+        if global_config.DEV_ENV == "prod":
+            if global_config.STRIPE_WEBHOOK_SECRET:
+                yield global_config.STRIPE_WEBHOOK_SECRET
+            else:
+                logger.error("STRIPE_WEBHOOK_SECRET not configured in PROD")
+        else:
+            if global_config.STRIPE_TEST_WEBHOOK_SECRET:
+                yield global_config.STRIPE_TEST_WEBHOOK_SECRET
+            else:
+                logger.warning(
+                    f"STRIPE_TEST_WEBHOOK_SECRET not configured in {global_config.DEV_ENV}"
+                )
 
     if not sig_header:
         raise HTTPException(status_code=400, detail="Missing stripe-signature header")
