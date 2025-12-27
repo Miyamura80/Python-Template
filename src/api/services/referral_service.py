@@ -6,6 +6,7 @@ from src.db.models.stripe.user_subscriptions import UserSubscriptions
 from src.db.models.stripe.subscription_types import SubscriptionTier
 from datetime import datetime, timedelta, timezone
 from loguru import logger
+from typing import cast
 import uuid
 
 
@@ -102,7 +103,10 @@ class ReferralService:
             db.refresh(referrer)
 
             if referrer.referral_count == 5:
-                ReferralService.grant_referral_reward(db, referrer.user_id)
+                # Cast user_id to uuid.UUID to satisfy ty type checker
+                # SQLAlchemy models sometimes return Column types in static analysis
+                user_id = cast(uuid.UUID, referrer.user_id)
+                ReferralService.grant_referral_reward(db, user_id)
 
         db.refresh(user_profile)
         return True
