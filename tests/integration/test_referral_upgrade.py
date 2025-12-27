@@ -14,6 +14,11 @@ from common.global_config import global_config
 
 class TestReferralUpgrade(TestTemplate):
 
+    @pytest.fixture(autouse=True)
+    def setup_shared_variables(self, setup):
+        # Initialize shared attributes here
+        pass
+
     @pytest.fixture
     @pytest.fixture
     def db_session(self):
