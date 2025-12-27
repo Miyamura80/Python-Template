@@ -69,17 +69,6 @@ class ConversationPayload(BaseModel):
     conversation: list[ConversationMessage]
 
 
-class AgentLimitResponse(BaseModel):
-    """Response model for agent limit status."""
-
-    tier: str
-    limit_name: str
-    limit_value: int
-    used_today: int
-    remaining: int
-    reset_at: datetime
-
-
 class AgentResponse(BaseModel):
     """Response model for agent endpoint."""
 
@@ -312,33 +301,6 @@ def record_agent_message(
     db.refresh(message)
     db.refresh(conversation)
     return message
-
-
-@router.get("/agent/limits", response_model=AgentLimitResponse)
-async def get_agent_limits(
-    request: Request,
-    db: Session = Depends(get_db_session),
-) -> AgentLimitResponse:
-    """
-    Get the current user's agent limit status.
-
-    Returns usage statistics for the daily agent chat limit, including
-    current tier, usage count, remaining quota, and reset time.
-    """
-    auth_user = await get_authenticated_user(request, db)
-    user_id = auth_user.id
-    user_uuid = user_uuid_from_str(user_id)
-
-    limit_status = ensure_daily_limit(db=db, user_uuid=user_uuid, enforce=False)
-
-    return AgentLimitResponse(
-        tier=limit_status.tier,
-        limit_name=limit_status.limit_name,
-        limit_value=limit_status.limit_value,
-        used_today=limit_status.used_today,
-        remaining=limit_status.remaining,
-        reset_at=limit_status.reset_at,
-    )
 
 
 @router.post("/agent", response_model=AgentResponse)  # noqa

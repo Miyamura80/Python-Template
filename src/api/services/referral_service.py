@@ -2,6 +2,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from src.db.models.public.profiles import Profiles, generate_referral_code
 from src.db.utils.db_transaction import db_transaction
+from src.db.models.stripe.user_subscriptions import UserSubscriptions
+from src.db.models.stripe.subscription_types import SubscriptionTier
+from common.global_config import global_config
+from datetime import datetime, timedelta, timezone
+from loguru import logger
+from typing import cast
+import uuid
 
 
 class ReferralService:
@@ -17,6 +24,52 @@ class ReferralService:
         return (
             db.query(Profiles).filter(Profiles.referral_code == referral_code).first()
         )
+
+    @staticmethod
+    def grant_referral_reward(db: Session, user_id: uuid.UUID):
+        """
+        Grant Plus Tier to the user based on configured reward duration.
+        """
+        now = datetime.now(timezone.utc)
+        reward_months = global_config.subscription.referral.reward_months
+        reward_duration = timedelta(days=30 * reward_months)
+
+        subscription = (
+            db.query(UserSubscriptions)
+            .filter(UserSubscriptions.user_id == user_id)
+            .first()
+        )
+
+        if subscription:
+            subscription.subscription_tier = SubscriptionTier.PLUS.value
+            subscription.is_active = True
+
+            # If current subscription is valid and ends in the future, extend it
+            # Otherwise start from now
+            current_end = subscription.subscription_end_date
+            if current_end and current_end.tzinfo is None:
+                current_end = current_end.replace(tzinfo=timezone.utc)
+
+            if current_end and current_end > now:
+                subscription.subscription_end_date = current_end + reward_duration
+            else:
+                subscription.subscription_end_date = now + reward_duration
+
+            logger.info(
+                f"Updated subscription for user {user_id} via referral reward ({reward_months} months)"
+            )
+        else:
+            new_subscription = UserSubscriptions(
+                user_id=user_id,
+                subscription_tier=SubscriptionTier.PLUS.value,
+                is_active=True,
+                subscription_start_date=now,
+                subscription_end_date=now + reward_duration,
+            )
+            db.add(new_subscription)
+            logger.info(
+                f"Created subscription for user {user_id} via referral reward ({reward_months} months)"
+            )
 
     @staticmethod
     def apply_referral(db: Session, user_profile: Profiles, referral_code: str) -> bool:
@@ -45,6 +98,15 @@ class ReferralService:
             )
 
             db.add(user_profile)
+
+            # Refresh referrer to get updated count and trigger reward if applicable
+            db.refresh(referrer)
+
+            required_referrals = global_config.subscription.referral.referrals_required
+            if referrer.referral_count == required_referrals:
+                # Cast user_id to uuid.UUID to satisfy ty
+                user_id = cast(uuid.UUID, referrer.user_id)
+                ReferralService.grant_referral_reward(db, user_id)
 
         db.refresh(user_profile)
         return True

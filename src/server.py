@@ -16,7 +16,9 @@ app = FastAPI()
 # Add CORS middleware with specific allowed origins
 app.add_middleware(  # type: ignore[call-overload]
     CORSMiddleware,  # type: ignore[arg-type]
-    allow_origins=global_config.server.allowed_origins,
+    allow_origins=[
+        "http://localhost:8080",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,5 +54,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=int(os.getenv("PORT", 8080)),
         log_config=None,  # Disable uvicorn's logging config
-        access_log=True,  # Enable access logs
+        access_log=False,  # Disable access logs
     )

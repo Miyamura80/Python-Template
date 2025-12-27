@@ -85,17 +85,8 @@ _This alert was generated when the agent could not resolve a user's request with
         telegram = Telegram()
         # Use test chat during testing to avoid spamming production alerts
         import sys
-        from common import global_config
 
-        is_pytest = "pytest" in sys.modules
-        is_dev_env_test = global_config.DEV_ENV.lower() == "test"
-
-        # Only check sys.argv if we are definitely not in prod
-        is_script_test = False
-        if global_config.DEV_ENV.lower() != "prod":
-            is_script_test = "test" in sys.argv[0].lower()
-
-        is_testing = is_pytest or is_dev_env_test or is_script_test
+        is_testing = "pytest" in sys.modules or "test" in sys.argv[0].lower()
         chat_name = "test" if is_testing else "admin_alerts"
 
         message_id = telegram.send_message_to_chat(

@@ -92,6 +92,10 @@ subscription:
   trial_period_days: 7
   payment_retry:
     max_attempts: 3
+  # Referral program configuration
+  referral:
+    referrals_required: 5
+    reward_months: 6
 
 ########################################################
 # Stripe
@@ -108,10 +112,3 @@ telegram:
   chat_ids:
     admin_alerts: "1560836485"
     test: "1560836485"
-
-########################################################
-# Server
-########################################################
-server:
-  allowed_origins:
-    - "http://localhost:8080"
