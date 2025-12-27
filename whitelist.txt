@@ -1,2 +1,0 @@
-tests/security/test_stripe_webhook_security.py:29: unused attribute 'STRIPE_WEBHOOK_SECRET' (60% confidence)
-tests/security/test_stripe_webhook_security.py:30: unused attribute 'STRIPE_TEST_WEBHOOK_SECRET' (60% confidence)

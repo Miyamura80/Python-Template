@@ -71,7 +71,8 @@ exclude = [
     "src/api/auth/",
     "src/utils/integration/",
     "src/stripe/",
-    "scripts/"
+    "scripts/",
+    "tests/security/test_stripe_webhook_security.py"
 ]
 ignore_names = [
     "apply_referral",
