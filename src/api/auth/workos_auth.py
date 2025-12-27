@@ -10,6 +10,7 @@ from loguru import logger
 from typing import Any
 import jwt
 import sys
+import os
 from jwt.exceptions import DecodeError, InvalidTokenError, PyJWKClientError
 from jwt import PyJWKClient
 from workos import WorkOSClient
@@ -134,9 +135,20 @@ async def get_current_workos_user(request: Request) -> WorkOSUser:
         # Extract token
         token = auth_header.split(" ", 1)[1]
 
-        # Check if we're in test mode (skip signature verification for tests)
-        # Detect test mode by checking if pytest is running
-        is_test_mode = "pytest" in sys.modules or "test" in sys.argv[0].lower()
+        # Check if we're in test mode (skip signature verification for tests).
+        #
+        # IMPORTANT: Do NOT infer "test mode" from sys.argv. It's too easy for a
+        # production entrypoint name/path to contain "test", which would disable
+        # signature verification and become an auth bypass.
+        #
+        # We keep the legacy behavior that running under pytest disables signature
+        # verification because many unit tests use locally-signed tokens.
+        #
+        # If you need to skip verification outside pytest (e.g., local manual
+        # testing), set WORKOS_SKIP_JWT_VERIFICATION=1 explicitly.
+        is_test_mode = "pytest" in sys.modules or os.getenv(
+            "WORKOS_SKIP_JWT_VERIFICATION", ""
+        ).lower() in {"1", "true", "yes"}
 
         # Determine whether the token declares an audience so we can decide
         # whether to enforce audience verification (access tokens currently omit aud).

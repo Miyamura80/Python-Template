@@ -3,9 +3,9 @@ import time
 
 import jwt
 import pytest
+from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi import HTTPException
 from starlette.requests import Request
-from cryptography.hazmat.primitives.asymmetric import rsa
 
 from common import global_config
 from src.api.auth import workos_auth
@@ -62,6 +62,55 @@ class TestWorkOSAuth(TestTemplate):
         monkeypatch.setattr(sys, "argv", ["main"])
 
         return private_key
+
+    @pytest.mark.asyncio
+    async def test_sys_argv_does_not_enable_test_mode(self, monkeypatch):
+        """
+        Guardrail: do not disable signature verification based on sys.argv[0].
+
+        Historically, the code treated any argv[0] containing "test" as a signal
+        to skip JWT signature verification. That is unsafe because production
+        entrypoints can contain "test" in their filename/path.
+        """
+
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        public_key = private_key.public_key()
+
+        jwks_called = {"value": False}
+
+        class FakeSigningKey:
+            def __init__(self, key):
+                self.key = key
+
+        class FakeJWKSClient:
+            def get_signing_key_from_jwt(self, token: str):
+                jwks_called["value"] = True
+                return FakeSigningKey(public_key)
+
+        monkeypatch.setattr(workos_auth, "get_jwks_client", lambda: FakeJWKSClient())
+
+        # Simulate a non-pytest runtime with an argv that contains "test".
+        monkeypatch.delitem(sys.modules, "pytest", raising=False)
+        monkeypatch.setattr(sys, "argv", ["test-server"])
+        monkeypatch.delenv("WORKOS_SKIP_JWT_VERIFICATION", raising=False)
+
+        now = int(time.time())
+        payload = {
+            "sub": "user_id_argv_guardrail",
+            "email": "argvguard@example.com",
+            "iss": workos_auth.WORKOS_ISSUER,
+            "aud": global_config.WORKOS_CLIENT_ID,
+            "exp": now + 3600,
+            "iat": now,
+        }
+
+        token = jwt.encode(payload, private_key, algorithm="RS256")
+        request = build_request_with_bearer(token)
+
+        user = await workos_auth.get_current_workos_user(request)
+        assert user.id == payload["sub"]
+        assert user.email == payload["email"]
+        assert jwks_called["value"] is True
 
     @pytest.mark.asyncio
     async def test_access_token_without_audience_is_accepted(self, signing_setup):
