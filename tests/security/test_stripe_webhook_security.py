@@ -1,17 +1,17 @@
-
 import os
 import sys
 import pytest
 import stripe
 import time
-from unittest.mock import MagicMock, patch
-from fastapi import Request, HTTPException
+from unittest.mock import patch
+from fastapi import HTTPException
 
 # We need to add the root to sys.path to import src
 sys.path.append(os.getcwd())
 
 # Import the module under test
 from src.api.routes.payments.webhooks import _try_construct_event
+
 
 def test_stripe_webhook_vuln_repro():
     """
@@ -25,9 +25,11 @@ def test_stripe_webhook_vuln_repro():
 
     # Mock global_config to simulate PROD environment
     with patch("src.api.routes.payments.webhooks.global_config") as mock_config:
-        mock_config.DEV_ENV = "prod"
-        mock_config.STRIPE_WEBHOOK_SECRET = PROD_SECRET
-        mock_config.STRIPE_TEST_WEBHOOK_SECRET = TEST_SECRET
+        mock_config.configure_mock(
+            DEV_ENV="prod",
+            STRIPE_WEBHOOK_SECRET=PROD_SECRET,
+            STRIPE_TEST_WEBHOOK_SECRET=TEST_SECRET,
+        )
 
         # Create a payload
         payload = b'{"id": "evt_test", "object": "event"}'
@@ -43,22 +45,29 @@ def test_stripe_webhook_vuln_repro():
                 def side_effect(payload, sig_header, secret):
                     if secret == TEST_SECRET:
                         return {"type": "test_event"}
-                    raise stripe.error.SignatureVerificationError("Invalid signature", sig_header=sig_header, http_body=payload)
+                    raise stripe.error.SignatureVerificationError(
+                        "Invalid signature", sig_header=sig_header, http_body=payload
+                    )
 
                 mock_construct.side_effect = side_effect
 
-                event = _try_construct_event(payload, header)
+                _try_construct_event(payload, header)
 
                 # If we get here, it means it accepted it
-                pytest.fail("Vulnerability STILL PRESENT: _try_construct_event accepted TEST secret in PROD mode!")
+                pytest.fail(
+                    "Vulnerability STILL PRESENT: _try_construct_event accepted TEST secret in PROD mode!"
+                )
 
         except HTTPException as e:
-             # If it raises HTTPException(400), it means it rejected it (secure behavior)
-             assert e.status_code == 400
-             assert e.detail == "Invalid signature"
-             print(f"\n[SUCCESS] _try_construct_event rejected TEST secret in PROD mode.")
+            # If it raises HTTPException(400), it means it rejected it (secure behavior)
+            assert e.status_code == 400
+            assert e.detail == "Invalid signature"
+            print(
+                "\n[SUCCESS] _try_construct_event rejected TEST secret in PROD mode."
+            )
         except Exception as e:
-             pytest.fail(f"Unexpected error: {e}")
+            pytest.fail(f"Unexpected error: {e}")
+
 
 if __name__ == "__main__":
     # Manually run the test function if executed as script
