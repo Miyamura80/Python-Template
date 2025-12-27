@@ -3,22 +3,53 @@ import pytest
 import uuid
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
+from sqlalchemy import event
 
 from src.api.services.referral_service import ReferralService
 from src.db.models.public.profiles import Profiles
 from src.db.models.stripe.user_subscriptions import UserSubscriptions
 from src.db.models.stripe.subscription_types import SubscriptionTier
 from tests.test_template import TestTemplate
-from src.db.database import create_db_session
+from src.db.database import engine, SessionLocal
 from common.global_config import global_config
 
 class TestReferralUpgrade(TestTemplate):
 
     @pytest.fixture
     def db_session(self):
-        session = create_db_session()
+        """
+        Creates a session wrapped in a transaction that rolls back after the test.
+        This ensures the database state is reverted, preventing pollution.
+        """
+        # Connect to the database
+        connection = engine.connect()
+        # Begin a non-ORM transaction
+        transaction = connection.begin()
+        # Bind the session to the connection
+        session = SessionLocal(bind=connection)
+
+        # Begin a nested transaction (SAVEPOINT)
+        session.begin_nested()
+
+        # If the application calls session.commit(), it will commit the SAVEPOINT,
+        # not the outer transaction. We need to start a new SAVEPOINT after each commit
+        # to keep the "outer" transaction valid for rollback.
+        @event.listens_for(session, "after_transaction_end")
+        def restart_savepoint(session, transaction):
+            if transaction.nested and not transaction._parent.nested:
+                # Ensure that state is expired so we reload from DB if needed
+                session.expire_all()
+                session.begin_nested()
+
+        # Mark as used for Vulture
+        _ = restart_savepoint
+
         yield session
+
+        # Rollback the outer transaction, undoing all changes (including commits)
         session.close()
+        transaction.rollback()
+        connection.close()
 
     def test_referral_reward_grant(self, db_session: Session):
         """Test that a user gets Plus Tier after required referrals."""
