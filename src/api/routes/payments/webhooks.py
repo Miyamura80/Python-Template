@@ -267,7 +267,10 @@ async def handle_subscription_webhook(
             if invoice_subscription_id:
                 subscription = (
                     db.query(UserSubscriptions)
-                    .filter(UserSubscriptions.stripe_subscription_id == invoice_subscription_id)
+                    .filter(
+                        UserSubscriptions.stripe_subscription_id
+                        == invoice_subscription_id
+                    )
                     .first()
                 )
 
