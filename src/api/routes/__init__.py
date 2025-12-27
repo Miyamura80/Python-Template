@@ -13,6 +13,7 @@ See .cursor/rules/routes.mdc for detailed instructions.
 from .ping import router as ping_router
 from .agent.agent import router as agent_router
 from .agent.history import router as agent_history_router
+from .referrals import router as referrals_router
 from .payments import (
     checkout_router,
     metering_router,
@@ -26,6 +27,7 @@ all_routers = [
     ping_router,
     agent_router,
     agent_history_router,
+    referrals_router,
     # Payments routers
     checkout_router,
     metering_router,
@@ -38,6 +40,7 @@ __all__ = [
     "ping_router",
     "agent_router",
     "agent_history_router",
+    "referrals_router",
     "checkout_router",
     "metering_router",
     "subscription_router",

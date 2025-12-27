@@ -13,8 +13,8 @@ from src.api.auth.utils import user_uuid_from_str
 from src.api.routes.payments.stripe_config import INCLUDED_UNITS
 from src.db.database import get_db_session
 from src.db.models.stripe.user_subscriptions import UserSubscriptions
-from src.db.models.public.profiles import Profiles
 from src.db.utils.db_transaction import db_transaction
+from src.db.utils.users import ensure_profile_exists
 
 router = APIRouter()
 
@@ -56,21 +56,6 @@ def _try_construct_event(payload: bytes, sig_header: str | None) -> dict:
 
     logger.error(f"Failed to verify Stripe webhook signature: {last_error}")
     raise HTTPException(status_code=400, detail="Invalid signature")
-
-
-def _ensure_profile_exists(db: Session, user_uuid, email: str | None) -> None:
-    """Guarantee a Profiles row for the user to satisfy FK constraints."""
-    profile = db.query(Profiles).filter(Profiles.user_id == user_uuid).first()
-    if profile:
-        return
-    with db_transaction(db):
-        db.add(
-            Profiles(
-                user_id=user_uuid,
-                email=email,
-                is_approved=True,
-            )
-        )
 
 
 @router.post("/webhook/usage-reset")
@@ -183,7 +168,7 @@ async def handle_subscription_webhook(
                 )
             else:
                 user_uuid = user_uuid_from_str(user_id)
-                _ensure_profile_exists(db, user_uuid, customer_email)
+                ensure_profile_exists(db, user_uuid, customer_email, is_approved=True)
 
                 # Extract subscription item ID (single item)
                 subscription_item_id = None
