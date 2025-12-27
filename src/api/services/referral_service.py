@@ -38,9 +38,13 @@ class ReferralService:
 
         with db_transaction(db):
             user_profile.referrer_id = referrer.user_id
-            referrer.referral_count += 1
+
+            # Atomic update to avoid race conditions
+            db.query(Profiles).filter(Profiles.user_id == referrer.user_id).update(
+                {Profiles.referral_count: Profiles.referral_count + 1}
+            )
+
             db.add(user_profile)
-            db.add(referrer)
 
         db.refresh(user_profile)
         return True
@@ -57,18 +61,6 @@ class ReferralService:
         for _ in range(5):
             try:
                 code = generate_referral_code()
-                # Use db_transaction to ensure atomic commit/rollback on error
-                # Note: db_transaction handles commit on success and rollback on error
-                # but we need to catch IntegrityError specifically for retry
-                # So we might need nested try/except or rely on db_transaction re-raising
-
-                # Simplified approach: Just try commit.
-                # If we use db_transaction, it catches exceptions and rolls back, then re-raises 500.
-                # But we want to catch IntegrityError specifically.
-                # So maybe NOT use db_transaction here if we want custom retry logic?
-                # Or use it and catch the HTTPException(500) it raises? That's messy.
-                # I'll stick to manual commit here for the retry loop as it is specific control flow.
-
                 profile.referral_code = code
                 db.add(profile)
                 db.commit()
@@ -79,14 +71,9 @@ class ReferralService:
                 continue
 
         # Fallback to longer code if collision persists
-        # Fallback to longer code if collision persists
         code = generate_referral_code(12)
         profile.referral_code = code
         db.add(profile)
-        try:
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-            raise HTTPException(status_code=500, detail="Failed to generate unique referral code")
+        db.commit()
         db.refresh(profile)
         return str(code)
