@@ -2,11 +2,7 @@
 
 ## Critical Issues
 
-### 1. Stripe Webhook Signature Bypass (FIXED)
-
-**Severity:** Critical
-**Description:** The Stripe webhook handler `_try_construct_event` was configured to accept payloads signed with the Test Secret even when the application was running in Production mode. This would allow an attacker knowing the Test Secret to forge events (e.g., subscription creation) against the Production environment.
-**Fix:** The logic in `src/api/routes/payments/webhooks.py` was updated to strictly enforce secret usage based on the environment (`DEV_ENV`). Production only uses `STRIPE_WEBHOOK_SECRET`, and non-production environments use `STRIPE_TEST_WEBHOOK_SECRET`.
+*None identified at this time.*
 
 ## Low/Medium Issues
 
