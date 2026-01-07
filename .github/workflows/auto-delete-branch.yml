@@ -5,6 +5,9 @@ on:
     - cron: '0 0 * * *'  # Runs at midnight UTC every day
   workflow_dispatch:  # Allows manual triggering
 
+permissions:
+  contents: write  # Required to delete branches
+
 jobs:
   delete-merged-branches:
     runs-on: ubuntu-latest
