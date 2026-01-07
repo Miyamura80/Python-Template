@@ -20,9 +20,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # A list of branches that should not be deleted.
           # Add any new protected branches to this list.
-          branches_to_protect:
-            - main
-            - saas
-            - cli-tool
+          exclude: main, saas, cli-tool
           # The number of days after a branch is merged before it is deleted.
           days_until_delete: 3
