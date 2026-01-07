@@ -43,7 +43,7 @@ async def generate_banner(title: str, suggestion: str | None = None) -> Image.Im
     prompt = f"{result.banner_description}. Create an image with the banner prominently displayed and taking 80% of the screen. The text '{title}' should be large and centered at the top. Use professional photography composition with the banner as the main focal point. Make sure the text is large, highly readable (good color contrast with background) and the banner is visually appealing with good contrast. Remember, the banner text should take up majority of the image. You should zoom into the image as much as possible. \n\n {style_prompt}"
 
     resp = client.models.generate_images(
-        model="imagen-3.0-generate-002",
+        model="imagen-4.0-generate-001",
         prompt=prompt,
         config=types.GenerateImagesConfig(number_of_images=1, aspect_ratio="16:9"),
     )
