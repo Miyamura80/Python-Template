@@ -25,6 +25,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set +e  # Don't exit on error
+          
           # Protected branches that should never be deleted
           PROTECTED_BRANCHES=("main" "saas" "cli-tool")
           
@@ -53,7 +55,7 @@ jobs:
             
             if [ "$SKIP" = true ]; then
               echo "⏭️  Skipping protected branch: $branch"
-              ((SKIPPED_COUNT++))
+              SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
               continue
             fi
             
@@ -63,14 +65,21 @@ jobs:
             
             if [ -n "$MERGE_BASE" ] && [ -n "$BRANCH_COMMIT" ] && [ "$MERGE_BASE" = "$BRANCH_COMMIT" ]; then
               echo "🗑️  Deleting merged branch: $branch"
-              git push origin --delete "$branch" 2>&1 || echo "⚠️  Failed to delete $branch"
-              ((DELETED_COUNT++))
+              if git push origin --delete "$branch" 2>&1; then
+                DELETED_COUNT=$((DELETED_COUNT + 1))
+              else
+                echo "⚠️  Failed to delete $branch"
+                SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+              fi
             else
               echo "⏭️  Skipping unmerged branch: $branch"
-              ((SKIPPED_COUNT++))
+              SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
             fi
           done
           
+          echo ""
           echo "✅ Cleanup complete!"
           echo "   - Deleted: $DELETED_COUNT branches"
           echo "   - Skipped: $SKIPPED_COUNT branches"
+          
+          exit 0
