@@ -30,6 +30,12 @@ jobs:
           # Protected branches that should never be deleted
           PROTECTED_BRANCHES=("main" "saas" "cli-tool")
           
+          # AI assistant branch prefixes to check for old closed/draft PRs
+          AI_PREFIXES=("cursor/" "claude/" "jules/")
+          
+          # Calculate timestamp for 3 months ago
+          THREE_MONTHS_AGO=$(date -u -d '3 months ago' +%s 2>/dev/null || date -u -v-3m +%s)
+          
           echo "🔍 Finding branches with merged PRs..."
           
           # Get all remote branches
@@ -43,6 +49,7 @@ jobs:
           DELETED_COUNT=0
           SKIPPED_COUNT=0
           NO_PR_COUNT=0
+          OLD_AI_BRANCH_COUNT=0
           
           # Loop through all remote branches
           for branch in $(git branch -r | grep -v '\->' | sed 's/origin\///'); do
@@ -61,10 +68,19 @@ jobs:
               continue
             fi
             
-            # Check if there's a PR for this branch using GitHub CLI
-            PR_STATE=$(gh pr list --head "$branch" --state all --json state --jq '.[0].state' 2>/dev/null || echo "")
+            # Check if branch has AI assistant prefix
+            IS_AI_BRANCH=false
+            for prefix in "${AI_PREFIXES[@]}"; do
+              if [[ "$branch" == $prefix* ]]; then
+                IS_AI_BRANCH=true
+                break
+              fi
+            done
             
-            if [ -z "$PR_STATE" ]; then
+            # Check if there's a PR for this branch using GitHub CLI
+            PR_DATA=$(gh pr list --head "$branch" --state all --json state,isDraft,createdAt --jq '.[0]' 2>/dev/null || echo "")
+            
+            if [ -z "$PR_DATA" ] || [ "$PR_DATA" = "null" ]; then
               # No PR found - check git history as fallback
               MERGE_BASE=$(git merge-base $DEFAULT_BRANCH origin/$branch 2>/dev/null || echo "")
               BRANCH_COMMIT=$(git rev-parse origin/$branch 2>/dev/null || echo "")
@@ -80,23 +96,42 @@ jobs:
                 echo "⏭️  No PR found, branch not merged: $branch"
                 NO_PR_COUNT=$((NO_PR_COUNT + 1))
               fi
-            elif [ "$PR_STATE" = "MERGED" ]; then
-              echo "🗑️  Deleting branch with merged PR: $branch"
-              if git push origin --delete "$branch" 2>&1; then
-                DELETED_COUNT=$((DELETED_COUNT + 1))
+            else
+              PR_STATE=$(echo "$PR_DATA" | jq -r '.state')
+              IS_DRAFT=$(echo "$PR_DATA" | jq -r '.isDraft')
+              CREATED_AT=$(echo "$PR_DATA" | jq -r '.createdAt')
+              
+              # Convert PR creation date to timestamp
+              PR_TIMESTAMP=$(date -u -d "$CREATED_AT" +%s 2>/dev/null || date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$CREATED_AT" +%s 2>/dev/null || echo "0")
+              
+              if [ "$PR_STATE" = "MERGED" ]; then
+                echo "🗑️  Deleting branch with merged PR: $branch"
+                if git push origin --delete "$branch" 2>&1; then
+                  DELETED_COUNT=$((DELETED_COUNT + 1))
+                else
+                  echo "⚠️  Failed to delete $branch"
+                  SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+                fi
+              elif [ "$IS_AI_BRANCH" = true ] && [ "$PR_TIMESTAMP" -lt "$THREE_MONTHS_AGO" ] && { [ "$PR_STATE" = "CLOSED" ] || [ "$IS_DRAFT" = "true" ]; }; then
+                echo "🗑️  Deleting old AI branch (>3 months, closed/draft): $branch"
+                if git push origin --delete "$branch" 2>&1; then
+                  DELETED_COUNT=$((DELETED_COUNT + 1))
+                  OLD_AI_BRANCH_COUNT=$((OLD_AI_BRANCH_COUNT + 1))
+                else
+                  echo "⚠️  Failed to delete $branch"
+                  SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+                fi
               else
-                echo "⚠️  Failed to delete $branch"
+                echo "⏭️  Skipping branch with $PR_STATE PR (draft: $IS_DRAFT): $branch"
                 SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
               fi
-            else
-              echo "⏭️  Skipping branch with $PR_STATE PR: $branch"
-              SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
             fi
           done
           
           echo ""
           echo "✅ Cleanup complete!"
           echo "   - Deleted: $DELETED_COUNT branches"
+          echo "     - Old AI branches (>3mo, closed/draft): $OLD_AI_BRANCH_COUNT"
           echo "   - Skipped: $SKIPPED_COUNT branches (open/closed PRs or protected)"
           echo "   - No PR: $NO_PR_COUNT branches (no PR found, not merged)"
           
