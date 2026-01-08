@@ -1,12 +1,15 @@
 name: Auto Delete Merged Branches
 
 on:
+  pull_request:
+    types: [closed]  # Triggers when a PR is closed
   schedule:
-    - cron: '0 0 * * *'  # Runs at midnight UTC every day
+    - cron: '0 0 * * 0'  # Runs weekly on Sundays at midnight UTC
   workflow_dispatch:  # Allows manual triggering
 
 permissions:
   contents: write  # Required to delete branches
+  pull-requests: read  # Required to check PR status
 
 jobs:
   delete-merged-branches:
@@ -15,12 +18,59 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-
-      - name: Delete Merged Branches
-        uses: SvanBoxel/delete-merged-branch@2b5b058e3db41a3328fd9a6a58fd4c2545a14353
         with:
-          # A list of branches that should not be deleted.
-          # Add any new protected branches to this list.
-          exclude: main, saas, cli-tool
-          # Set to true to also delete branches from closed (but not merged) PRs
-          delete_closed_pr: false
+          fetch-depth: 0  # Fetch all branches and history
+
+      - name: Delete Merged Branches with GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Protected branches that should never be deleted
+          PROTECTED_BRANCHES=("main" "saas" "cli-tool")
+          
+          echo "🔍 Finding merged branches..."
+          
+          # Get all remote branches
+          git fetch --all --prune
+          
+          # Get the default branch
+          DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+          echo "Default branch: $DEFAULT_BRANCH"
+          
+          DELETED_COUNT=0
+          SKIPPED_COUNT=0
+          
+          # Loop through all remote branches
+          for branch in $(git branch -r | grep -v '\->' | sed 's/origin\///'); do
+            # Skip protected branches
+            SKIP=false
+            for protected in "${PROTECTED_BRANCHES[@]}"; do
+              if [ "$branch" = "$protected" ]; then
+                SKIP=true
+                break
+              fi
+            done
+            
+            if [ "$SKIP" = true ]; then
+              echo "⏭️  Skipping protected branch: $branch"
+              ((SKIPPED_COUNT++))
+              continue
+            fi
+            
+            # Check if branch is merged into default branch
+            MERGE_BASE=$(git merge-base $DEFAULT_BRANCH origin/$branch 2>/dev/null || echo "")
+            BRANCH_COMMIT=$(git rev-parse origin/$branch 2>/dev/null || echo "")
+            
+            if [ -n "$MERGE_BASE" ] && [ -n "$BRANCH_COMMIT" ] && [ "$MERGE_BASE" = "$BRANCH_COMMIT" ]; then
+              echo "🗑️  Deleting merged branch: $branch"
+              git push origin --delete "$branch" 2>&1 || echo "⚠️  Failed to delete $branch"
+              ((DELETED_COUNT++))
+            else
+              echo "⏭️  Skipping unmerged branch: $branch"
+              ((SKIPPED_COUNT++))
+            fi
+          done
+          
+          echo "✅ Cleanup complete!"
+          echo "   - Deleted: $DELETED_COUNT branches"
+          echo "   - Skipped: $SKIPPED_COUNT branches"
