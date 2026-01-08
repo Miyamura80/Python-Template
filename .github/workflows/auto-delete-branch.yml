@@ -30,7 +30,7 @@ jobs:
           # Protected branches that should never be deleted
           PROTECTED_BRANCHES=("main" "saas" "cli-tool")
           
-          echo "🔍 Finding merged branches..."
+          echo "🔍 Finding branches with merged PRs..."
           
           # Get all remote branches
           git fetch --all --prune
@@ -38,9 +38,11 @@ jobs:
           # Get the default branch
           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
           echo "Default branch: $DEFAULT_BRANCH"
+          echo ""
           
           DELETED_COUNT=0
           SKIPPED_COUNT=0
+          NO_PR_COUNT=0
           
           # Loop through all remote branches
           for branch in $(git branch -r | grep -v '\->' | sed 's/origin\///'); do
@@ -59,12 +61,27 @@ jobs:
               continue
             fi
             
-            # Check if branch is merged into default branch
-            MERGE_BASE=$(git merge-base $DEFAULT_BRANCH origin/$branch 2>/dev/null || echo "")
-            BRANCH_COMMIT=$(git rev-parse origin/$branch 2>/dev/null || echo "")
+            # Check if there's a PR for this branch using GitHub CLI
+            PR_STATE=$(gh pr list --head "$branch" --state all --json state --jq '.[0].state' 2>/dev/null || echo "")
             
-            if [ -n "$MERGE_BASE" ] && [ -n "$BRANCH_COMMIT" ] && [ "$MERGE_BASE" = "$BRANCH_COMMIT" ]; then
-              echo "🗑️  Deleting merged branch: $branch"
+            if [ -z "$PR_STATE" ]; then
+              # No PR found - check git history as fallback
+              MERGE_BASE=$(git merge-base $DEFAULT_BRANCH origin/$branch 2>/dev/null || echo "")
+              BRANCH_COMMIT=$(git rev-parse origin/$branch 2>/dev/null || echo "")
+              
+              if [ -n "$MERGE_BASE" ] && [ -n "$BRANCH_COMMIT" ] && [ "$MERGE_BASE" = "$BRANCH_COMMIT" ]; then
+                echo "🗑️  Deleting merged branch (no PR): $branch"
+                if git push origin --delete "$branch" 2>&1; then
+                  DELETED_COUNT=$((DELETED_COUNT + 1))
+                else
+                  echo "⚠️  Failed to delete $branch"
+                fi
+              else
+                echo "⏭️  No PR found, branch not merged: $branch"
+                NO_PR_COUNT=$((NO_PR_COUNT + 1))
+              fi
+            elif [ "$PR_STATE" = "MERGED" ]; then
+              echo "🗑️  Deleting branch with merged PR: $branch"
               if git push origin --delete "$branch" 2>&1; then
                 DELETED_COUNT=$((DELETED_COUNT + 1))
               else
@@ -72,7 +89,7 @@ jobs:
                 SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
               fi
             else
-              echo "⏭️  Skipping unmerged branch: $branch"
+              echo "⏭️  Skipping branch with $PR_STATE PR: $branch"
               SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
             fi
           done
@@ -80,6 +97,7 @@ jobs:
           echo ""
           echo "✅ Cleanup complete!"
           echo "   - Deleted: $DELETED_COUNT branches"
-          echo "   - Skipped: $SKIPPED_COUNT branches"
+          echo "   - Skipped: $SKIPPED_COUNT branches (open/closed PRs or protected)"
+          echo "   - No PR: $NO_PR_COUNT branches (no PR found, not merged)"
           
           exit 0
