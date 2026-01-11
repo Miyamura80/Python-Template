@@ -1,0 +1,90 @@
+---
+description: Documentation standards and scope for public-facing APIs
+globs:
+  - "docs/**"
+  - "**/*.md"
+alwaysApply: true
+---
+
+# Documentation Standards
+
+## Quick Reference
+
+**ALWAYS read `.cursor/docs-scope.yml` first** - it defines what needs documentation.
+
+### What to Document in /docs (PUBLIC APIs)
+- Modules in `public_modules` (e.g., `common/`)
+- Functions/classes in `__all__` exports
+- Code marked `# Public API`
+- No underscore prefix in public modules
+
+### What NOT to Document in /docs (PRIVATE/INTERNAL)
+- Modules in `private_modules` (e.g., `utils/`, `tests/`)
+- Underscore-prefixed code (`_private_function`)
+- Code marked `# Internal only`
+- Paths in `exclude_from_docs`
+
+## Decision Tree
+
+```
+Is it in public_modules? → YES = Document in /docs
+Is it in __all__? → YES = Document in /docs
+Has # Public API marker? → YES = Document in /docs
+Has underscore prefix? → YES = Skip /docs (docstrings only)
+Is it in private_modules? → YES = Skip /docs (docstrings only)
+```
+
+## Documentation Structure
+
+Per `.cursor/docs-scope.yml`:
+- **docs/api/** - API reference
+- **docs/guides/** - User guides
+- **docs/setup/** - Setup instructions
+- **docs/examples/** - Code examples
+
+## Quality Standards
+
+**Public APIs** - Comprehensive:
+```python
+# Public API
+class APIClient:
+    """Client for the REST API.
+
+    See docs/api/client.md for full reference.
+
+    Example:
+        >>> client = APIClient("https://api.example.com")
+        >>> client.get("/users")
+    """
+```
+
+**Private code** - Docstrings only:
+```python
+# Internal only
+def _retry(func):
+    """Internal retry helper."""
+    pass
+```
+
+## Markers
+
+```python
+# Public API - Forces /docs documentation
+def public_func(): pass
+
+# Internal only - Prevents /docs documentation
+def _private_func(): pass
+```
+
+## Restrictions
+
+- ✅ Modify `docs/**` only
+- ❌ Never touch code, configs, or CI files
+- ❌ Never over-document private utilities
+
+## Checklist
+
+- [ ] Read `.cursor/docs-scope.yml`
+- [ ] Changes only in `docs/**`
+- [ ] Only documented public APIs
+- [ ] Followed docs structure from scope file
