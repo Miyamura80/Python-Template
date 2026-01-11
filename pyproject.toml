@@ -23,6 +23,8 @@ dependencies = [
     "ty>=0.0.1a9",
     "pytest-env>=1.1.5",
     "pydantic-settings>=2.12.0",
+    "requests>=2.31.0",
+    "typer[all]>=0.12.3",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -35,7 +37,10 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/python_template"]
+packages = ["src"]
+
+[project.scripts]
+eito = "src.cli.main:app"
 
 [tool.vulture]
 exclude = [
