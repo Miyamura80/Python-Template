@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-<b>Description of the project here. </b>
+<b>Opinionated Python project stack. Batteries included. </b>
 </p>
 
 <p align="center">
@@ -42,7 +42,7 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 |---------|:------:|:------:|
 | UV + Pydantic config | ✅ | ✅ |
 | CI/Linters (Ruff, Black, Vulture) | ✅ | ✅ |
-| LLM (DSPY + LangFuse) | ✅ | ✅ |
+| LLM (DSPY + LangFuse Observability) | ✅ | ✅ |
 | FastAPI + Uvicorn | ❌ | ✅ |
 | SQLAlchemy + Alembic | ❌ | ✅ |
 | Auth (WorkOS + API keys) | ❌ | ✅ |
