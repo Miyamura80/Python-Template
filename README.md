@@ -11,9 +11,8 @@
 <p align="center">
 <p align="center">
   <a href="#key-features">Key Features</a> •
-  <a href="#requirements">Requirements</a> •
   <a href="#quick-start">Quick Start</a> •
-  <a href="#configuration-options">Configuration</a> •
+  <a href="#configuration">Configuration</a> •
   <a href="#credits">Credits</a> •
   <a href="#about-the-core-contributors">About the Core Contributors</a>
 </p>
@@ -37,12 +36,7 @@
 
 ## Key Features
 
-- Super opinionated python stack to enable super fast development on new projects without getting the usual tooling available
-- CI/Linters built-in
-- LLM Inference/Observability built-in
-- (Optional) `saas` branch contains default template for building SaaS apps
-
-### Branch Comparison
+Opinionated Python stack for fast development. The `saas` branch extends `main` with web framework, auth, and payments.
 
 | Feature | `main` | `saas` |
 |---------|:------:|:------:|
@@ -57,13 +51,6 @@
 
 [Full comparison](docs/branch_comparison.md)
 
-## Requirements
-
-- [uv](https://docs.astral.sh/uv/)
-  ```
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  ```
-
 ## Quick Start
 
 - `make all` - runs `main.py`
@@ -73,29 +60,19 @@
 
 
 
-## Configuration Options
+## Configuration
 
-This project uses **pydantic-settings** for configuration management, providing automatic validation and type checking.
+```python
+from common import global_config
 
-**Configuration Files:**
-- `common/global_config.yaml` - Base configuration values
-- `common/config_models.py` - Pydantic models for validation
-- `common/global_config.py` - Main Config class
-- `.env` - Environment variables and secrets (create this file)
+# Access config values from common/global_config.yaml
+global_config.example_parent.example_child
 
-1. **Global config:** [`common/global_config.yaml`](common/global_config.yaml) - Add hyperparameters here
-2. **Environment Variables:** Store environment variables in `.env` (git-ignored) and `common/global_config.py` will read them automatically with validation:
+# Access secrets from .env
+global_config.OPENAI_API_KEY
+```
 
-    `.env` file:
-    ```env
-    OPENAI_API_KEY=sk-...
-    ```
-    python file:
-    ```python
-    from common import global_config
-
-    print(global_config.OPENAI_API_KEY)
-    ```
+[Full configuration docs](docs/configuration.md)
 
 ## Credits
 
