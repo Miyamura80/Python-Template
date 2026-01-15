@@ -42,6 +42,21 @@
 - LLM Inference/Observability built-in
 - (Optional) `saas` branch contains default template for building SaaS apps
 
+### Branch Comparison
+
+| Feature | `main` | `saas` |
+|---------|:------:|:------:|
+| UV + Pydantic config | ✅ | ✅ |
+| CI/Linters (Ruff, Black, Vulture) | ✅ | ✅ |
+| LLM (DSPY + LangFuse) | ✅ | ✅ |
+| FastAPI + Uvicorn | ❌ | ✅ |
+| SQLAlchemy + Alembic | ❌ | ✅ |
+| Auth (WorkOS + API keys) | ❌ | ✅ |
+| Payments (Stripe) | ❌ | ✅ |
+| Referrals + Agent system | ❌ | ✅ |
+
+[Full comparison](docs/branch_comparison.md)
+
 ## Requirements
 
 - [uv](https://docs.astral.sh/uv/)
