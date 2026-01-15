@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-<b>Opinionated Python project stack. Batteries included. </b>
+<b>Opinionated Python project stack. 🔋 Batteries included. </b>
 </p>
 
 <p align="center">
