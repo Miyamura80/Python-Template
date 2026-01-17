@@ -31,11 +31,28 @@ class RetryConfig(BaseModel):
     max_wait_seconds: int
 
 
+class TimeoutConfig(BaseModel):
+    """Timeout configuration for LLM requests."""
+
+    default_seconds: int
+    thinking_seconds: int
+    thinking_model_markers: list[str]
+
+
+class FallbackConfig(BaseModel):
+    """Fallback configuration for LLM requests."""
+
+    enabled: bool
+    gemini_model: str
+
+
 class LlmConfig(BaseModel):
     """LLM configuration including caching and retry settings."""
 
     cache_enabled: bool
     retry: RetryConfig
+    timeout: TimeoutConfig
+    fallback: FallbackConfig
 
 
 class LoggingLocationConfig(BaseModel):

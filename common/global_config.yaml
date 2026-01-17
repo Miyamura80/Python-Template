@@ -18,6 +18,16 @@ llm_config:
     max_attempts: 3
     min_wait_seconds: 1
     max_wait_seconds: 5
+  timeout:
+    default_seconds: 60
+    thinking_seconds: 180
+    thinking_model_markers:
+      - "thinking"
+      - "o1"
+      - "o3"
+  fallback:
+    enabled: true
+    gemini_model: "gpt-4o-mini"
 
 ########################################################
 # Debugging
