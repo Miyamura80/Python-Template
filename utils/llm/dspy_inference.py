@@ -53,7 +53,9 @@ class DSPYInference:
                     timeout=request_timeout,
                 )
             except Exception as e:
-                log.warning(f"Failed to initialize fallback model {fallback_model}: {e}")
+                log.warning(
+                    f"Failed to initialize fallback model {fallback_model}: {e}"
+                )
 
         if observe:
             # Initialize a LangFuseDSPYCallback and configure the LM instance for generation tracing
@@ -76,7 +78,9 @@ class DSPYInference:
         )
 
     @retry(
-        retry=retry_if_exception_type((ServiceUnavailableError, RateLimitError, Timeout)),
+        retry=retry_if_exception_type(
+            (ServiceUnavailableError, RateLimitError, Timeout)
+        ),
         stop=stop_after_attempt(global_config.llm_config.retry.max_attempts),
         wait=wait_exponential(
             multiplier=global_config.llm_config.retry.min_wait_seconds,

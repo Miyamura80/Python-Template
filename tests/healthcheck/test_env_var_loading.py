@@ -31,7 +31,7 @@ def test_env_var_loading_precedence(monkeypatch):
         monkeypatch.setenv("OPENAI_API_KEY", "system_openai_key")
 
         # 2. Create a temporary .env file
-        dot_env_content = "DEV_ENV=dotenv\n" "OPENAI_API_KEY=dotenv_openai_key\n"
+        dot_env_content = "DEV_ENV=dotenv\nOPENAI_API_KEY=dotenv_openai_key\n"
         with open(dot_env_path, "w") as f:
             f.write(dot_env_content)
 
@@ -41,12 +41,12 @@ def test_env_var_loading_precedence(monkeypatch):
 
         # 4. Assert that the variables are loaded with the correct precedence
         assert reloaded_config.DEV_ENV == "dotenv", "Should load from .env first"
-        assert (
-            reloaded_config.ANTHROPIC_API_KEY == "system_anthropic_key"
-        ), "Should fall back to system env"
-        assert (
-            reloaded_config.OPENAI_API_KEY == "dotenv_openai_key"
-        ), "Should load from .env"
+        assert reloaded_config.ANTHROPIC_API_KEY == "system_anthropic_key", (
+            "Should fall back to system env"
+        )
+        assert reloaded_config.OPENAI_API_KEY == "dotenv_openai_key", (
+            "Should load from .env"
+        )
 
     finally:
         # Clean up and restore the original .env file if it existed
