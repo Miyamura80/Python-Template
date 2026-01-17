@@ -374,26 +374,30 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         inputs: dict[str, Any],
     ) -> None:
         """Called when a tool execution starts."""
-        tool_name = getattr(instance, "__name__", None) or getattr(
-            instance, "name", None
-        ) or str(type(instance).__name__)
-        
+        tool_name = (
+            getattr(instance, "__name__", None)
+            or getattr(instance, "name", None)
+            or str(type(instance).__name__)
+        )
+
         # Skip internal DSPy tools
         if tool_name in self.INTERNAL_TOOLS:
             self.current_tool_span.set(None)
             return
-        
+
         # Extract tool arguments
         tool_args = inputs.get("args", {})
         if not tool_args:
             # Try to get kwargs directly
-            tool_args = {k: v for k, v in inputs.items() if k not in ["call_id", "instance"]}
-        
+            tool_args = {
+                k: v for k, v in inputs.items() if k not in ["call_id", "instance"]
+            }
+
         log.debug(f"Tool call started: {tool_name} with args: {tool_args}")
-        
+
         trace_id = langfuse_context.get_current_trace_id()
         parent_observation_id = langfuse_context.get_current_observation_id()
-        
+
         if trace_id:
             # Create a span for the tool call
             tool_span = self.langfuse.span(
@@ -416,12 +420,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
     ) -> None:
         """Called when a tool execution ends."""
         tool_span = self.current_tool_span.get(None)
-        
+
         if tool_span:
             level: Literal["DEFAULT", "WARNING", "ERROR"] = "DEFAULT"
             status_message: Optional[str] = None
             output_value: Any = None
-            
+
             if exception:
                 level = "ERROR"
                 status_message = str(exception)
@@ -438,12 +442,12 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                         output_value = str(outputs)
                 except Exception as e:
                     output_value = {"serialization_error": str(e), "raw": str(outputs)}
-            
+
             tool_span.end(
                 output=output_value,
                 level=level,
                 status_message=status_message,
             )
             self.current_tool_span.set(None)
-            
+
             log.debug(f"Tool call ended with output: {str(output_value)[:100]}...")
