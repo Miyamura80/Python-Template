@@ -9,8 +9,10 @@ example_parent:
 ########################################################
 default_llm:
   default_model: gemini/gemini-2.0-flash
+  fallback_model: null
   default_temperature: 0.5
   default_max_tokens: 100000
+  default_request_timeout: 300
 
 llm_config:
   cache_enabled: false

@@ -10,7 +10,7 @@ from tenacity import (
     retry_if_exception_type,
 )
 from utils.llm.dspy_langfuse import LangFuseDSPYCallback
-from litellm.exceptions import ServiceUnavailableError
+from litellm.exceptions import ServiceUnavailableError, RateLimitError, Timeout
 from langfuse.decorators import observe  # type: ignore
 
 
@@ -21,8 +21,10 @@ class DSPYInference:
         tools: list[Callable[..., Any]] | None = None,
         observe: bool = True,
         model_name: str = global_config.default_llm.default_model,
+        fallback_model: str | None = global_config.default_llm.fallback_model,
         temperature: float = global_config.default_llm.default_temperature,
         max_tokens: int = global_config.default_llm.default_max_tokens,
+        request_timeout: int = global_config.default_llm.default_request_timeout,
         max_iters: int = 5,
     ) -> None:
         if tools is None:
@@ -35,7 +37,24 @@ class DSPYInference:
             cache=global_config.llm_config.cache_enabled,
             temperature=temperature,
             max_tokens=max_tokens,
+            timeout=request_timeout,
         )
+
+        self.fallback_lm = None
+        if fallback_model:
+            try:
+                fallback_api_key = global_config.llm_api_key(fallback_model)
+                self.fallback_lm = dspy.LM(
+                    model=fallback_model,
+                    api_key=fallback_api_key,
+                    cache=global_config.llm_config.cache_enabled,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    timeout=request_timeout,
+                )
+            except Exception as e:
+                log.warning(f"Failed to initialize fallback model {fallback_model}: {e}")
+
         if observe:
             # Initialize a LangFuseDSPYCallback and configure the LM instance for generation tracing
             self.callback = LangFuseDSPYCallback(pred_signature)
@@ -56,26 +75,38 @@ class DSPYInference:
             self.inference_module
         )
 
-    @observe()
     @retry(
-        retry=retry_if_exception_type(ServiceUnavailableError),
+        retry=retry_if_exception_type((ServiceUnavailableError, RateLimitError, Timeout)),
         stop=stop_after_attempt(global_config.llm_config.retry.max_attempts),
         wait=wait_exponential(
             multiplier=global_config.llm_config.retry.min_wait_seconds,
             max=global_config.llm_config.retry.max_wait_seconds,
         ),
         before_sleep=lambda retry_state: log.warning(
-            f"Retrying due to ServiceUnavailableError. Attempt {retry_state.attempt_number}"
+            f"Retrying due to LLM Error ({retry_state.outcome.exception()}). Attempt {retry_state.attempt_number}"
         ),
+        reraise=True,
     )
+    async def _run_inference(self, lm, **kwargs) -> Any:
+        return await self.inference_module_async(**kwargs, lm=lm)
+
+    @observe()
     async def run(
         self,
         **kwargs: Any,
     ) -> Any:
         try:
             # user_id is passed if the pred_signature requires it.
-            result = await self.inference_module_async(**kwargs, lm=self.lm)
+            result = await self._run_inference(lm=self.lm, **kwargs)
         except Exception as e:
-            log.error(f"Error in run: {str(e)}")
-            raise
+            if self.fallback_lm:
+                log.warning(f"Primary model failed: {e}. Switching to fallback model.")
+                try:
+                    result = await self._run_inference(lm=self.fallback_lm, **kwargs)
+                except Exception as fallback_error:
+                    log.error(f"Fallback model also failed: {fallback_error}")
+                    raise fallback_error
+            else:
+                log.error(f"Error in run: {str(e)}")
+                raise
         return result
