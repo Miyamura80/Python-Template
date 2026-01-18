@@ -1,0 +1,84 @@
+# Documentation Scope - Defines what needs public-facing docs vs docstrings only
+
+# PUBLIC MODULES (comprehensive /docs required)
+public_modules:
+  - path: "common/"
+    description: "Shared utilities and global configuration"
+    doc_level: "comprehensive"
+    doc_files: ["docs/api/common.md", "docs/setup/configuration.md"]
+  # Add new public modules:
+  # - path: "src/api/"
+  #   description: "Public REST API"
+  #   doc_level: "comprehensive"
+  #   doc_files: ["docs/api/rest-api.md"]
+
+# PUBLIC API PATTERNS
+public_api_patterns:
+  - pattern: "^[^_].*"     # No leading underscore
+    scope: "all"
+  - marker: "# Public API" # Explicit marker
+    scope: "all"
+
+# EXPORTED APIs (user-facing imports)
+exported_apis:
+  - "common.global_config"
+  - "common.global_config.GlobalConfig"
+
+# PRIVATE MODULES (docstrings only, no /docs)
+private_modules:
+  - {path: "src/utils/", description: "Internal utilities", doc_level: "minimal"}
+  - {path: "tests/", description: "Test suite", doc_level: "minimal"}
+  - {path: "init/", description: "Init scripts", doc_level: "minimal"}
+  - {path: "utils/", description: "Internal utilities", doc_level: "minimal"}
+
+# PRIVATE API PATTERNS
+private_api_patterns:
+  - pattern: "^_.*"           # Leading underscore
+    scope: "all"
+  - marker: "# Internal only" # Explicit marker
+    scope: "all"
+
+# EXCLUSIONS (never document)
+exclude_from_docs:
+  - ".github/"
+  - ".git/"
+  - ".cursor/"
+  - "**/__pycache__/"
+  - "**/*.pyc"
+  - ".env*"
+  - "*.log"
+  - ".pytest_cache/"
+  - ".mypy_cache/"
+  - "node_modules/"
+  - "dist/"
+  - "build/"
+
+# DOCUMENTATION REQUIREMENTS
+documentation_requirements:
+  comprehensive:  # Public modules
+    - "API reference in /docs/api/"
+    - "Usage examples"
+    - "Setup guide"
+  minimal:        # Private modules
+    - "Docstrings only"
+    - "Inline comments for complex logic"
+
+# UPDATE TRIGGERS
+update_triggers:
+  high_priority_paths:
+    - "common/"
+    - "src/api/"
+  significant_change_threshold: 50
+  critical_patterns:
+    - "**/__init__.py"
+    - "**/global_config.*"
+    - "**/README.md"
+
+# DOCS STRUCTURE
+docs_structure:
+  api_reference: "docs/api/"
+  user_guides: "docs/guides/"
+  setup_instructions: "docs/setup/"
+  examples: "docs/examples/"
+  prompts: "docs/prompts/"
+  commands: "docs/commands/"
