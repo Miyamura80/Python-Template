@@ -1,3 +1,58 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+
+/* Brand Colors:
+   - Baseline Black  #000000  (40%)
+   - Graphene Grey   #9BA4A6  (30%)
+   - Core Cyan       #C3FFFD  (20%)
+   - Wavelength White #F9F9F9 (10%)
+*/
+
+@theme inline {
+  /* Light mode - inverted for readability */
+  --color-fd-background: #F9F9F9;
+  --color-fd-foreground: #000000;
+  --color-fd-muted: #9BA4A6;
+  --color-fd-muted-foreground: #5a6366;
+  --color-fd-primary: #000000;
+  --color-fd-primary-foreground: #F9F9F9;
+  --color-fd-secondary: #e8e8e8;
+  --color-fd-secondary-foreground: #000000;
+  --color-fd-accent: #C3FFFD;
+  --color-fd-accent-foreground: #000000;
+  --color-fd-border: #9BA4A6;
+  --color-fd-ring: #C3FFFD;
+  --color-fd-card: #F9F9F9;
+  --color-fd-card-foreground: #000000;
+  --color-fd-popover: #F9F9F9;
+  --color-fd-popover-foreground: #000000;
+}
+
+:root.dark {
+  --color-fd-background: #000000;
+  --color-fd-foreground: #F9F9F9;
+  --color-fd-muted: #1a1a1a;
+  --color-fd-muted-foreground: #9BA4A6;
+  --color-fd-primary: #C3FFFD;
+  --color-fd-primary-foreground: #000000;
+  --color-fd-secondary: #1a1a1a;
+  --color-fd-secondary-foreground: #F9F9F9;
+  --color-fd-accent: #0d3332;
+  --color-fd-accent-foreground: #C3FFFD;
+  --color-fd-border: #2a2a2a;
+  --color-fd-ring: #C3FFFD;
+  --color-fd-card: #0a0a0a;
+  --color-fd-card-foreground: #F9F9F9;
+  --color-fd-popover: #0a0a0a;
+  --color-fd-popover-foreground: #F9F9F9;
+}
+
+/* Sidebar dark mode overrides */
+.dark #nd-sidebar {
+  --color-fd-background: #000000;
+  --color-fd-muted: #1a1a1a;
+  --color-fd-secondary: #1a1a1a;
+  --color-fd-muted-foreground: #9BA4A6;
+  --color-fd-border: #2a2a2a;
+}
