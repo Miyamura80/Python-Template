@@ -1,14 +1,29 @@
 #!/usr/bin/env python3
 
 import subprocess
+import sys
 
-def run_linter():
-    result = subprocess.run(["make", "lint"], capture_output=True, text=True)
-    return result.returncode == 0
+def run_ci():
+    """Run CI checks (ruff, vulture, ty) after commit."""
+    print("\nRunning CI checks (make ci)...")
+    result = subprocess.run(["make", "ci"], capture_output=True, text=True)
 
-if not run_linter():
-    print("Applying linter failed. Commit aborted.")
-    exit(1)
+    if result.returncode != 0:
+        print("❌ CI checks failed:")
+        print(result.stdout)
+        print(result.stderr)
+        print("\nCommit was created, but CI checks failed.")
+        print("Please fix the issues and amend your commit:")
+        print("  git add <files>")
+        print("  git commit --amend --no-edit")
+        return False
 
-print("Linting passed. Proceeding with commit.")
-exit(0)
+    print("✓ CI checks passed")
+    return True
+
+if not run_ci():
+    print("\n⚠️  Post-commit hook: CI checks failed (commit was still created)")
+    sys.exit(1)
+
+print("✓ Post-commit hook: All checks passed")
+sys.exit(0)

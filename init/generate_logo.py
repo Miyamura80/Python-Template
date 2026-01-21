@@ -104,7 +104,7 @@ def invert_colors(img: Image.Image) -> Image.Image:
         img = img.convert("RGBA")
 
     data = np.array(img)
-    r, g, b, alpha = data[:, :, 0], data[:, :, 1], data[:, :, 2], data[:, :, 3]
+    r, g, b = data[:, :, 0], data[:, :, 1], data[:, :, 2]
 
     # Invert RGB channels only (not alpha)
     r = 255 - r

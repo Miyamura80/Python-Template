@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+
+import subprocess
+import sys
+
+def run_formatter():
+    """Run formatter before commit."""
+    print("Running formatter (make fmt)...")
+    result = subprocess.run(["make", "fmt"], capture_output=True, text=True)
+
+    if result.returncode != 0:
+        print("Formatting failed:")
+        print(result.stderr)
+        return False
+
+    # Check if formatter made any changes
+    status_result = subprocess.run(
+        ["git", "diff", "--name-only"],
+        capture_output=True,
+        text=True
+    )
+
+    if status_result.stdout.strip():
+        print("\nFormatting made changes to these files:")
+        print(status_result.stdout)
+        print("\nChanges have been formatted. Please review and stage them:")
+        print("  git add <files>")
+        print("  git commit")
+        return False
+
+    print("✓ Formatting complete, no changes needed")
+    return True
+
+if not run_formatter():
+    print("\n❌ Pre-commit hook: Formatting required or failed")
+    sys.exit(1)
+
+print("✓ Pre-commit hook: All checks passed")
+sys.exit(0)
