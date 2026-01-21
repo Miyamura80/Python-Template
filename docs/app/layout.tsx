@@ -1,11 +1,21 @@
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import './global.css';
 import { Archivo } from 'next/font/google';
+import type { Metadata } from 'next';
 
 const archivo = Archivo({
   subsets: ['latin'],
   weight: ['500'],
 });
+
+export const metadata: Metadata = {
+  title: 'Python Template Documentation',
+  description: 'Super-opinionated Python stack for fast development',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icon.png',
+  },
+};
 
 export default function Layout({ children }: LayoutProps<'/'>) {
   return (
