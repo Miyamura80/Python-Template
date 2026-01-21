@@ -9,14 +9,42 @@ PYTHON=uv run
 TEST=uv run pytest
 PROJECT_ROOT=.
 
+.DEFAULT_GOAL := help
+
+########################################################
+# Help
+########################################################
+
+### Help
+.PHONY: help
+help: ## Show this help message
+	@echo "$(BLUE)Available Make Targets$(RESET)"
+	@echo ""
+	@awk 'BEGIN {FS = ":.*?## "; category=""} \
+		/^### / {category = substr($$0, 5); next} \
+		/^[a-zA-Z_-]+:.*?## / { \
+			if (category != last_category) { \
+				if (last_category != "") print ""; \
+				print "$(GREEN)" category ":$(RESET)"; \
+				last_category = category; \
+			} \
+			printf "  $(YELLOW)%-23s$(RESET) %s\n", $$1, $$2 \
+		}' $(MAKEFILE_LIST)
+
 ########################################################
 # Initialization: Delete later
 ########################################################
 
-banner: check_uv
+### Initialization
+banner: check_uv ## Generate project banner image
 	@echo "$(YELLOW)🔍Generating banner...$(RESET)"
 	@uv run python -m init.generate_banner
 	@echo "$(GREEN)✅Banner generated.$(RESET)"
+
+logo: check_uv ## Generate logo and favicon for docs
+	@echo "$(YELLOW)🔍Generating logo and favicon...$(RESET)"
+	@uv run python -m init.generate_logo
+	@echo "$(GREEN)✅Logo and favicon generated in docs/public/$(RESET)"
 
 
 ########################################################
@@ -55,7 +83,8 @@ setup_githooks:
 # Python dependency-related
 ########################################################
 
-setup: check_uv
+### Setup & Dependencies
+setup: check_uv ## Create venv and sync dependencies
 	@echo "$(YELLOW)🔎Looking for .venv...$(RESET)"
 	@if [ ! -d ".venv" ]; then \
 		echo "$(YELLOW)VS Code is not detected. Creating a new one...$(RESET)"; \
@@ -82,7 +111,8 @@ view_python_venv_size_by_libraries:
 # Run Main Application
 ########################################################
 
-all: setup setup_githooks
+### Running
+all: setup setup_githooks ## Setup and run main application
 	@echo "$(GREEN)🏁Running main application...$(RESET)"
 	@$(PYTHON) main.py
 	@echo "$(GREEN)✅ Main application run completed.$(RESET)"
@@ -94,8 +124,8 @@ all: setup setup_githooks
 
 TEST_TARGETS = tests/
 
-# Tests
-test: check_uv
+### Testing
+test: check_uv ## Run pytest tests
 	@echo "$(GREEN)🧪Running Target Tests...$(RESET)"
 	$(TEST) $(TEST_TARGETS)
 	@echo "$(GREEN)✅Target Tests Passed.$(RESET)"
@@ -109,7 +139,8 @@ test: check_uv
 IGNORE_LINT_DIRS = .venv|venv
 LINE_LENGTH = 88
 
-install_tools: check_uv
+### Code Quality
+install_tools: check_uv ## Install linting/formatting tools
 	@echo "$(YELLOW)🔧Installing tools...$(RESET)"
 	@uv tool install black --force
 	@uv tool install ruff --force
@@ -117,7 +148,7 @@ install_tools: check_uv
 	@uv tool install vulture --force
 	@echo "$(GREEN)✅Tools installed.$(RESET)"
 
-fmt: install_tools check_jq
+fmt: install_tools check_jq ## Format code with black and jq
 	@echo "$(YELLOW)✨Formatting project with Black...$(RESET)"
 	@uv tool run black --exclude '/($(IGNORE_LINT_DIRS))/' . --line-length $(LINE_LENGTH)
 	@echo "$(YELLOW)✨Formatting JSONs with jq...$(RESET)"
@@ -133,17 +164,17 @@ fmt: install_tools check_jq
 	echo "$(BLUE)$$count JSON file(s)$(RESET) formatted."; \
 	echo "$(GREEN)✅Formatting completed.$(RESET)"
 
-ruff: install_tools
+ruff: install_tools ## Run ruff linter
 	@echo "$(YELLOW)🔍Running ruff...$(RESET)"
 	@uv tool run ruff check
 	@echo "$(GREEN)✅Ruff completed.$(RESET)"
 
-vulture: install_tools
+vulture: install_tools ## Find dead code with vulture
 	@echo "$(YELLOW)🔍Running Vulture...$(RESET)"
 	@uv tool run vulture .
 	@echo "$(GREEN)✅Vulture completed.$(RESET)"
 
-ty: install_tools
+ty: install_tools ## Run type checker
 	@echo "$(YELLOW)🔍Running Typer...$(RESET)"
 	@uv run ty check
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
