@@ -251,4 +251,5 @@ if is_local:
         warnings.warn(f"{env_file_to_check} file not found or empty", UserWarning)
 
 # Create a singleton instance
-global_config = Config()
+# Note: Config() loads all required fields from YAML and .env files via custom settings sources
+global_config = Config()  # type: ignore[call-arg]

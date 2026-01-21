@@ -36,7 +36,7 @@ def test_pydantic_type_coercion(monkeypatch):
 
     # Reload the config module to pick up the new environment variables
     importlib.reload(common_module)
-    config = common_module.global_config
+    config = getattr(common_module, "global_config")  # type: ignore[arg-type]
 
     # Verify integer coercion
     assert isinstance(
