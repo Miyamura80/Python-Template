@@ -1,19 +1,31 @@
-import { RootProvider } from 'fumadocs-ui/provider/next';
-import './global.css';
-import { Archivo } from 'next/font/google';
-import type { Metadata } from 'next';
+import { RootProvider } from "fumadocs-ui/provider/next";
+import "./global.css";
+import { Archivo } from "next/font/google";
+import type { Metadata } from "next";
 
 const archivo = Archivo({
-  subsets: ['latin'],
-  weight: ['500'],
+  subsets: ["latin"],
+  weight: ["500"],
 });
 
 export const metadata: Metadata = {
-  title: 'Python Template Documentation',
-  description: 'Super-opinionated Python stack for fast development',
+  title: "Python Template Documentation",
+  description: "Super-opinionated Python stack for fast development",
   icons: {
-    icon: '/favicon.ico',
-    apple: '/icon.png',
+    icon: [
+      {
+        url: "/favicon.ico",
+      },
+      {
+        url: "/icon-light.png",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/icon-dark.png",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+    apple: "/icon-light.png",
   },
 };
 
