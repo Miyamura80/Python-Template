@@ -16,7 +16,7 @@ PROJECT_ROOT=.
 ########################################################
 
 ### Help
-.PHONY: help
+.PHONY: help docs
 help: ## Show this help message
 	@echo "$(BLUE)Available Make Targets$(RESET)"
 	@echo ""
@@ -116,6 +116,11 @@ all: setup setup_githooks ## Setup and run main application
 	@echo "$(GREEN)🏁Running main application...$(RESET)"
 	@$(PYTHON) main.py
 	@echo "$(GREEN)✅ Main application run completed.$(RESET)"
+
+docs: ## Run docs with bun
+	@echo "$(GREEN)📚Running docs...$(RESET)"
+	@cd docs && bun run dev
+	@echo "$(GREEN)✅ Docs run completed.$(RESET)"
 
 
 ########################################################
