@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 old_scripts/
 
 # Overwrite global config
