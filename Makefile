@@ -184,7 +184,12 @@ ty: install_tools ## Run type checker
 	@uv run ty check
 	@echo "$(GREEN)✅Typer completed.$(RESET)"
 
-ci: ruff vulture ty ## Run all CI checks (ruff, vulture, ty)
+docs_lint: ## Lint docs links
+	@echo "$(YELLOW)🔍Linting docs links...$(RESET)"
+	@cd docs && bun run lint:links
+	@echo "$(GREEN)✅Docs linting completed.$(RESET)"
+
+ci: ruff vulture ty docs_lint ## Run all CI checks (ruff, vulture, ty, docs_lint)
 	@echo "$(GREEN)✅CI checks completed.$(RESET)"
 
 ########################################################
