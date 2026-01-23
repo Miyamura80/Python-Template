@@ -25,7 +25,7 @@ make ci             # Run all CI checks (ruff, vulture, ty)
 
 # Dependencies
 uv sync             # Install dependencies (not pip install)
-uv pip install <pkg> # Add new dependency
+uv add <pkg>        # Add new dependency
 uv run python <file> # Run Python files
 uv run pytest path/to/test.py  # Run specific test
 ```
@@ -99,7 +99,10 @@ from loguru import logger as log
 from src.utils.logging_config import setup_logging
 
 setup_logging()
-log.info("message")
+log.debug("detailed diagnostic information")
+log.info("general informational message")
+log.warning("warning message for potentially harmful situations")
+log.error("error message for error events")
 ```
 
 ## Commit Message Convention
