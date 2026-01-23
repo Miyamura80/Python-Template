@@ -42,6 +42,7 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 |---------|:------:|:------:|
 | UV + Pydantic config | ✅ | ✅ |
 | CI/Linters (Ruff, Black, Vulture) | ✅ | ✅ |
+| Pre-commit hooks (prek) | ✅ | ✅ |
 | LLM (DSPY + LangFuse Observability) | ✅ | ✅ |
 | FastAPI + Uvicorn | ❌ | ✅ |
 | SQLAlchemy + Alembic | ❌ | ✅ |
@@ -79,6 +80,7 @@ global_config.OPENAI_API_KEY
 This software uses the following tools:
 - [Cursor: The AI Code Editor](cursor.com)
 - [uv](https://docs.astral.sh/uv/)
+- [prek: Rust-based pre-commit framework](https://github.com/j178/prek)
 - [DSPY: Pytorch for LLM Inference](https://dspy.ai/)
 - [LangFuse: LLM Observability Tool](https://langfuse.com/)
 
