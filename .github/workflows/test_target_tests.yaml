@@ -59,3 +59,9 @@ jobs:
     - name: Run tests
       run: |
         make test
+    - name: Run flaky test detection
+      run: |
+        make test_flaky
+    - name: Validate AGENTS.md
+      run: |
+        make agents_validate
