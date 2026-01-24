@@ -58,10 +58,10 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         try:
             with open(config_path, "r") as file:
                 config_data = yaml.safe_load(file) or {}
-        except FileNotFoundError:
-            raise RuntimeError(f"Required config file not found: {config_path}")
+        except FileNotFoundError as e:
+            raise RuntimeError(f"Required config file not found: {config_path}") from e
         except yaml.YAMLError as e:
-            raise RuntimeError(f"Invalid YAML in {config_path}: {e}")
+            raise RuntimeError(f"Invalid YAML in {config_path}: {e}") from e
 
         # Load split YAML files from common/ directory
         reserved_filenames = {
@@ -89,7 +89,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                         f"Loaded split config: {split_file.name} -> '{root_key}'"
                     )
             except yaml.YAMLError as e:
-                raise RuntimeError(f"Invalid YAML in {split_file}: {e}")
+                raise RuntimeError(f"Invalid YAML in {split_file}: {e}") from e
 
         # Load production config if in prod environment
         if os.getenv("DEV_ENV") == "prod":
@@ -108,7 +108,9 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                         f"Production config file not found: {prod_config_path}"
                     )
                 except yaml.YAMLError as e:
-                    raise RuntimeError(f"Invalid YAML in {prod_config_path}: {e}")
+                    raise RuntimeError(
+                        f"Invalid YAML in {prod_config_path}: {e}"
+                    ) from e
 
         # Load custom local config if it exists (highest priority)
         custom_config_path = root_dir / ".global_config.yaml"
@@ -126,7 +128,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
             except FileNotFoundError:
                 logger.warning(f"Custom config file not found: {custom_config_path}")
             except yaml.YAMLError as e:
-                raise RuntimeError(f"Invalid YAML in {custom_config_path}: {e}")
+                raise RuntimeError(f"Invalid YAML in {custom_config_path}: {e}") from e
 
         return config_data
 
@@ -221,26 +223,35 @@ class Config(BaseSettings):
         """Convert config to dictionary."""
         return self.model_dump()
 
+    def _identify_provider(self, model_name: str) -> str:
+        """Identify the LLM provider from a model name string."""
+        name_lower = model_name.lower()
+        if "gpt" in name_lower or re.match(OPENAI_O_SERIES_PATTERN, name_lower):
+            return "openai"
+        if "claude" in name_lower or "anthropic" in name_lower:
+            return "anthropic"
+        if "groq" in name_lower:
+            return "groq"
+        if "perplexity" in name_lower:
+            return "perplexity"
+        if "gemini" in name_lower:
+            return "gemini"
+        return "unknown"
+
     def llm_api_key(self, model_name: str | None = None) -> str:
         """Returns the appropriate API key based on the model name."""
         model_identifier = model_name or self.model_name
-        if "gpt" in model_identifier.lower() or re.match(
-            OPENAI_O_SERIES_PATTERN, model_identifier.lower()
-        ):
-            return self.OPENAI_API_KEY
-        elif (
-            "claude" in model_identifier.lower()
-            or "anthropic" in model_identifier.lower()
-        ):
-            return self.ANTHROPIC_API_KEY
-        elif "groq" in model_identifier.lower():
-            return self.GROQ_API_KEY
-        elif "perplexity" in model_identifier.lower():
-            return self.PERPLEXITY_API_KEY
-        elif "gemini" in model_identifier.lower():
-            return self.GEMINI_API_KEY
-        else:
-            raise ValueError(f"No API key configured for model: {model_identifier}")
+        provider = self._identify_provider(model_identifier)
+        api_keys = {
+            "openai": self.OPENAI_API_KEY,
+            "anthropic": self.ANTHROPIC_API_KEY,
+            "groq": self.GROQ_API_KEY,
+            "perplexity": self.PERPLEXITY_API_KEY,
+            "gemini": self.GEMINI_API_KEY,
+        }
+        if provider in api_keys:
+            return api_keys[provider]
+        raise ValueError(f"No API key configured for model: {model_identifier}")
 
     def api_base(self, model_name: str) -> str:
         """Returns the Helicone link for the model.
@@ -248,18 +259,16 @@ class Config(BaseSettings):
         Raises:
             ValueError: If no API base is configured for the given model.
         """
-        if "gpt" in model_name.lower() or re.match(
-            OPENAI_O_SERIES_PATTERN, model_name.lower()
-        ):
-            return "https://oai.hconeai.com/v1"
-        elif "groq" in model_name.lower():
-            return "https://groq.helicone.ai/openai/v1"
-        elif "perplexity" in model_name.lower():
-            return "https://perplexity.helicone.ai"
-        elif "gemini" in model_name.lower():
-            return "https://generativelanguage.googleapis.com/v1beta/openai/"
-        else:
-            raise ValueError(f"No API base configured for model: {model_name}")
+        provider = self._identify_provider(model_name)
+        api_bases = {
+            "openai": "https://oai.hconeai.com/v1",
+            "groq": "https://groq.helicone.ai/openai/v1",
+            "perplexity": "https://perplexity.helicone.ai",
+            "gemini": "https://generativelanguage.googleapis.com/v1beta/openai/",
+        }
+        if provider in api_bases:
+            return api_bases[provider]
+        raise ValueError(f"No API base configured for model: {model_name}")
 
 
 # Load .env files before creating the config instance
@@ -276,7 +285,11 @@ if is_local:
     env_file_to_check = ".prod.env" if os.getenv("DEV_ENV") == "prod" else ".env"
     env_values = dotenv_values(root_dir / env_file_to_check)
     if not env_values:
-        warnings.warn(f"{env_file_to_check} file not found or empty", UserWarning)
+        warnings.warn(
+            f"{env_file_to_check} file not found or empty",
+            UserWarning,
+            stacklevel=2,
+        )
 
 # Create a singleton instance
 # Note: Config() loads all required fields from YAML and .env files via custom settings sources

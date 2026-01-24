@@ -11,3 +11,9 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: ruff-check
+        name: Run ruff linter
+        entry: uv run ruff check
+        language: system
+        pass_filenames: false
+        always_run: true
