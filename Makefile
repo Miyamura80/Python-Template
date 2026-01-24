@@ -160,7 +160,6 @@ test_nondeterministic: check_uv ## Run nondeterministic tests only
 		exit 0; \
 	fi; \
 	exit $$status
-	@echo "$(GREEN)✅Nondeterministic Tests Passed.$(RESET)"
 
 test_flaky: check_uv ## Repeat fast tests to detect flaky tests
 	@echo "$(GREEN)🧪Running Flaky Test Detection...$(RESET)"
