@@ -130,7 +130,7 @@ docs: ## Run docs with bun
 TEST_TARGETS = tests/
 
 ### Testing
-test: check_uv ## Run pytest tests
+test: check_uv ## Run all pytest tests
 	@echo "$(GREEN)🧪Running Target Tests...$(RESET)"
 	$(TEST) $(TEST_TARGETS)
 	@echo "$(GREEN)✅Target Tests Passed.$(RESET)"
