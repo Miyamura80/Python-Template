@@ -81,7 +81,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                     f"already exists in global_config.yaml. Remove it from one location."
                 )
             try:
-                with open(split_file, "r") as file:
+                with open(split_file) as file:
                     split_data = yaml.safe_load(file)
                 if split_data is not None:
                     config_data[root_key] = split_data
