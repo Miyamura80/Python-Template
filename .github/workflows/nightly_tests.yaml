@@ -1,27 +1,12 @@
-name: Run Target Tests
+name: Nightly Tests
 
-on: 
-  push:
-    branches:
-      - '**'
-    paths-ignore:
-      - '.github/workflows/**'
-  pull_request:
-    types: [opened, synchronize, reopened]  
+on:
+  schedule:
+    - cron: "0 2 * * *"
   workflow_dispatch:
-    inputs:
-      log_level:
-        description: 'Log level'
-        required: false
-        default: 'warning'
-      environment:
-        description: 'Environment to run tests in'
-        required: false
-        default: 'staging'
 
 jobs:
-  target_tests:
-    if: github.event_name == 'pull_request' || github.event.pull_request == null
+  nightly_tests:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -36,9 +21,6 @@ jobs:
         git submodule update
     - name: Read Python version
       run: echo "PYTHON_VERSION=$(cat .python-version | tr -d '\n')" >> $GITHUB_ENV
-    - run: |
-        echo "Log Level: ${{ github.event.inputs.log_level }}"
-        echo "Environment: ${{ github.event.inputs.environment }}"
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
@@ -56,12 +38,12 @@ jobs:
         echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" >> $GITHUB_ENV
         echo "PERPLEXITY_API_KEY=${{ secrets.PERPLEXITY_API_KEY }}" >> $GITHUB_ENV
         echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> $GITHUB_ENV
-    - name: Run fast tests
+    - name: Run slow tests
       run: |
-        make test_fast
-    - name: Run flaky test detection
+        make test_slow
+    - name: Run nondeterministic tests
       run: |
-        make test_flaky
+        make test_nondeterministic
     - name: Validate AGENTS.md
       run: |
         make agents_validate
