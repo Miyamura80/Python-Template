@@ -135,6 +135,11 @@ test: check_uv ## Run pytest tests
 	$(TEST) $(TEST_TARGETS)
 	@echo "$(GREEN)✅Target Tests Passed.$(RESET)"
 
+test_flaky: check_uv ## Run tests twice to detect flaky tests
+	@echo "$(GREEN)🧪Running Flaky Test Detection...$(RESET)"
+	$(TEST) --count 2 -m "not slow" $(TEST_TARGETS)
+	@echo "$(GREEN)✅Flaky Test Detection Passed.$(RESET)"
+
 
 ########################################################
 # Cleaning
@@ -188,6 +193,11 @@ docs_lint: ## Lint docs links
 	@echo "$(YELLOW)🔍Linting docs links...$(RESET)"
 	@cd docs && bun run lint:links
 	@echo "$(GREEN)✅Docs linting completed.$(RESET)"
+
+agents_validate: ## Validate AGENTS.md content
+	@echo "$(YELLOW)🔍Validating AGENTS.md...$(RESET)"
+	@$(PYTHON) scripts/validate_agents_md.py
+	@echo "$(GREEN)✅AGENTS.md validation completed.$(RESET)"
 
 ci: ruff vulture ty docs_lint ## Run all CI checks (ruff, vulture, ty, docs_lint)
 	@echo "$(GREEN)✅CI checks completed.$(RESET)"
