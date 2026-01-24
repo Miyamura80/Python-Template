@@ -149,7 +149,6 @@ test_slow: check_uv ## Run slow tests only
 		exit 0; \
 	fi; \
 	exit $$status
-	@echo "$(GREEN)✅Slow Tests Passed.$(RESET)"
 
 test_nondeterministic: check_uv ## Run nondeterministic tests only
 	@echo "$(GREEN)🧪Running Nondeterministic Tests...$(RESET)"
@@ -160,7 +159,6 @@ test_nondeterministic: check_uv ## Run nondeterministic tests only
 		exit 0; \
 	fi; \
 	exit $$status
-	@echo "$(GREEN)✅Nondeterministic Tests Passed.$(RESET)"
 
 test_flaky: check_uv ## Repeat fast tests to detect flaky tests
 	@echo "$(GREEN)🧪Running Flaky Test Detection...$(RESET)"
