@@ -43,9 +43,9 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP"]
-ignore = ["E501"]
+ignore = ["E501", "UP015"]
 
-[tool.ty]
+[tool.ty.environment]
 python-version = "3.12"
 
 [tool.vulture]

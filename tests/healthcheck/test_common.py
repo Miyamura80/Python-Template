@@ -1,5 +1,5 @@
-from tests.test_template import TestTemplate
 from common import global_config
+from tests.test_template import TestTemplate
 
 
 class TestCommonHealthCheck(TestTemplate):
