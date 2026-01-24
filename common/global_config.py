@@ -1,23 +1,23 @@
 import os
 import re
 import warnings
-import yaml
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv, dotenv_values
+import yaml
+from dotenv import dotenv_values, load_dotenv
 from loguru import logger
 from pydantic import Field, field_validator
 from pydantic_settings import (
     BaseSettings,
-    SettingsConfigDict,
     PydanticBaseSettingsSource,
+    SettingsConfigDict,
 )
 
 # Import configuration models
 from .config_models import (
-    ExampleParent,
     DefaultLlm,
+    ExampleParent,
     LlmConfig,
     LoggingConfig,
 )
@@ -81,7 +81,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                     f"already exists in global_config.yaml. Remove it from one location."
                 )
             try:
-                with open(split_file) as file:
+                with open(split_file, "r") as file:
                     split_data = yaml.safe_load(file)
                 if split_data is not None:
                     config_data[root_key] = split_data

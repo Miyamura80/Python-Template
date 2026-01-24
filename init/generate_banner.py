@@ -1,12 +1,14 @@
+import asyncio
 from io import BytesIO
-from PIL import Image
+from pathlib import Path
+
+import dspy
 from google import genai
 from google.genai import types
+from PIL import Image
+
 from common import global_config
 from utils.llm.dspy_inference import DSPYInference
-import dspy
-import asyncio
-from pathlib import Path
 
 
 class BannerDescription(dspy.Signature):
