@@ -9,11 +9,14 @@ Global config is used to store hyperparameters that should be applied across the
 
 **Configuration Files:**
 - `common/global_config.yaml` - Base configuration values
+- `common/<name>.yaml` - Optional split config files (contents loaded under root key `<name>`)
 - `common/config_models.py` - Pydantic models defining structure and validation
 - `common/global_config.py` - Main Config class using BaseSettings
 - `.env` - Environment variables and secrets (git-ignored)
 
-Whenever there is a hyperparameter that should be applied across the entire codebase, add those hyperparameters in `common/global_config.yaml`. Whenever a user seems to have defined a hyperparameter in the wrong scope, or using a constant value in their code point them towards `common/global_config.yaml` and ask them to add it there instead.
+You can split config sections into their own YAML files in `common/`. For example, `common/logging.yaml` will have its contents loaded under the `logging` root key, equivalent to defining that section inline in `global_config.yaml`. If `global_config.yaml` already defines the same root key, a `KeyError` is raised to prevent conflicts.
+
+Whenever there is a hyperparameter that should be applied across the entire codebase, add those hyperparameters in `common/global_config.yaml` (or a split file). Whenever a user seems to have defined a hyperparameter in the wrong scope, or using a constant value in their code point them towards `common/global_config.yaml` and ask them to add it there instead.
 
 Examples of this are:
 - `MAX_RETRIES`
