@@ -1,36 +1,37 @@
-from dspy.utils.callback import BaseCallback
-from langfuse.decorators import langfuse_context  # type: ignore
-from langfuse.client import Langfuse, StatefulGenerationClient  # type: ignore
-from litellm.cost_calculator import completion_cost  # type: ignore
-from typing import Optional, Any, Literal
-from pydantic import BaseModel, ValidationError, Field
+import contextvars
+from typing import Any, Literal
+
 from dspy.adapters import Image as dspy_Image
 from dspy.signatures import Signature as dspy_Signature
-import contextvars
+from dspy.utils.callback import BaseCallback
+from langfuse.client import Langfuse, StatefulGenerationClient  # type: ignore
+from langfuse.decorators import langfuse_context  # type: ignore
+from litellm.cost_calculator import completion_cost  # type: ignore
 from loguru import logger as log
+from pydantic import BaseModel, Field, ValidationError
 
 
 # Pydantic models for parsing the 'outputs' dictionary when it's a dict
 class _MessagePayload(BaseModel):
-    content: Optional[str] = None
+    content: str | None = None
 
 
 class _ChoicePayload(BaseModel):
-    message: Optional[_MessagePayload] = None
+    message: _MessagePayload | None = None
 
 
 class _UsagePayload(BaseModel):
-    prompt_tokens: Optional[int] = None
-    completion_tokens: Optional[int] = None
-    total_tokens: Optional[int] = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
 
 
 class _ModelOutputPayload(BaseModel):
-    model: Optional[str] = None
-    choices: Optional[list[_ChoicePayload]] = Field(
+    model: str | None = None
+    choices: list[_ChoicePayload] | None = Field(
         default_factory=list
     )  # Corrected usage: List to list
-    usage: Optional[_UsagePayload] = None
+    usage: _UsagePayload | None = None
 
     class Config:
         extra = "allow"  # Allow other fields in the dict not defined in model # noqa
@@ -51,18 +52,16 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         )
         self.current_prompt = contextvars.ContextVar[str]("current_prompt")
         self.current_completion = contextvars.ContextVar[str]("current_completion")
-        self.current_span = contextvars.ContextVar[Optional[StatefulGenerationClient]](
+        self.current_span = contextvars.ContextVar[StatefulGenerationClient | None](
             "current_span"
         )
-        self.model_name_at_span_creation = contextvars.ContextVar[Optional[str]](
+        self.model_name_at_span_creation = contextvars.ContextVar[str | None](
             "model_name_at_span_creation"
         )
         self.input_field_values = contextvars.ContextVar[dict[str, Any]](
             "input_field_values"
         )
-        self.current_tool_span = contextvars.ContextVar[Optional[Any]](
-            "current_tool_span"
-        )
+        self.current_tool_span = contextvars.ContextVar[Any | None]("current_tool_span")
         # Initialize Langfuse client
         self.langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
@@ -88,8 +87,8 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
     def on_module_end(  # noqa
         self,  # noqa
         call_id: str,  # noqa
-        outputs: Optional[Any],
-        exception: Optional[Exception] = None,  # noqa
+        outputs: Any | None,
+        exception: Exception | None = None,  # noqa
     ) -> None:
         metadata = {
             "existing_trace_id": langfuse_context.get_current_trace_id(),
@@ -137,7 +136,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.model_name_at_span_creation.set(model_name)
         trace_id = langfuse_context.get_current_trace_id()
         parent_observation_id = langfuse_context.get_current_observation_id()
-        span_obj: Optional[StatefulGenerationClient] = None
+        span_obj: StatefulGenerationClient | None = None
         if trace_id:
             span_obj = self.langfuse.generation(  # type: ignore (Langfuse fails the type check in this function, grr...)
                 input=user_input,
@@ -157,20 +156,20 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self,  # noqa
         call_id: str,  # noqa
         outputs: dict[str, Any] | list[Any] | None,
-        exception: Optional[Exception] = None,
+        exception: Exception | None = None,
     ) -> None:
-        completion_content: Optional[str] = None
-        model_name: Optional[str] = self.model_name_at_span_creation.get(None)
+        completion_content: str | None = None
+        model_name: str | None = self.model_name_at_span_creation.get(None)
         level: Literal["DEFAULT", "WARNING", "ERROR"] = "DEFAULT"
-        status_message: Optional[str] = None
+        status_message: str | None = None
 
-        prompt_tokens: Optional[int] = None
-        completion_tokens: Optional[int] = None
-        total_tokens: Optional[int] = None
+        prompt_tokens: int | None = None
+        completion_tokens: int | None = None
+        total_tokens: int | None = None
 
         span = self.current_span.get(None)
-        system_prompt: Optional[str] = self.current_system_prompt.get(None)
-        prompt: Optional[str] = self.current_prompt.get(None)
+        system_prompt: str | None = self.current_system_prompt.get(None)
+        prompt: str | None = self.current_prompt.get(None)
 
         if exception:
             level = "ERROR"
@@ -273,7 +272,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                     final_completion_tokens = len(current_completion_content)
                     final_total_tokens = final_prompt_tokens + final_completion_tokens
 
-                total_cost: Optional[float] = None  # Initialize to None
+                total_cost: float | None = None  # Initialize to None
                 try:
                     total_cost = completion_cost(
                         model=current_model_name,
@@ -415,15 +414,15 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
     def on_tool_end(  # noqa
         self,  # noqa
         call_id: str,  # noqa
-        outputs: Optional[Any],
-        exception: Optional[Exception] = None,
+        outputs: Any | None,
+        exception: Exception | None = None,
     ) -> None:
         """Called when a tool execution ends."""
         tool_span = self.current_tool_span.get(None)
 
         if tool_span:
             level: Literal["DEFAULT", "WARNING", "ERROR"] = "DEFAULT"
-            status_message: Optional[str] = None
+            status_message: str | None = None
             output_value: Any = None
 
             if exception:

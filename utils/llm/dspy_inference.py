@@ -1,17 +1,19 @@
-from typing import Callable, Any
-import dspy
-from common import global_config
+from collections.abc import Callable
+from typing import Any
 
+import dspy
+from langfuse.decorators import observe  # type: ignore
+from litellm.exceptions import ServiceUnavailableError
 from loguru import logger as log
 from tenacity import (
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
 )
+
+from common import global_config
 from utils.llm.dspy_langfuse import LangFuseDSPYCallback
-from litellm.exceptions import ServiceUnavailableError
-from langfuse.decorators import observe  # type: ignore
 
 
 class DSPYInference:

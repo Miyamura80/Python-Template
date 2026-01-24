@@ -1,6 +1,8 @@
-import pytest
 from copy import deepcopy
+
+import pytest
 from human_id import generate_id
+
 from common import global_config
 
 # Markers for slow, and nondeterministic tests

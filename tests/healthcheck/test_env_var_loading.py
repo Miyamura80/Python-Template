@@ -1,5 +1,5 @@
-import os
 import importlib
+import os
 import sys
 from pathlib import Path
 
@@ -15,7 +15,7 @@ def test_env_var_loading_precedence(monkeypatch):
     dot_env_path = root_dir / ".env"
     original_dot_env_content = None
     if dot_env_path.exists():
-        with open(dot_env_path, "r") as f:
+        with open(dot_env_path) as f:
             original_dot_env_content = f.read()
 
     common_module = sys.modules["common.global_config"]

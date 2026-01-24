@@ -1,23 +1,23 @@
 import os
 import re
 import warnings
-import yaml
 from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv, dotenv_values
+import yaml
+from dotenv import dotenv_values, load_dotenv
 from loguru import logger
 from pydantic import Field, field_validator
 from pydantic_settings import (
     BaseSettings,
-    SettingsConfigDict,
     PydanticBaseSettingsSource,
+    SettingsConfigDict,
 )
 
 # Import configuration models
 from .config_models import (
-    ExampleParent,
     DefaultLlm,
+    ExampleParent,
     LlmConfig,
     LoggingConfig,
 )
@@ -56,7 +56,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         # Load base config
         config_path = root_dir / "common" / "global_config.yaml"
         try:
-            with open(config_path, "r") as file:
+            with open(config_path) as file:
                 config_data = yaml.safe_load(file) or {}
         except FileNotFoundError:
             raise RuntimeError(f"Required config file not found: {config_path}")
@@ -96,7 +96,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
             prod_config_path = root_dir / "common" / "production_config.yaml"
             if prod_config_path.exists():
                 try:
-                    with open(prod_config_path, "r") as file:
+                    with open(prod_config_path) as file:
                         prod_config_data = yaml.safe_load(file)
                     if prod_config_data:
                         config_data = recursive_update(config_data, prod_config_data)
@@ -114,7 +114,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         custom_config_path = root_dir / ".global_config.yaml"
         if custom_config_path.exists():
             try:
-                with open(custom_config_path, "r") as file:
+                with open(custom_config_path) as file:
                     custom_config_data = yaml.safe_load(file)
 
                 if custom_config_data:

@@ -1,13 +1,15 @@
+import asyncio
 from io import BytesIO
-from PIL import Image
+from pathlib import Path
+
+import dspy
+import numpy as np
 from google import genai
 from google.genai import types
+from PIL import Image
+
 from common import global_config
 from utils.llm.dspy_inference import DSPYInference
-import dspy
-import asyncio
-from pathlib import Path
-import numpy as np
 
 
 class WordmarkDescription(dspy.Signature):
