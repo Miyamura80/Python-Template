@@ -77,7 +77,6 @@ omit = [
     "docs/*",
     "init/*",
     "alembic/*",
-    "utils/llm/*",
     "utils/llm/**"
 ]
 
