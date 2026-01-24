@@ -33,7 +33,8 @@ uv run pytest path/to/test.py  # Run specific test
 ## Architecture
 
 - **common/** - Global configuration via pydantic-settings
-  - `global_config.yaml` - Hyperparameters and config values
+  - `global_config.yaml` - Base hyperparameters and config values
+  - `<name>.yaml` - Optional split configs (loaded as root key `<name>`)
   - `global_config.py` - Config class (access via `from common import global_config`)
   - `.env` - Secrets/API keys (git-ignored)
 - **src/** - Source code (api/, db/, utils/, stripe/)

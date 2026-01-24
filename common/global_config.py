@@ -63,6 +63,34 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         except yaml.YAMLError as e:
             raise RuntimeError(f"Invalid YAML in {config_path}: {e}")
 
+        # Load split YAML files from common/ directory
+        reserved_filenames = {
+            "global_config.yaml",
+            "production_config.yaml",
+            ".global_config.yaml",
+        }
+        common_dir = root_dir / "common"
+        split_files = sorted(common_dir.glob("*.yaml"))
+        for split_file in split_files:
+            if split_file.name in reserved_filenames:
+                continue
+            root_key = split_file.stem
+            if root_key in config_data:
+                raise KeyError(
+                    f"Config conflict: key '{root_key}' from '{split_file.name}' "
+                    f"already exists in global_config.yaml. Remove it from one location."
+                )
+            try:
+                with open(split_file) as file:
+                    split_data = yaml.safe_load(file)
+                if split_data is not None:
+                    config_data[root_key] = split_data
+                    logger.debug(
+                        f"Loaded split config: {split_file.name} -> '{root_key}'"
+                    )
+            except yaml.YAMLError as e:
+                raise RuntimeError(f"Invalid YAML in {split_file}: {e}")
+
         # Load production config if in prod environment
         if os.getenv("DEV_ENV") == "prod":
             prod_config_path = root_dir / "common" / "production_config.yaml"
