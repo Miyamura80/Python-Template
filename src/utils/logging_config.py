@@ -130,7 +130,9 @@ def _should_log_level(level: str, overrides: dict | None = None) -> bool:
         return True
 
 
-def setup_logging(*, debug=None, info=None, warning=None, error=None, critical=None):
+def setup_logging(  # noqa: C901
+    *, debug=None, info=None, warning=None, error=None, critical=None
+):
     """Setup centralized logging configuration with optional level overrides
 
     Args:

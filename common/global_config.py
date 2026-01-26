@@ -41,7 +41,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         super().__init__(settings_cls)
         self.yaml_data = self._load_yaml_files()
 
-    def _load_yaml_files(self) -> dict[str, Any]:
+    def _load_yaml_files(self) -> dict[str, Any]:  # noqa: C901
         """Load and merge YAML configuration files."""
 
         def recursive_update(default: dict, override: dict) -> dict:

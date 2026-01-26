@@ -28,5 +28,11 @@ jobs:
         run: make setup
       - name: Run ruff
         run: make ruff
+      - name: Run complexity check
+        run: make complexity
+      - name: Run tech debt check
+        run: make tech_debt
+      - name: Run duplicate code check
+        run: make duplicate_code
       - name: Run import-linter
         run: make import_lint
