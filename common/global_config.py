@@ -172,13 +172,13 @@ class Config(BaseSettings):
     logging: LoggingConfig
     features: FeaturesConfig = Field(default_factory=lambda: FeaturesConfig())
 
-    # Environment variables (required)
+    # Environment variables
     DEV_ENV: str
-    OPENAI_API_KEY: str
-    ANTHROPIC_API_KEY: str
-    GROQ_API_KEY: str
-    PERPLEXITY_API_KEY: str
-    GEMINI_API_KEY: str
+    OPENAI_API_KEY: str | None = None
+    ANTHROPIC_API_KEY: str | None = None
+    GROQ_API_KEY: str | None = None
+    PERPLEXITY_API_KEY: str | None = None
+    GEMINI_API_KEY: str | None = None
 
     # Runtime environment (computed)
     is_local: bool = Field(default=False)
@@ -252,7 +252,13 @@ class Config(BaseSettings):
             "gemini": self.GEMINI_API_KEY,
         }
         if provider in api_keys:
-            return api_keys[provider]
+            key = api_keys[provider]
+            if key is None:
+                raise ValueError(
+                    f"API key for provider '{provider}' is not configured. "
+                    f"Set {provider.upper()}_API_KEY in your .env file."
+                )
+            return key
         raise ValueError(f"No API key configured for model: {model_identifier}")
 
 
