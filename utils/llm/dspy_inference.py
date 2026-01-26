@@ -14,8 +14,11 @@ from tenacity import (
 )
 
 from common import global_config
+from common.flags import setup_feature_flags
 from utils.llm.dspy_langfuse import LangFuseDSPYCallback
 
+# Ensure feature flags are initialized before getting client
+setup_feature_flags()
 client = api.get_client()
 
 
