@@ -3,8 +3,8 @@
 
 old_scripts/
 
-# Overwrite global config
-.global_config.yaml
+# Agent session files
+session-*.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
