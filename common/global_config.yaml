@@ -50,3 +50,24 @@ logging:
     warning: true # Show warning logs
     error: true   # Show error logs
     critical: true # Show critical logs
+  redaction:
+    enabled: true
+    use_default_pii: true
+    patterns:
+      - name: "ANTHROPIC_API_KEY"
+        regex: "sk-ant-[a-zA-Z0-9-]{20,}"
+        placeholder: "[REDACTED_API_KEY]"
+      - name: "OPENAI_API_KEY"
+        regex: "sk-[a-zA-Z0-9]{20,}"
+        placeholder: "[REDACTED_API_KEY]"
+      - name: "STRIPE_API_KEY"
+        regex: "[spr]k_(live|test)_[a-zA-Z0-9]{20,}"
+        placeholder: "[REDACTED_API_KEY]"
+      - name: "BEARER_TOKEN"
+        regex: "Bearer\\s+[a-zA-Z0-9._\\-]{20,}"
+        placeholder: "[REDACTED_BEARER_TOKEN]"
+      - name: "GENERIC_KEY"
+        regex: "(?i:(api[_-]?key|project[_-]?key|secret[_-]?key)[=:\\s]+['\"]?[a-zA-Z0-9_\\-]{16,}['\"]?)"
+        placeholder: "[REDACTED_KEY]"
+
+
