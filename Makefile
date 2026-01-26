@@ -172,6 +172,7 @@ test_flaky: check_uv ## Repeat fast tests to detect flaky tests
 
 # Linter will ignore these directories
 IGNORE_LINT_DIRS = .venv venv
+LINE_LENGTH = 88
 FIND_PRUNE = $(foreach dir,$(IGNORE_LINT_DIRS),-path "./$(dir)" -o) -false
 
 ### Code Quality
