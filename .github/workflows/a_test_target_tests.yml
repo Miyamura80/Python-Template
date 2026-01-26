@@ -58,7 +58,7 @@ jobs:
         echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> $GITHUB_ENV
     - name: Run fast tests
       run: |
-        make test_fast
+        uv run pytest -n auto --durations=10 -m "not slow and not nondeterministic" tests/
     - name: Run flaky test detection
       run: |
         make test_flaky
