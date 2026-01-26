@@ -57,13 +57,13 @@ class _LogScrubber:
         if not self.enabled or not text:
             return text
 
-        # 1. Scrub custom secrets (single pass)
-        if self.combined_regex:
-            text = self.combined_regex.sub(self._redact_callback, text)
-
-        # 2. Scrub general PII using scrubadub
+        # 1. Scrub general PII using scrubadub
         if self.scrubber:
             text = self.scrubber.clean(text)
+
+        # 2. Scrub custom secrets (single pass)
+        if self.combined_regex:
+            text = self.combined_regex.sub(self._redact_callback, text)
 
         return text
 
