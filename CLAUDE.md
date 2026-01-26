@@ -32,6 +32,11 @@ uv sync             # Install dependencies (not pip install)
 uv add <pkg>        # Add new dependency
 uv run python <file> # Run Python files
 uv run pytest path/to/test.py  # Run specific test
+
+# Release
+# 1. Update version in pyproject.toml
+# 2. Tag the commit: git tag -a v0.1.0 -m "Release v0.1.0"
+# 3. Push the tag: git push origin v0.1.0 (triggers Release workflow)
 ```
 
 ## Architecture
