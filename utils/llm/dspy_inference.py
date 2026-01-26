@@ -112,7 +112,11 @@ class DSPYInference:
             log.warning(
                 f"Primary model unavailable; falling back to {self.fallback_model_name}"
             )
-            result = await self._run_with_retry(self.fallback_lm, **kwargs)
+            try:
+                result = await self._run_with_retry(self.fallback_lm, **kwargs)
+            except (RateLimitError, ServiceUnavailableError) as fallback_error:
+                log.error(f"Fallback model failed: {fallback_error.__class__.__name__}")
+                raise
         except (RuntimeError, ValueError, TypeError) as e:
             log.error(f"Error in run: {str(e)}")
             raise
