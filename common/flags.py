@@ -22,7 +22,7 @@ def setup_feature_flags():
     provider = InMemoryProvider(flags)
     api.set_provider(provider)
 
-    log.debug(f"Feature flags initialized: {list(flags.keys())}")
+    log.debug("Feature flags initialized: {}", list(flags.keys()))
 
 
 # Optionally auto-initialize when imported
