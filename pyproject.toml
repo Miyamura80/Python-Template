@@ -11,6 +11,7 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "human-id>=0.2.0",
     "pytest>=8.3.3",
+    "pytest-xdist>=3.6.1",
     "termcolor>=2.4.0",
     "loguru>=0.7.3",
     "vulture>=2.14",
@@ -46,6 +47,14 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
 ignore = ["E501", "UP015", "B008"]
+
+[tool.ty]
+
+[tool.ty.rules]
+possibly-unresolved-reference = "error"
+
+[tool.ty.terminal]
+error-on-warning = true
 
 [tool.ty.environment]
 python-version = "3.12"
