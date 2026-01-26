@@ -1,0 +1,58 @@
+[importlinter]
+root_packages =
+    common
+    utils
+    src
+    tests
+    init
+
+[importlinter:contract:common_no_upper_layers]
+name = Common does not import higher layers
+type = forbidden
+source_modules =
+    common
+forbidden_modules =
+    utils
+    src
+    tests
+    init
+
+[importlinter:contract:utils_no_tests_init]
+name = Utils does not import tests or init
+type = forbidden
+source_modules =
+    utils
+forbidden_modules =
+    tests
+    init
+
+[importlinter:contract:src_no_tests_init]
+name = Src does not import tests or init
+type = forbidden
+source_modules =
+    src
+forbidden_modules =
+    tests
+    init
+
+[importlinter:contract:no_imports_from_tests]
+name = Tests are not imported by app code
+type = forbidden
+source_modules =
+    common
+    utils
+    src
+    init
+forbidden_modules =
+    tests
+
+[importlinter:contract:init_is_leaf]
+name = Init is a leaf module
+type = forbidden
+source_modules =
+    common
+    utils
+    src
+    tests
+forbidden_modules =
+    init

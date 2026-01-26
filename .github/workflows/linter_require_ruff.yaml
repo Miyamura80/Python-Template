@@ -28,3 +28,5 @@ jobs:
         run: make setup
       - name: Run ruff
         run: make ruff
+      - name: Run import-linter
+        run: make import_lint

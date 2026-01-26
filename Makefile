@@ -179,6 +179,7 @@ install_tools: check_uv ## Install linting/formatting tools
 	@echo "$(YELLOW)🔧Installing tools...$(RESET)"
 	@uv tool install black --force
 	@uv tool install ruff --force
+	@uv tool install import-linter --force
 	@uv tool install ty --force
 	@uv tool install vulture --force
 	@echo "$(GREEN)✅Tools installed.$(RESET)"
@@ -209,6 +210,11 @@ vulture: install_tools ## Find dead code with vulture
 	@uv tool run vulture .
 	@echo "$(GREEN)✅Vulture completed.$(RESET)"
 
+import_lint: install_tools ## Enforce module boundaries with import-linter
+	@echo "$(YELLOW)🔍Running Import Linter...$(RESET)"
+	@uv tool run --from import-linter lint-imports
+	@echo "$(GREEN)✅Import Linter completed.$(RESET)"
+
 ty: install_tools ## Run type checker
 	@echo "$(YELLOW)🔍Running Typer...$(RESET)"
 	@uv run ty check
@@ -224,7 +230,7 @@ agents_validate: ## Validate AGENTS.md content
 	@$(PYTHON) scripts/validate_agents_md.py
 	@echo "$(GREEN)✅AGENTS.md validation completed.$(RESET)"
 
-ci: ruff vulture ty docs_lint ## Run all CI checks (ruff, vulture, ty, docs_lint)
+ci: ruff vulture import_lint ty docs_lint ## Run all CI checks (ruff, vulture, import_lint, ty, docs_lint)
 	@echo "$(GREEN)✅CI checks completed.$(RESET)"
 
 ########################################################
