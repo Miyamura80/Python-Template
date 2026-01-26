@@ -1,8 +1,15 @@
+import pytest
+
 from src.utils.logging_config import scrub_sensitive_data
 from tests.test_template import TestTemplate
 
 
 class TestLoggingSecurity(TestTemplate):
+    @pytest.fixture(autouse=True)
+    def setup_shared_variables(self, setup):
+        # Initialize shared attributes here
+        pass
+
     def test_email_redaction(self):
         """Test that email addresses are redacted from log messages."""
         record = {"message": "User email is test@example.com", "exception": None}
