@@ -28,6 +28,6 @@
       }
     }
   },
-  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && make setup",
+  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && . $HOME/.cargo/env && make setup",
   "remoteUser": "vscode"
 }
