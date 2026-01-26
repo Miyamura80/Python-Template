@@ -3,6 +3,9 @@
 
 old_scripts/
 
+# Agent session files
+session-*.md
+
 # Overwrite global config
 .global_config.yaml
 

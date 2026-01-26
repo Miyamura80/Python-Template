@@ -4,6 +4,7 @@ import re
 import sys
 import threading
 
+import scrubadub
 from human_id import generate_id
 from loguru import logger
 
@@ -13,25 +14,62 @@ from src.utils.context import session_id
 _logging_initialized = False
 _logging_lock = threading.Lock()
 
-# PII Patterns for redaction (pre-compiled for performance)
-# Note: More specific patterns must come before general ones (e.g., sk-ant- before sk-)
-_COMPILED_PII_PATTERNS = [
-    # Email addresses
-    (
-        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
-        "[REDACTED_EMAIL]",
-    ),
-    # Anthropic API keys (sk-ant-...) - must be before OpenAI pattern
-    (re.compile(r"sk-ant-[a-zA-Z0-9-]{20,}"), "[REDACTED_API_KEY]"),
-    # OpenAI API keys (sk-...)
-    (re.compile(r"sk-[a-zA-Z0-9]{20,}"), "[REDACTED_API_KEY]"),
-    # Stripe API keys (sk_live_*, sk_test_*, pk_live_*, pk_test_*, rk_live_*, rk_test_*)
-    (re.compile(r"[spr]k_(live|test)_[a-zA-Z0-9]{20,}"), "[REDACTED_API_KEY]"),
-    # Authorization Bearer tokens
-    (re.compile(r"Bearer\s+[a-zA-Z0-9._\-]{20,}"), "[REDACTED_BEARER_TOKEN]"),
-    # Generic project/API keys (common formats: xxx_key_*, api_key=*, apikey=*)
-    (re.compile(r"(?i)(api[_-]?key|project[_-]?key|secret[_-]?key)[=:\s]+['\"]?[a-zA-Z0-9_\-]{16,}['\"]?"), "[REDACTED_KEY]"),
-]
+
+class _LogScrubber:
+    """
+    Optimized single-pass log scrubber.
+    Uses scrubadub for general PII and a compiled multi-pattern regex for secrets.
+    """
+
+    def __init__(self):
+        config = global_config.logging.redaction
+        self.enabled = config.enabled
+        self.use_default_pii = config.use_default_pii
+        self.patterns = config.patterns
+
+        # Initialize scrubadub
+        self.scrubber = None
+        if self.enabled and self.use_default_pii:
+            self.scrubber = scrubadub.Scrubber()
+            # Remove default FilenameDetector if it's too aggressive, but usually it's fine
+            # We can customize detectors here if needed
+
+        # Compile custom patterns into a single-pass regex
+        self.combined_regex = None
+        self.placeholder_map = {}
+
+        if self.enabled and self.patterns:
+            regex_parts = []
+            for i, p in enumerate(self.patterns):
+                group_name = f"p{i}"
+                regex_parts.append(f"(?P<{group_name}>{p.regex})")
+                self.placeholder_map[group_name] = p.placeholder
+
+            self.combined_regex = re.compile("|".join(regex_parts))
+
+    def _redact_callback(self, match):
+        """Callback for re.sub to return the correct placeholder for the matched group."""
+        group_name = match.lastgroup
+        return self.placeholder_map.get(group_name, "[REDACTED]")
+
+    def scrub(self, text: str) -> str:
+        """Scrub sensitive data from text in a single pass."""
+        if not self.enabled or not text:
+            return text
+
+        # 1. Scrub general PII using scrubadub
+        if self.scrubber:
+            text = self.scrubber.clean(text)
+
+        # 2. Scrub custom secrets (single pass)
+        if self.combined_regex:
+            text = self.combined_regex.sub(self._redact_callback, text)
+
+        return text
+
+
+# Initialize the singleton scrubber
+_SCRUBBER = _LogScrubber()
 
 
 def scrub_sensitive_data(record):
@@ -39,31 +77,27 @@ def scrub_sensitive_data(record):
     Patch function to scrub sensitive data from the log record.
     Modifies record["message"] and record["exception"] in place.
     """
+    if not _SCRUBBER.enabled:
+        return
+
     # Scrub main message
-    message = record["message"]
-    for pattern, placeholder in _COMPILED_PII_PATTERNS:
-        message = pattern.sub(placeholder, message)
-    record["message"] = message
+    record["message"] = _SCRUBBER.scrub(record["message"])
 
     # Scrub exception if present
     exception = record.get("exception")
     if exception:
         type_, value, tb = exception
         value_str = str(value)
-        redacted = False
-        for pattern, placeholder in _COMPILED_PII_PATTERNS:
-            if pattern.search(value_str):
-                value_str = pattern.sub(placeholder, value_str)
-                redacted = True
+        scrubbed_value_str = _SCRUBBER.scrub(value_str)
 
-        if redacted:
+        if scrubbed_value_str != value_str:
             # Re-instantiate the exception with the redacted message to preserve loguru formatting
             try:
                 # Most standard exceptions accept a single string argument
-                new_value = type_(value_str)
+                new_value = type_(scrubbed_value_str)
             except Exception:
                 # Fallback to a generic Exception if type instantiation fails
-                new_value = Exception(value_str)
+                new_value = Exception(scrubbed_value_str)
 
             # Preserve traceback and context metadata
             new_value.__traceback__ = tb
@@ -71,6 +105,13 @@ def scrub_sensitive_data(record):
             new_value.__context__ = getattr(value, "__context__", None)
 
             record["exception"] = (type_, new_value, tb)
+
+    # Scrub extra context if present
+    extra = record.get("extra")
+    if extra:
+        for key, val in extra.items():
+            if isinstance(val, str):
+                extra[key] = _SCRUBBER.scrub(val)
 
 
 def _should_show_location(level: str) -> bool:

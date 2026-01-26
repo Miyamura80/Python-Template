@@ -15,7 +15,14 @@ class TestLoggingSecurity(TestTemplate):
         record = {"message": "User email is test@example.com", "exception": None}
         scrub_sensitive_data(record)
         assert "test@example.com" not in record["message"]
-        assert "[REDACTED_EMAIL]" in record["message"]
+        assert "{{EMAIL}}" in record["message"]
+
+    def test_phone_redaction(self):
+        """Test that phone numbers are redacted (new capability via scrubadub)."""
+        record = {"message": "Call me at 1-800-555-0199", "exception": None}
+        scrub_sensitive_data(record)
+        assert "1-800-555-0199" not in record["message"]
+        assert "{{PHONE}}" in record["message"]
 
     def test_api_key_redaction(self):
         """Test that OpenAI API keys are redacted from log messages."""
@@ -32,7 +39,7 @@ class TestLoggingSecurity(TestTemplate):
             "exception": None,
         }
         scrub_sensitive_data(record)
-        assert "[REDACTED_EMAIL]" in record["message"]
+        assert "{{EMAIL}}" in record["message"]
         assert "[REDACTED_API_KEY]" in record["message"]
         assert "test@example.com" not in record["message"]
         assert "sk-123456789012345678901234" not in record["message"]
@@ -54,7 +61,7 @@ class TestLoggingSecurity(TestTemplate):
         # Verify exception redaction
         _, value, _ = record["exception"]
         assert "test@example.com" not in str(value)
-        assert "[REDACTED_EMAIL]" in str(value)
+        assert "{{EMAIL}}" in str(value)
 
     def test_exception_api_key_redaction(self):
         """Test redacting API keys from exception values."""

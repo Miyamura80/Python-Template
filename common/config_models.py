@@ -6,7 +6,7 @@ Each model corresponds to a section in the global_config.yaml file and provides
 type validation and structure for the configuration data.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ExampleParent(BaseModel):
@@ -70,12 +70,29 @@ class LoggingLevelsConfig(BaseModel):
     critical: bool
 
 
+class RedactionPattern(BaseModel):
+    """Configuration for a specific redaction pattern."""
+
+    name: str
+    regex: str
+    placeholder: str
+
+
+class RedactionConfig(BaseModel):
+    """Configuration for log redaction/scrubbing."""
+
+    enabled: bool = True
+    use_default_pii: bool = True
+    patterns: list[RedactionPattern] = []
+
+
 class LoggingConfig(BaseModel):
     """Complete logging configuration."""
 
     verbose: bool
     format: LoggingFormatConfig
     levels: LoggingLevelsConfig
+    redaction: RedactionConfig = Field(default_factory=lambda: RedactionConfig())
 
 
 class FeaturesConfig(BaseModel):
