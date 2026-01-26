@@ -97,7 +97,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         outputs_extracted = {}  # Default to empty dict
         if outputs is not None:
             try:
-                outputs_extracted = {k: v for k, v in outputs.items()}
+                outputs_extracted = dict(outputs.items())
             except AttributeError:
                 outputs_extracted = {"value": outputs}
             except Exception as e:
@@ -229,9 +229,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
             except ValidationError as e:
                 level = "ERROR"
                 status_message = f"Error validating LM output structure (dict using Pydantic): {e}. Output: {str(outputs)[:200]}"
-            except (
-                Exception
-            ) as e:  # Catch any other unexpected errors during dict processing
+            except (KeyError, AttributeError, TypeError) as e:
                 level = "ERROR"
                 status_message = f"Unexpected error processing LM output (dict): {e}. Output: {str(outputs)[:200]}"
 
@@ -431,9 +429,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 output_value = {"error": str(exception)}
             elif outputs is not None:
                 try:
-                    if isinstance(outputs, str):
-                        output_value = outputs
-                    elif isinstance(outputs, dict):
+                    if isinstance(outputs, (str, dict)):
                         output_value = outputs
                     elif hasattr(outputs, "__dict__"):
                         output_value = outputs.__dict__

@@ -1,0 +1,48 @@
+name: Validate AGENTS.md
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - 'scripts/validate_agents_md.py'
+      - '.github/workflows/agents_validate.yaml'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - 'scripts/validate_agents_md.py'
+      - '.github/workflows/agents_validate.yaml'
+  workflow_dispatch:
+
+jobs:
+  agents_validate:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Checkout submodules
+      run: |
+        git submodule init
+        git submodule update
+    - name: Read Python version
+      run: echo "PYTHON_VERSION=$(cat .python-version | tr -d '\n')" >> $GITHUB_ENV
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Install dependencies
+      run: |
+        uv sync
+    - name: Validate AGENTS.md
+      run: |
+        make agents_validate

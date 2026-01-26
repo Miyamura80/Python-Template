@@ -77,7 +77,7 @@ class DSPYInference:
         try:
             # user_id is passed if the pred_signature requires it.
             result = await self.inference_module_async(**kwargs, lm=self.lm)
-        except Exception as e:
+        except (RuntimeError, ValueError, TypeError) as e:
             log.error(f"Error in run: {str(e)}")
             raise
         return result

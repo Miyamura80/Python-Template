@@ -130,14 +130,39 @@ docs: ## Run docs with bun
 TEST_TARGETS = tests/
 
 ### Testing
-test: check_uv ## Run pytest tests
+test: check_uv ## Run all pytest tests
 	@echo "$(GREEN)🧪Running Target Tests...$(RESET)"
 	$(TEST) $(TEST_TARGETS)
 	@echo "$(GREEN)✅Target Tests Passed.$(RESET)"
 
-test_flaky: check_uv ## Run tests twice to detect flaky tests
+test_fast: check_uv ## Run fast tests (exclude slow/nondeterministic)
+	@echo "$(GREEN)🧪Running Fast Tests...$(RESET)"
+	$(TEST) -m "not slow and not nondeterministic" $(TEST_TARGETS)
+	@echo "$(GREEN)✅Fast Tests Passed.$(RESET)"
+
+test_slow: check_uv ## Run slow tests only
+	@echo "$(GREEN)🧪Running Slow Tests...$(RESET)"
+	@$(TEST) -m "slow" $(TEST_TARGETS); \
+	status=$$?; \
+	if [ $$status -eq 5 ]; then \
+		echo "$(YELLOW)⚠️ No slow tests collected.$(RESET)"; \
+		exit 0; \
+	fi; \
+	exit $$status
+
+test_nondeterministic: check_uv ## Run nondeterministic tests only
+	@echo "$(GREEN)🧪Running Nondeterministic Tests...$(RESET)"
+	@$(TEST) -m "nondeterministic" $(TEST_TARGETS); \
+	status=$$?; \
+	if [ $$status -eq 5 ]; then \
+		echo "$(YELLOW)⚠️ No nondeterministic tests collected.$(RESET)"; \
+		exit 0; \
+	fi; \
+	exit $$status
+
+test_flaky: check_uv ## Repeat fast tests to detect flaky tests
 	@echo "$(GREEN)🧪Running Flaky Test Detection...$(RESET)"
-	$(TEST) --count 2 -m "not slow" $(TEST_TARGETS)
+	$(TEST) --count 2 -m "not slow and not nondeterministic" $(TEST_TARGETS)
 	@echo "$(GREEN)✅Flaky Test Detection Passed.$(RESET)"
 
 

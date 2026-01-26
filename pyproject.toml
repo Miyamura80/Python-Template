@@ -44,8 +44,8 @@ line-length = 88
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP"]
-ignore = ["E501", "UP015"]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = ["E501", "UP015", "B008"]
 
 [tool.ty.environment]
 python-version = "3.12"
@@ -77,7 +77,6 @@ omit = [
     "docs/*",
     "init/*",
     "alembic/*",
-    "utils/llm/**"
 ]
 
 [tool.coverage.report]

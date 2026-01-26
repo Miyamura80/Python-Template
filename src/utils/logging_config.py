@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+import threading
 
 from human_id import generate_id
 from loguru import logger
@@ -9,6 +10,7 @@ from common import global_config
 from src.utils.context import session_id
 
 _logging_initialized = False
+_logging_lock = threading.Lock()
 
 
 def _should_show_location(level: str) -> bool:
@@ -143,47 +145,51 @@ def setup_logging(*, debug=None, info=None, warning=None, error=None, critical=N
     if _logging_initialized:
         return
 
-    # Remove any existing handlers
-    logger.remove()
+    with _logging_lock:
+        if _logging_initialized:
+            return
 
-    # Initialize session_id if not already set
-    if session_id.get() is None:
-        session_id.set(generate_id())
+        # Remove any existing handlers
+        logger.remove()
 
-    # Build overrides dict from provided arguments
-    overrides = {}
-    if debug is not None:
-        overrides["debug"] = debug
-    if info is not None:
-        overrides["info"] = info
-    if warning is not None:
-        overrides["warning"] = warning
-    if error is not None:
-        overrides["error"] = error
-    if critical is not None:
-        overrides["critical"] = critical
+        # Initialize session_id if not already set
+        if session_id.get() is None:
+            session_id.set(generate_id())
 
-    # Add session_id, replica ID, and level filtering to all log records
-    def log_filter(record):
-        # Add session ID and replica ID
-        if "extra" not in record:
-            record["extra"] = {}
-        record["extra"]["session_id"] = session_id.get() or "---"
-        record["extra"]["replica_id"] = _get_replica_id()
+        # Build overrides dict from provided arguments
+        overrides = {}
+        if debug is not None:
+            overrides["debug"] = debug
+        if info is not None:
+            overrides["info"] = info
+        if warning is not None:
+            overrides["warning"] = warning
+        if error is not None:
+            overrides["error"] = error
+        if critical is not None:
+            overrides["critical"] = critical
 
-        # Check if this level should be logged using overrides
-        return _should_log_level(record["level"].name, overrides)
+        # Add session_id, replica ID, and level filtering to all log records
+        def log_filter(record):
+            # Add session ID and replica ID
+            if "extra" not in record:
+                record["extra"] = {}
+            record["extra"]["session_id"] = session_id.get() or "---"
+            record["extra"]["replica_id"] = _get_replica_id()
 
-    # Add our standardized handler with dynamic format and filter
-    logger.add(
-        sys.stderr,
-        format=lambda record: _build_format_string(record),
-        colorize=True,
-        enqueue=True,
-        backtrace=True,
-        diagnose=True,
-        catch=True,
-        filter=log_filter,
-    )
+            # Check if this level should be logged using overrides
+            return _should_log_level(record["level"].name, overrides)
 
-    _logging_initialized = True
+        # Add our standardized handler with dynamic format and filter
+        logger.add(
+            sys.stderr,
+            format=lambda record: _build_format_string(record),
+            colorize=True,
+            enqueue=True,
+            backtrace=True,
+            diagnose=True,
+            catch=True,
+            filter=log_filter,
+        )
+
+        _logging_initialized = True

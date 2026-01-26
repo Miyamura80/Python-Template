@@ -15,6 +15,10 @@ make all            # Run main.py with setup
 
 # Testing
 make test           # Run pytest on tests/
+make test_fast      # Run fast tests (no slow/nondeterministic)
+make test_flaky     # Repeat fast tests to detect flakiness
+make test_slow      # Run slow tests only
+make test_nondeterministic # Run nondeterministic tests only
 
 # Code Quality (run after major changes)
 make fmt            # Run black formatter + JSON formatting
