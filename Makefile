@@ -205,6 +205,21 @@ ruff: install_tools ## Run ruff linter
 	@uv tool run ruff check
 	@echo "$(GREEN)✅Ruff completed.$(RESET)"
 
+complexity: install_tools ## Check cyclomatic complexity
+	@echo "$(YELLOW)🔍Checking cyclomatic complexity...$(RESET)"
+	@uv tool run ruff check --select C901
+	@echo "$(GREEN)✅Complexity check completed.$(RESET)"
+
+tech_debt: install_tools ## Check TODO/FIXME markers
+	@echo "$(YELLOW)🔍Checking tech debt markers...$(RESET)"
+	@uv tool run ruff check --select FIX
+	@echo "$(GREEN)✅Tech debt check completed.$(RESET)"
+
+duplicate_code: check_uv ## Detect duplicate code blocks
+	@echo "$(YELLOW)🔍Checking duplicate code...$(RESET)"
+	@uv run pylint --disable=all --enable=R0801 src common utils
+	@echo "$(GREEN)✅Duplicate code check completed.$(RESET)"
+
 vulture: install_tools ## Find dead code with vulture
 	@echo "$(YELLOW)🔍Running Vulture...$(RESET)"
 	@uv tool run vulture .
