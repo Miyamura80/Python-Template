@@ -13,6 +13,7 @@ from tenacity import (
 )
 
 from common import global_config
+from common.flags import client
 from utils.llm.dspy_langfuse import LangFuseDSPYCallback
 
 
@@ -106,6 +107,11 @@ class DSPYInference:
             # user_id is passed if the pred_signature requires it.
             result = await self._run_with_retry(self.lm, **kwargs)
         except (RateLimitError, ServiceUnavailableError) as e:
+            # Check feature flag for fallback logic
+            if not client.get_boolean_value("enable_llm_fallback", True):
+                log.warning("LLM fallback disabled by feature flag. Propagating error.")
+                raise
+
             if not self.fallback_lm:
                 log.error(f"{e.__class__.__name__} without fallback: {str(e)}")
                 raise

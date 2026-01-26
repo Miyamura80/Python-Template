@@ -1258,6 +1258,15 @@ wheels = [
 ]
 
 [[package]]
+name = "openfeature-sdk"
+version = "0.8.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3b/08/f6698d0614b8703170117b786bd77b7b0a04f3ee00f19fbe9b360d2dee69/openfeature_sdk-0.8.4.tar.gz", hash = "sha256:66abf71f928ec8c0db1111072bb0ef2635dfbd09510f77f4b548e5d0ea0e6c1a", size = 29676 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9c/80/f6532778188c573cc83790b11abccde717d4c1442514e722d6bb6140e55c/openfeature_sdk-0.8.4-py3-none-any.whl", hash = "sha256:805ba090669798fc343ca9fdcbc56ff0f4b57bf6757533f0854d2021192e620a", size = 35986 },
+]
+
+[[package]]
 name = "opentelemetry-api"
 version = "1.39.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1468,11 +1477,11 @@ wheels = [
 
 [[package]]
 name = "platformdirs"
-version = "4.3.8"
+version = "4.5.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fe/8b/3c73abc9c759ecd3f1f7ceff6685840859e8070c4d947c93fae71f6a0bf2/platformdirs-4.3.8.tar.gz", hash = "sha256:3d512d96e16bcb959a814c9f348431070822a6496326a4be0911c40b5a74c2bc", size = 21362 }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/86/0248f086a84f01b37aaec0fa567b397df1a119f73c16f6c7a9aac73ea309/platformdirs-4.5.1.tar.gz", hash = "sha256:61d5cdcc6065745cdd94f0f878977f8de9437be93de97c1c12f853c9c0cdcbda", size = 21715 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fe/39/979e8e21520d4e47a0bbe349e2713c0aac6f3d853d0e5b34d76206c439aa/platformdirs-4.3.8-py3-none-any.whl", hash = "sha256:ff7059bb7eb1179e2685604f4aaf157cfd9535242bd23742eadc3c13542139b4", size = 18567 },
+    { url = "https://files.pythonhosted.org/packages/cb/28/3bfe2fa5a7b9c46fe7e13c97bda14c895fb10fa2ebf1d0abb90e0cea7ee1/platformdirs-4.5.1-py3-none-any.whl", hash = "sha256:d03afa3963c806a9bed9d5125c8f4cb2fdaf74a55ab60e5d59b3fde758104d31", size = 18731 },
 ]
 
 [[package]]
@@ -1805,6 +1814,7 @@ dependencies = [
     { name = "langfuse" },
     { name = "litellm" },
     { name = "loguru" },
+    { name = "openfeature-sdk" },
     { name = "pillow" },
     { name = "pydantic-settings" },
     { name = "pylint" },
@@ -1831,6 +1841,7 @@ requires-dist = [
     { name = "langfuse", specifier = ">=2.60.5" },
     { name = "litellm", specifier = ">=1.70.0" },
     { name = "loguru", specifier = ">=0.7.3" },
+    { name = "openfeature-sdk", specifier = ">=0.8.4" },
     { name = "pillow", specifier = ">=11.2.1" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },
     { name = "pylint", specifier = ">=3.3.0" },

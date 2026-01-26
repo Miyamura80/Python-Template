@@ -23,6 +23,12 @@ llm_config:
 ########################################################
 # Debugging
 ########################################################
+features:
+  # Add feature flags here. Can be overridden by env vars: FEATURES__NEW_UI=true
+  new_ui: false
+  beta_features: false
+  enable_llm_fallback: true
+
 logging:
   verbose: true
   format:
