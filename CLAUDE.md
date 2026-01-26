@@ -128,6 +128,10 @@ Structure as: `init()` → `continue(id)` → `cleanup(id)`
 - Use descriptive IDs (runId, taskId)
 - Handle rate limits, timeouts, retries at system boundaries
 
+## Git Workflow
+- **Protected Branch**: `main` is protected. Do not push directly to `main`. Use PRs.
+- **Merge Strategy**: Squash and merge.
+
 ## Deprecated
 
 - Don't use `datetime.utcnow()` - use `datetime.now(timezone.utc)`
