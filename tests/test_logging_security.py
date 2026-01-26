@@ -87,7 +87,7 @@ class TestLoggingSecurity(TestTemplate):
         """Test that Stripe API keys are redacted."""
         # Construct keys dynamically to avoid GitHub secret scanning
         suffix = "0" * 24
-        prefixes = ["sk" + "_live_", "sk" + "_test_", "pk" + "_live_"]
+        prefixes = ["sk" + "_live_", "sk" + "_test_", "pk" + "_live_", "rk" + "_live_"]
 
         for prefix in prefixes:
             key = prefix + suffix

@@ -14,16 +14,17 @@ _logging_initialized = False
 _logging_lock = threading.Lock()
 
 # PII Patterns for redaction (pre-compiled for performance)
+# Note: More specific patterns must come before general ones (e.g., sk-ant- before sk-)
 _COMPILED_PII_PATTERNS = [
     # Email addresses
     (
-        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
+        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
         "[REDACTED_EMAIL]",
     ),
+    # Anthropic API keys (sk-ant-...) - must be before OpenAI pattern
+    (re.compile(r"sk-ant-[a-zA-Z0-9-]{20,}"), "[REDACTED_API_KEY]"),
     # OpenAI API keys (sk-...)
     (re.compile(r"sk-[a-zA-Z0-9]{20,}"), "[REDACTED_API_KEY]"),
-    # Anthropic API keys (sk-ant-...)
-    (re.compile(r"sk-ant-[a-zA-Z0-9-]{20,}"), "[REDACTED_API_KEY]"),
     # Stripe API keys (sk_live_*, sk_test_*, pk_live_*, pk_test_*, rk_live_*, rk_test_*)
     (re.compile(r"[spr]k_(live|test)_[a-zA-Z0-9]{20,}"), "[REDACTED_API_KEY]"),
     # Authorization Bearer tokens
