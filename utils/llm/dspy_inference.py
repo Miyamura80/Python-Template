@@ -3,7 +3,7 @@ from typing import Any
 
 import dspy
 from langfuse.decorators import observe  # type: ignore
-from litellm.exceptions import ServiceUnavailableError
+from litellm.exceptions import RateLimitError, ServiceUnavailableError
 from loguru import logger as log
 from tenacity import (
     retry,
@@ -63,14 +63,16 @@ class DSPYInference:
         )
 
     @retry(
-        retry=retry_if_exception_type(ServiceUnavailableError),
+        retry=retry_if_exception_type((RateLimitError, ServiceUnavailableError)),
         stop=stop_after_attempt(global_config.llm_config.retry.max_attempts),
         wait=wait_exponential(
             multiplier=global_config.llm_config.retry.min_wait_seconds,
             max=global_config.llm_config.retry.max_wait_seconds,
         ),
         before_sleep=lambda retry_state: log.warning(
-            f"Retrying due to ServiceUnavailableError. Attempt {retry_state.attempt_number}"
+            "Retrying due to LLM error "
+            f"{retry_state.outcome.exception().__class__.__name__}. "
+            f"Attempt {retry_state.attempt_number}"
         ),
     )
     async def _run_with_retry(
@@ -103,9 +105,9 @@ class DSPYInference:
         try:
             # user_id is passed if the pred_signature requires it.
             result = await self._run_with_retry(self.lm, **kwargs)
-        except ServiceUnavailableError as e:
+        except (RateLimitError, ServiceUnavailableError) as e:
             if not self.fallback_lm:
-                log.error(f"ServiceUnavailableError without fallback: {str(e)}")
+                log.error(f"{e.__class__.__name__} without fallback: {str(e)}")
                 raise
             log.warning(
                 f"Primary model unavailable; falling back to {self.fallback_model_name}"
