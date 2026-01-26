@@ -23,6 +23,7 @@ class DSPYInference:
         tools: list[Callable[..., Any]] | None = None,
         observe: bool = True,
         model_name: str = global_config.default_llm.default_model,
+        fallback_model_name: str | None = global_config.default_llm.fallback_model,
         temperature: float = global_config.default_llm.default_temperature,
         max_tokens: int = global_config.default_llm.default_max_tokens,
         max_iters: int = 5,
@@ -30,13 +31,16 @@ class DSPYInference:
         if tools is None:
             tools = []
 
-        api_key = global_config.llm_api_key(model_name)
-        self.lm = dspy.LM(
-            model=model_name,
-            api_key=api_key,
-            cache=global_config.llm_config.cache_enabled,
-            temperature=temperature,
-            max_tokens=max_tokens,
+        self.lm = self._build_lm(model_name, temperature, max_tokens)
+        self.fallback_model_name = (
+            fallback_model_name
+            if fallback_model_name and fallback_model_name != model_name
+            else None
+        )
+        self.fallback_lm = (
+            self._build_lm(self.fallback_model_name, temperature, max_tokens)
+            if self.fallback_model_name
+            else None
         )
         if observe:
             # Initialize a LangFuseDSPYCallback and configure the LM instance for generation tracing
@@ -58,7 +62,6 @@ class DSPYInference:
             self.inference_module
         )
 
-    @observe()
     @retry(
         retry=retry_if_exception_type(ServiceUnavailableError),
         stop=stop_after_attempt(global_config.llm_config.retry.max_attempts),
@@ -70,13 +73,44 @@ class DSPYInference:
             f"Retrying due to ServiceUnavailableError. Attempt {retry_state.attempt_number}"
         ),
     )
+    async def _run_with_retry(
+        self,
+        lm: dspy.LM,
+        **kwargs: Any,
+    ) -> Any:
+        return await self.inference_module_async(**kwargs, lm=lm)
+
+    def _build_lm(
+        self,
+        model_name: str,
+        temperature: float,
+        max_tokens: int,
+    ) -> dspy.LM:
+        api_key = global_config.llm_api_key(model_name)
+        return dspy.LM(
+            model=model_name,
+            api_key=api_key,
+            cache=global_config.llm_config.cache_enabled,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+
+    @observe()
     async def run(
         self,
         **kwargs: Any,
     ) -> Any:
         try:
             # user_id is passed if the pred_signature requires it.
-            result = await self.inference_module_async(**kwargs, lm=self.lm)
+            result = await self._run_with_retry(self.lm, **kwargs)
+        except ServiceUnavailableError as e:
+            if not self.fallback_lm:
+                log.error(f"ServiceUnavailableError without fallback: {str(e)}")
+                raise
+            log.warning(
+                f"Primary model unavailable; falling back to {self.fallback_model_name}"
+            )
+            result = await self._run_with_retry(self.fallback_lm, **kwargs)
         except (RuntimeError, ValueError, TypeError) as e:
             log.error(f"Error in run: {str(e)}")
             raise

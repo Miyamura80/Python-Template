@@ -9,6 +9,7 @@ example_parent:
 ########################################################
 default_llm:
   default_model: gemini/gemini-2.0-flash
+  fallback_model: gemini/gemini-1.5-flash
   default_temperature: 0.5
   default_max_tokens: 100000
 
