@@ -21,7 +21,7 @@ make test_slow      # Run slow tests only
 make test_nondeterministic # Run nondeterministic tests only
 
 # Code Quality (run after major changes)
-make fmt            # Run black formatter + JSON formatting
+make fmt            # Run ruff formatter + JSON formatting
 make ruff           # Run ruff linter
 make vulture        # Find dead code
 make ty             # Run typer type checker

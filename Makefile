@@ -171,24 +171,23 @@ test_flaky: check_uv ## Repeat fast tests to detect flaky tests
 ########################################################
 
 # Linter will ignore these directories
-IGNORE_LINT_DIRS = .venv|venv
-LINE_LENGTH = 88
+IGNORE_LINT_DIRS = .venv venv
+FIND_PRUNE = $(foreach dir,$(IGNORE_LINT_DIRS),-path "./$(dir)" -o) -false
 
 ### Code Quality
 install_tools: check_uv ## Install linting/formatting tools
 	@echo "$(YELLOW)🔧Installing tools...$(RESET)"
-	@uv tool install black --force
 	@uv tool install ruff --force
 	@uv tool install ty --force
 	@uv tool install vulture --force
 	@echo "$(GREEN)✅Tools installed.$(RESET)"
 
-fmt: install_tools check_jq ## Format code with black and jq
-	@echo "$(YELLOW)✨Formatting project with Black...$(RESET)"
-	@uv tool run black --exclude '/($(IGNORE_LINT_DIRS))/' . --line-length $(LINE_LENGTH)
+fmt: install_tools check_jq ## Format code with ruff and jq
+	@echo "$(YELLOW)✨Formatting project with Ruff...$(RESET)"
+	@uv tool run ruff format
 	@echo "$(YELLOW)✨Formatting JSONs with jq...$(RESET)"
 	@count=0; \
-	find . \( $(IGNORE_LINT_DIRS:%=-path './%' -prune -o) \) -type f -name '*.json' -print0 | \
+	find . \( $(FIND_PRUNE) \) -prune -o -type f -name '*.json' -print0 | \
 	while IFS= read -r -d '' file; do \
 		if jq . "$$file" > "$$file.tmp" 2>/dev/null && mv "$$file.tmp" "$$file"; then \
 			count=$$((count + 1)); \

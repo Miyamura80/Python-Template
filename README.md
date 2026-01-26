@@ -41,7 +41,7 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 | Feature | `main` | `saas` |
 |---------|:------:|:------:|
 | UV + Pydantic config | ✅ | ✅ |
-| CI/Linters (Ruff, Black, Vulture) | ✅ | ✅ |
+| CI/Linters (Ruff, Vulture) | ✅ | ✅ |
 | Pre-commit hooks (prek) | ✅ | ✅ |
 | LLM (DSPY + LangFuse Observability) | ✅ | ✅ |
 | FastAPI + Uvicorn | ❌ | ✅ |
@@ -55,7 +55,7 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 ## Quick Start
 
 - `make all` - runs `main.py`
-- `make fmt` - runs `black` linter, an opinionated linter
+- `make fmt` - runs `ruff format` + JSON formatting
 - `make banner` - create a new banner that makes the README nice 😊
 - `make test` - runs all tests defined by `TEST_TARGETS = tests/folder1 tests/folder2`
 
@@ -91,4 +91,3 @@ This software uses the following tools:
 </a>
 
 Made with [contrib.rocks](https://contrib.rocks).
-

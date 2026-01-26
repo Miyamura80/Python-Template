@@ -39,51 +39,51 @@ def test_pydantic_type_coercion(monkeypatch):
     config = common_module.global_config  # type: ignore[attr-defined]
 
     # Verify integer coercion
-    assert isinstance(
-        config.default_llm.default_max_tokens, int
-    ), "default_max_tokens should be int"
-    assert (
-        config.default_llm.default_max_tokens == 50000
-    ), "default_max_tokens should be 50000"
+    assert isinstance(config.default_llm.default_max_tokens, int), (
+        "default_max_tokens should be int"
+    )
+    assert config.default_llm.default_max_tokens == 50000, (
+        "default_max_tokens should be 50000"
+    )
 
-    assert isinstance(
-        config.llm_config.retry.max_attempts, int
-    ), "max_attempts should be int"
+    assert isinstance(config.llm_config.retry.max_attempts, int), (
+        "max_attempts should be int"
+    )
     assert config.llm_config.retry.max_attempts == 5, "max_attempts should be 5"
 
-    assert isinstance(
-        config.llm_config.retry.min_wait_seconds, int
-    ), "min_wait_seconds should be int"
+    assert isinstance(config.llm_config.retry.min_wait_seconds, int), (
+        "min_wait_seconds should be int"
+    )
     assert config.llm_config.retry.min_wait_seconds == 2, "min_wait_seconds should be 2"
 
-    assert isinstance(
-        config.llm_config.retry.max_wait_seconds, int
-    ), "max_wait_seconds should be int"
-    assert (
-        config.llm_config.retry.max_wait_seconds == 10
-    ), "max_wait_seconds should be 10"
+    assert isinstance(config.llm_config.retry.max_wait_seconds, int), (
+        "max_wait_seconds should be int"
+    )
+    assert config.llm_config.retry.max_wait_seconds == 10, (
+        "max_wait_seconds should be 10"
+    )
 
     # Verify float coercion
-    assert isinstance(
-        config.default_llm.default_temperature, float
-    ), "default_temperature should be float"
-    assert (
-        config.default_llm.default_temperature == 0.7
-    ), "default_temperature should be 0.7"
+    assert isinstance(config.default_llm.default_temperature, float), (
+        "default_temperature should be float"
+    )
+    assert config.default_llm.default_temperature == 0.7, (
+        "default_temperature should be 0.7"
+    )
 
     # Verify boolean coercion
-    assert isinstance(
-        config.llm_config.cache_enabled, bool
-    ), "cache_enabled should be bool"
+    assert isinstance(config.llm_config.cache_enabled, bool), (
+        "cache_enabled should be bool"
+    )
     assert config.llm_config.cache_enabled is True, "cache_enabled should be True"
 
     assert isinstance(config.logging.verbose, bool), "verbose should be bool"
     assert config.logging.verbose is False, "verbose should be False"
 
     assert isinstance(config.logging.format.show_time, bool), "show_time should be bool"
-    assert (
-        config.logging.format.show_time is True
-    ), "show_time should be True (from '1')"
+    assert config.logging.format.show_time is True, (
+        "show_time should be True (from '1')"
+    )
 
     assert isinstance(config.logging.levels.debug, bool), "debug should be bool"
     assert config.logging.levels.debug is True, "debug should be True"
