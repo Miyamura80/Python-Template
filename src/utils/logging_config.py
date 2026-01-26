@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import sys
 import threading
 
@@ -11,6 +12,26 @@ from src.utils.context import session_id
 
 _logging_initialized = False
 _logging_lock = threading.Lock()
+
+# PII Patterns for redaction
+PII_PATTERNS = {
+    # Email pattern
+    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b": "[REDACTED_EMAIL]",
+    # Generic API Key-like pattern (starts with sk- or similar, long alphanumeric)
+    r"(sk-[a-zA-Z0-9]{20,})": "[REDACTED_API_KEY]",
+}
+
+
+def scrub_sensitive_data(record):
+    """
+    Patch function to scrub sensitive data from the log record.
+    Modifies record["message"] in place.
+    """
+    message = record["message"]
+    for pattern, placeholder in PII_PATTERNS.items():
+        if re.search(pattern, message):
+            message = re.sub(pattern, placeholder, message)
+    record["message"] = message
 
 
 def _should_show_location(level: str) -> bool:
@@ -151,6 +172,9 @@ def setup_logging(*, debug=None, info=None, warning=None, error=None, critical=N
 
         # Remove any existing handlers
         logger.remove()
+
+        # Configure global patcher for log scrubbing
+        logger.configure(patcher=scrub_sensitive_data)
 
         # Initialize session_id if not already set
         if session_id.get() is None:
