@@ -26,13 +26,30 @@ _COMPILED_PII_PATTERNS = [
 def scrub_sensitive_data(record):
     """
     Patch function to scrub sensitive data from the log record.
-    Modifies record["message"] in place.
+    Modifies record["message"] and record["exception"] in place.
     """
+    # Scrub main message
     message = record["message"]
     for pattern, placeholder in _COMPILED_PII_PATTERNS:
         if pattern.search(message):
             message = pattern.sub(placeholder, message)
     record["message"] = message
+
+    # Scrub exception if present
+    exception = record.get("exception")
+    if exception:
+        type_, value, tb = exception
+        value_str = str(value)
+        redacted = False
+        for pattern, placeholder in _COMPILED_PII_PATTERNS:
+            if pattern.search(value_str):
+                value_str = pattern.sub(placeholder, value_str)
+                redacted = True
+
+        if redacted:
+            # Replace the exception with a new one containing redacted value
+            # We use a string for the value to ensure it's displayed as redacted
+            record["exception"] = (type_, value_str, tb)
 
 
 def _should_show_location(level: str) -> bool:
