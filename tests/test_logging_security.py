@@ -1,5 +1,5 @@
-from tests.test_template import TestTemplate
 from src.utils.logging_config import scrub_sensitive_data
+from tests.test_template import TestTemplate
 
 
 class TestLoggingSecurity(TestTemplate):
