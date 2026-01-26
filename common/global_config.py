@@ -18,6 +18,7 @@ from pydantic_settings import (
 from .config_models import (
     DefaultLlm,
     ExampleParent,
+    FeaturesConfig,
     LlmConfig,
     LoggingConfig,
 )
@@ -169,6 +170,7 @@ class Config(BaseSettings):
     default_llm: DefaultLlm
     llm_config: LlmConfig
     logging: LoggingConfig
+    features: FeaturesConfig = Field(default_factory=lambda: FeaturesConfig())
 
     # Environment variables (required)
     DEV_ENV: str

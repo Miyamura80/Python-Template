@@ -76,3 +76,9 @@ class LoggingConfig(BaseModel):
     verbose: bool
     format: LoggingFormatConfig
     levels: LoggingLevelsConfig
+
+
+class FeaturesConfig(BaseModel):
+    """Feature flags configuration."""
+
+    model_config = {"extra": "allow"}  # Allow arbitrary flags
