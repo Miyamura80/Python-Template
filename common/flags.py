@@ -22,6 +22,7 @@ def setup_feature_flags():
     logger.debug(f"Feature flags initialized: {list(flags.keys())}")
 
 
-# Auto-initialize when imported, or can be called explicitly
+# Optionally auto-initialize when imported
+# To defer initialization, import setup_feature_flags and call it explicitly
 setup_feature_flags()
 client = api.get_client()
