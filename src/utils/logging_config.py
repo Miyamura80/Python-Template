@@ -46,9 +46,20 @@ def scrub_sensitive_data(record):
                 redacted = True
 
         if redacted:
-            # Replace the exception with a new one containing redacted value
-            # We use a string for the value to ensure it's displayed as redacted
-            record["exception"] = (type_, value_str, tb)
+            # Re-instantiate the exception with the redacted message to preserve loguru formatting
+            try:
+                # Most standard exceptions accept a single string argument
+                new_value = type_(value_str)
+            except Exception:
+                # Fallback to a generic Exception if type instantiation fails
+                new_value = Exception(value_str)
+
+            # Preserve traceback and context metadata
+            new_value.__traceback__ = tb
+            new_value.__cause__ = getattr(value, "__cause__", None)
+            new_value.__context__ = getattr(value, "__context__", None)
+
+            record["exception"] = (type_, new_value, tb)
 
 
 def _should_show_location(level: str) -> bool:
