@@ -15,11 +15,21 @@ _logging_lock = threading.Lock()
 
 # PII Patterns for redaction (pre-compiled for performance)
 _COMPILED_PII_PATTERNS = [
+    # Email addresses
     (
         re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
         "[REDACTED_EMAIL]",
     ),
+    # OpenAI API keys (sk-...)
     (re.compile(r"sk-[a-zA-Z0-9]{20,}"), "[REDACTED_API_KEY]"),
+    # Anthropic API keys (sk-ant-...)
+    (re.compile(r"sk-ant-[a-zA-Z0-9-]{20,}"), "[REDACTED_API_KEY]"),
+    # Stripe API keys (sk_live_*, sk_test_*, pk_live_*, pk_test_*, rk_live_*, rk_test_*)
+    (re.compile(r"[spr]k_(live|test)_[a-zA-Z0-9]{20,}"), "[REDACTED_API_KEY]"),
+    # Authorization Bearer tokens
+    (re.compile(r"Bearer\s+[a-zA-Z0-9._\-]{20,}"), "[REDACTED_BEARER_TOKEN]"),
+    # Generic project/API keys (common formats: xxx_key_*, api_key=*, apikey=*)
+    (re.compile(r"(?i)(api[_-]?key|project[_-]?key|secret[_-]?key)[=:\s]+['\"]?[a-zA-Z0-9_\-]{16,}['\"]?"), "[REDACTED_KEY]"),
 ]
 
 

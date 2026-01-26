@@ -74,3 +74,47 @@ class TestLoggingSecurity(TestTemplate):
         record = {"message": original_message, "exception": None}
         scrub_sensitive_data(record)
         assert record["message"] == original_message
+
+    def test_anthropic_api_key_redaction(self):
+        """Test that Anthropic API keys are redacted."""
+        api_key = "sk-ant-api03-abc123def456ghi789jkl012mno345pqr678"
+        record = {"message": f"Using Anthropic key: {api_key}", "exception": None}
+        scrub_sensitive_data(record)
+        assert api_key not in record["message"]
+        assert "[REDACTED_API_KEY]" in record["message"]
+
+    def test_stripe_api_key_redaction(self):
+        """Test that Stripe API keys are redacted."""
+        # Construct keys dynamically to avoid GitHub secret scanning
+        suffix = "0" * 24
+        prefixes = ["sk" + "_live_", "sk" + "_test_", "pk" + "_live_"]
+
+        for prefix in prefixes:
+            key = prefix + suffix
+            record = {"message": f"Stripe key: {key}", "exception": None}
+            scrub_sensitive_data(record)
+            assert key not in record["message"]
+            assert "[REDACTED_API_KEY]" in record["message"]
+
+    def test_bearer_token_redaction(self):
+        """Test that Authorization Bearer tokens are redacted."""
+        token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkw"
+        record = {"message": f"Authorization: {token}", "exception": None}
+        scrub_sensitive_data(record)
+        assert "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" not in record["message"]
+        assert "[REDACTED_BEARER_TOKEN]" in record["message"]
+
+    def test_generic_api_key_redaction(self):
+        """Test that generic api_key patterns are redacted."""
+        patterns = [
+            "api_key=abc123def456ghi789jkl012",
+            "API-KEY: abc123def456ghi789jkl012",
+            "apikey='abc123def456ghi789jkl012'",
+            "project_key=abc123def456ghi789jkl012",
+            "secret-key: abc123def456ghi789jkl012",
+        ]
+        for pattern in patterns:
+            record = {"message": f"Config: {pattern}", "exception": None}
+            scrub_sensitive_data(record)
+            assert "abc123def456ghi789jkl012" not in record["message"]
+            assert "[REDACTED_KEY]" in record["message"]
