@@ -27,6 +27,7 @@ dependencies = [
     "pytest-cov>=7.0.0",
     "pytest-repeat>=0.9.4",
     "pylint>=3.3.0",
+    "deptry>=0.24.0",
     "openfeature-sdk>=0.8.4",
 ]
 readme = "README.md"

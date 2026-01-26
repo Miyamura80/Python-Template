@@ -245,7 +245,12 @@ agents_validate: ## Validate AGENTS.md content
 	@$(PYTHON) scripts/validate_agents_md.py
 	@echo "$(GREEN)✅AGENTS.md validation completed.$(RESET)"
 
-ci: ruff vulture import_lint ty docs_lint ## Run all CI checks (ruff, vulture, import_lint, ty, docs_lint)
+check_deps: install_tools ## Check for unused dependencies
+	@echo "$(YELLOW)🔍Checking unused dependencies...$(RESET)"
+	@uv run deptry .
+	@echo "$(GREEN)✅Dependency check completed.$(RESET)"
+
+ci: ruff vulture import_lint ty docs_lint check_deps ## Run all CI checks (ruff, vulture, import_lint, ty, docs_lint)
 	@echo "$(GREEN)✅CI checks completed.$(RESET)"
 
 ########################################################
