@@ -19,6 +19,7 @@ class DefaultLlm(BaseModel):
     """Default LLM configuration."""
 
     default_model: str
+    fallback_model: str | None = None
     default_temperature: float
     default_max_tokens: int
 
