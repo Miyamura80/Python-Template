@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import sys
 import threading
 
@@ -11,6 +12,65 @@ from src.utils.context import session_id
 
 _logging_initialized = False
 _logging_lock = threading.Lock()
+
+# PII Patterns for redaction (pre-compiled for performance)
+# Note: More specific patterns must come before general ones (e.g., sk-ant- before sk-)
+_COMPILED_PII_PATTERNS = [
+    # Email addresses
+    (
+        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
+        "[REDACTED_EMAIL]",
+    ),
+    # Anthropic API keys (sk-ant-...) - must be before OpenAI pattern
+    (re.compile(r"sk-ant-[a-zA-Z0-9-]{20,}"), "[REDACTED_API_KEY]"),
+    # OpenAI API keys (sk-...)
+    (re.compile(r"sk-[a-zA-Z0-9]{20,}"), "[REDACTED_API_KEY]"),
+    # Stripe API keys (sk_live_*, sk_test_*, pk_live_*, pk_test_*, rk_live_*, rk_test_*)
+    (re.compile(r"[spr]k_(live|test)_[a-zA-Z0-9]{20,}"), "[REDACTED_API_KEY]"),
+    # Authorization Bearer tokens
+    (re.compile(r"Bearer\s+[a-zA-Z0-9._\-]{20,}"), "[REDACTED_BEARER_TOKEN]"),
+    # Generic project/API keys (common formats: xxx_key_*, api_key=*, apikey=*)
+    (re.compile(r"(?i)(api[_-]?key|project[_-]?key|secret[_-]?key)[=:\s]+['\"]?[a-zA-Z0-9_\-]{16,}['\"]?"), "[REDACTED_KEY]"),
+]
+
+
+def scrub_sensitive_data(record):
+    """
+    Patch function to scrub sensitive data from the log record.
+    Modifies record["message"] and record["exception"] in place.
+    """
+    # Scrub main message
+    message = record["message"]
+    for pattern, placeholder in _COMPILED_PII_PATTERNS:
+        message = pattern.sub(placeholder, message)
+    record["message"] = message
+
+    # Scrub exception if present
+    exception = record.get("exception")
+    if exception:
+        type_, value, tb = exception
+        value_str = str(value)
+        redacted = False
+        for pattern, placeholder in _COMPILED_PII_PATTERNS:
+            if pattern.search(value_str):
+                value_str = pattern.sub(placeholder, value_str)
+                redacted = True
+
+        if redacted:
+            # Re-instantiate the exception with the redacted message to preserve loguru formatting
+            try:
+                # Most standard exceptions accept a single string argument
+                new_value = type_(value_str)
+            except Exception:
+                # Fallback to a generic Exception if type instantiation fails
+                new_value = Exception(value_str)
+
+            # Preserve traceback and context metadata
+            new_value.__traceback__ = tb
+            new_value.__cause__ = getattr(value, "__cause__", None)
+            new_value.__context__ = getattr(value, "__context__", None)
+
+            record["exception"] = (type_, new_value, tb)
 
 
 def _should_show_location(level: str) -> bool:
@@ -153,6 +213,9 @@ def setup_logging(  # noqa: C901
 
         # Remove any existing handlers
         logger.remove()
+
+        # Configure global patcher for log scrubbing
+        logger.configure(patcher=scrub_sensitive_data)
 
         # Initialize session_id if not already set
         if session_id.get() is None:
