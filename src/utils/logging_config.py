@@ -31,7 +31,7 @@ def scrub_sensitive_data(record):
     # Scrub main message
     message = record["message"]
     for pattern, placeholder in _COMPILED_PII_PATTERNS:
-        if pattern.search(message):
+        message = pattern.sub(placeholder, message)
             message = pattern.sub(placeholder, message)
     record["message"] = message
 
