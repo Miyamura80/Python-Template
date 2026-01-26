@@ -17,3 +17,21 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: ruff-complexity
+        name: Check cyclomatic complexity
+        entry: uv run ruff check --select C901
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: ruff-tech-debt
+        name: Check TODO/FIXME markers
+        entry: uv run ruff check --select FIX
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: pylint-duplicate-code
+        name: Detect duplicate code
+        entry: uv run pylint --disable=all --enable=R0801 src common utils
+        language: system
+        pass_filenames: false
+        always_run: true

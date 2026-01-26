@@ -26,6 +26,7 @@ dependencies = [
     "pydantic-settings>=2.12.0",
     "pytest-cov>=7.0.0",
     "pytest-repeat>=0.9.4",
+    "pylint>=3.3.0",
     "openfeature-sdk>=0.8.4",
 ]
 readme = "README.md"
@@ -46,8 +47,11 @@ line-length = 88
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "C901", "FIX"]
 ignore = ["E501", "UP015", "B008"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 
 [tool.ty]
 
