@@ -1772,7 +1772,6 @@ name = "python-template"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "black" },
     { name = "dspy" },
     { name = "google-genai" },
     { name = "human-id" },
@@ -1797,7 +1796,6 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "black", specifier = ">=24.8.0" },
     { name = "dspy", specifier = ">=2.6.24" },
     { name = "google-genai", specifier = ">=1.15.0" },
     { name = "human-id", specifier = ">=0.2.0" },

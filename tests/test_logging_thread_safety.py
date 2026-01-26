@@ -43,7 +43,7 @@ class TestLoggingThreadSafety(TestTemplate):
         logger_any.remove = original_remove
 
         assert not errors, f"Errors during concurrent setup: {errors}"
-        assert (
-            call_count == 1
-        ), f"logger.remove() called {call_count} times, expected exactly 1"
+        assert call_count == 1, (
+            f"logger.remove() called {call_count} times, expected exactly 1"
+        )
         assert logging_module._logging_initialized is True

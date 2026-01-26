@@ -25,7 +25,7 @@ This document provides a detailed comparison of features available in the `main`
 | Feature | `main` | `saas` | Notes |
 |---------|:------:|:------:|-------|
 | Ruff linter | ✅ | ✅ | Fast Python linter |
-| Black formatter | ✅ | ✅ | Opinionated code formatting |
+| Ruff formatter | ✅ | ✅ | Opinionated code formatting |
 | Vulture dead code detection | ✅ | ✅ | Find unused code |
 | ty type checker | ✅ | ✅ | Type checking |
 | GitHub Actions CI | ✅ | ✅ | Automated testing & linting |

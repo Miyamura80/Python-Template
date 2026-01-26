@@ -6,7 +6,6 @@ authors = [
     { name = "Miyamura80", email = "eitomiyamura@gmail.com" }
 ]
 dependencies = [
-    "black>=24.8.0",
     "pyyaml>=6.0.2",
     "python-dotenv>=1.0.1",
     "human-id>=0.2.0",
