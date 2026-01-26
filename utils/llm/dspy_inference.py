@@ -38,9 +38,10 @@ class DSPYInference:
             else None
         )
         self.fallback_lm = (
-            self._build_lm(self.fallback_model_name, temperature, max_tokens)
-            if self.fallback_model_name
+            self._build_lm(fallback_model_name, temperature, max_tokens)
+            if fallback_model_name
             else None
+        )
         )
         if observe:
             # Initialize a LangFuseDSPYCallback and configure the LM instance for generation tracing
