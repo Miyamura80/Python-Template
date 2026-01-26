@@ -29,6 +29,9 @@ dependencies = [
     "pylint>=3.3.0",
     "deptry>=0.24.0",
     "openfeature-sdk>=0.8.4",
+    "pydantic>=2.10.0",
+    "numpy>=1.26.0",
+    "requests>=2.31.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -97,3 +100,6 @@ omit = [
 
 [tool.coverage.report]
 show_missing = true
+
+[tool.deptry]
+per_rule_ignores = { DEP002 = ["import-linter", "pytest", "pytest-xdist", "termcolor", "vulture", "ty", "pytest-env", "pytest-cov", "pytest-repeat", "pylint", "deptry"] }

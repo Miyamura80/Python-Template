@@ -30,7 +30,12 @@ _COMPILED_PII_PATTERNS = [
     # Authorization Bearer tokens
     (re.compile(r"Bearer\s+[a-zA-Z0-9._\-]{20,}"), "[REDACTED_BEARER_TOKEN]"),
     # Generic project/API keys (common formats: xxx_key_*, api_key=*, apikey=*)
-    (re.compile(r"(?i)(api[_-]?key|project[_-]?key|secret[_-]?key)[=:\s]+['\"]?[a-zA-Z0-9_\-]{16,}['\"]?"), "[REDACTED_KEY]"),
+    (
+        re.compile(
+            r"(?i)(api[_-]?key|project[_-]?key|secret[_-]?key)[=:\s]+['\"]?[a-zA-Z0-9_\-]{16,}['\"]?"
+        ),
+        "[REDACTED_KEY]",
+    ),
 ]
 
 
