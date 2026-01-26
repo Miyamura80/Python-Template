@@ -17,7 +17,7 @@ jobs:
     name: Delete Merged Branches
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Fetch all branches and history
 
