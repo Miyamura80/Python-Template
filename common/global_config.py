@@ -7,7 +7,7 @@ from typing import Any
 import yaml
 from dotenv import dotenv_values, load_dotenv
 from loguru import logger
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -180,22 +180,15 @@ class Config(BaseSettings):
     PERPLEXITY_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None
 
-    # Runtime environment (computed)
-    is_local: bool = Field(default=False)
-    running_on: str = Field(default="")
-
-    @field_validator("is_local", mode="before")
-    @classmethod
-    def set_is_local(cls, v: Any) -> bool:
-        """Set is_local based on GITHUB_ACTIONS env var."""
-        return os.getenv("GITHUB_ACTIONS") != "true"
-
-    @field_validator("running_on", mode="before")
-    @classmethod
-    def set_running_on(cls, v: Any) -> str:
-        """Set running_on based on is_local."""
-        is_local = os.getenv("GITHUB_ACTIONS") != "true"
-        return "🖥️  local" if is_local else "☁️  CI"
+    # Runtime environment (computed via default_factory)
+    is_local: bool = Field(
+        default_factory=lambda: os.getenv("GITHUB_ACTIONS") != "true"
+    )
+    running_on: str = Field(
+        default_factory=lambda: "🖥️  local"
+        if os.getenv("GITHUB_ACTIONS") != "true"
+        else "☁️  CI"
+    )
 
     @classmethod
     def settings_customise_sources(

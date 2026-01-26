@@ -3,9 +3,6 @@ from openfeature import api
 from openfeature.provider.in_memory_provider import InMemoryProvider
 
 from common.global_config import global_config
-from src.utils.logging_config import setup_logging
-
-setup_logging()
 
 
 def setup_feature_flags():
