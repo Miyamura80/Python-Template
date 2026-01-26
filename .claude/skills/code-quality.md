@@ -9,7 +9,7 @@ Use the following `make` targets to ensure code quality:
 - `make fmt`: Runs the `ruff` formatter and formats JSON files.
 - `make ruff`: Runs the `ruff` linter to catch common errors and style issues.
 - `make vulture`: Searches for dead code across the project.
-- `make ty`: Runs the `typer` type checker (leveraging `pyright` or similar) to ensure type safety.
+- `make ty`: Runs the `ty` type checker to ensure type safety.
 - `make ci`: Runs all of the above checks (`ruff`, `vulture`, `ty`) in sequence.
 
 ## Workflow
