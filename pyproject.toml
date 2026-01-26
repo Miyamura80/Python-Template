@@ -50,9 +50,6 @@ ignore = ["E501", "UP015", "B008"]
 
 [tool.ty]
 
-[tool.ty.analysis]
-respect-type-ignore-comments = false
-
 [tool.ty.rules]
 possibly-unresolved-reference = "error"
 

@@ -1,4 +1,5 @@
 import threading
+from typing import Any, cast
 
 from tests.test_template import TestTemplate
 
@@ -12,14 +13,15 @@ class TestLoggingThreadSafety(TestTemplate):
         logging_module._logging_initialized = False
 
         call_count = 0
-        original_remove = logging_module.logger.remove
+        logger_any = cast(Any, logging_module.logger)
+        original_remove = logger_any.remove
 
         def counting_remove(*args, **kwargs):
             nonlocal call_count
             call_count += 1
             return original_remove(*args, **kwargs)
 
-        logging_module.logger.remove = counting_remove
+        logger_any.remove = counting_remove
 
         barrier = threading.Barrier(10)
         errors = []
@@ -38,7 +40,7 @@ class TestLoggingThreadSafety(TestTemplate):
             t.join(timeout=10)
 
         # Restore original
-        logging_module.logger.remove = original_remove
+        logger_any.remove = original_remove
 
         assert not errors, f"Errors during concurrent setup: {errors}"
         assert (
