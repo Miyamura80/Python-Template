@@ -253,23 +253,6 @@ class Config(BaseSettings):
             return api_keys[provider]
         raise ValueError(f"No API key configured for model: {model_identifier}")
 
-    def api_base(self, model_name: str) -> str:
-        """Returns the Helicone link for the model.
-
-        Raises:
-            ValueError: If no API base is configured for the given model.
-        """
-        provider = self._identify_provider(model_name)
-        api_bases = {
-            "openai": "https://oai.hconeai.com/v1",
-            "groq": "https://groq.helicone.ai/openai/v1",
-            "perplexity": "https://perplexity.helicone.ai",
-            "gemini": "https://generativelanguage.googleapis.com/v1beta/openai/",
-        }
-        if provider in api_bases:
-            return api_bases[provider]
-        raise ValueError(f"No API base configured for model: {model_name}")
-
 
 # Load .env files before creating the config instance
 # Load .env file first, to get DEV_ENV if it's defined there
