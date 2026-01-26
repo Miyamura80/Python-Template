@@ -1,4 +1,4 @@
-model_name: gemini/gemini-2.0-flash
+model_name: gemini/gemini-3-flash
 dot_global_config_health_check: true
 
 example_parent:
@@ -8,7 +8,8 @@ example_parent:
 # LLMs
 ########################################################
 default_llm:
-  default_model: gemini/gemini-2.0-flash
+  default_model: gemini/gemini-3-flash
+  fallback_model: gemini/gemini-2.5-flash
   default_temperature: 0.5
   default_max_tokens: 100000
 
