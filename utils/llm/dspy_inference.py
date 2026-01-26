@@ -39,7 +39,7 @@ class DSPYInference:
         )
         self.fallback_lm = (
             self._build_lm(self.fallback_model_name, temperature, max_tokens)
-            if self.fallback_model_name
+            if self.fallback_model_name is not None
             else None
         )
         if observe:
