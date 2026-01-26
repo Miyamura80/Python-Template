@@ -3,6 +3,9 @@ from openfeature import api
 from openfeature.provider.in_memory_provider import InMemoryProvider
 
 from common.global_config import global_config
+from src.utils.logging_config import setup_logging
+
+setup_logging()
 
 
 def setup_feature_flags():
@@ -19,7 +22,7 @@ def setup_feature_flags():
     provider = InMemoryProvider(flags)
     api.set_provider(provider)
 
-    log.debug("Feature flags initialized: %s", list(flags.keys()))
+    log.debug(f"Feature flags initialized: {list(flags.keys())}")
 
 
 # Optionally auto-initialize when imported
