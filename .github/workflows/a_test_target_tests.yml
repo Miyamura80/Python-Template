@@ -56,9 +56,9 @@ jobs:
         echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" >> $GITHUB_ENV
         echo "PERPLEXITY_API_KEY=${{ secrets.PERPLEXITY_API_KEY }}" >> $GITHUB_ENV
         echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> $GITHUB_ENV
-    - name: Run fast tests
+    - name: Run fast tests with coverage
       run: |
-        uv run pytest -n auto --durations=10 -m "not slow and not nondeterministic" tests/
+        uv run pytest -n auto --durations=10 --cov=src --cov=common --cov=utils --cov-report=term-missing -m "not slow and not nondeterministic" tests/
     - name: Run flaky test detection
       run: |
         make test_flaky
