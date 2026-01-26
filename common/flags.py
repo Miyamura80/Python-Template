@@ -1,4 +1,4 @@
-from loguru import logger
+from loguru import logger as log
 from openfeature import api
 from openfeature.provider.in_memory_provider import InMemoryProvider
 
