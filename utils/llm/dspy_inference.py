@@ -5,7 +5,6 @@ import dspy
 from langfuse.decorators import observe  # type: ignore
 from litellm.exceptions import RateLimitError, ServiceUnavailableError
 from loguru import logger as log
-from openfeature import api
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -14,12 +13,8 @@ from tenacity import (
 )
 
 from common import global_config
-from common.flags import setup_feature_flags
+from common.flags import client
 from utils.llm.dspy_langfuse import LangFuseDSPYCallback
-
-# Ensure feature flags are initialized before getting client
-setup_feature_flags()
-client = api.get_client()
 
 
 class DSPYInference:
