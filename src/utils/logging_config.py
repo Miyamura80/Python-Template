@@ -4,10 +4,9 @@ import re
 import sys
 import threading
 
+import scrubadub
 from human_id import generate_id
 from loguru import logger
-
-import scrubadub
 
 from common import global_config
 from src.utils.context import session_id

@@ -30,6 +30,8 @@ dependencies = [
     "deptry>=0.24.0",
     "openfeature-sdk>=0.8.4",
     "scrubadub>=2.0.1",
+    "pydantic>=2.0.0",
+    "numpy>=1.26.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -65,6 +67,9 @@ error-on-warning = true
 
 [tool.ty.environment]
 python-version = "3.12"
+
+[tool.deptry]
+ignore = ["DEP002"]
 
 [tool.vulture]
 exclude = [
