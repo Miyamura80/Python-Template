@@ -25,7 +25,8 @@ make fmt            # Run ruff formatter + JSON formatting
 make ruff           # Run ruff linter
 make vulture        # Find dead code
 make ty             # Run type checker
-make ci             # Run all CI checks (ruff, vulture, ty, import_lint, docs_lint, check_deps)
+make lint_links     # Check for broken links in markdown files (README, etc.)
+make ci             # Run all CI checks (ruff, vulture, ty, import_lint, docs_lint, check_deps, lint_links)
 
 # Dependencies
 uv sync             # Install dependencies (not pip install)

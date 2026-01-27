@@ -51,7 +51,7 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 | Referrals + Agent system | ❌ | ✅ |
 | Ralph Wiggum Agent Loop | ✅ | ✅ |
 
-[Full comparison](docs/branch_comparison.md)
+[Full comparison](manual_docs/branch_comparison.md)
 
 ## Quick Start
 
@@ -75,12 +75,12 @@ global_config.example_parent.example_child
 global_config.OPENAI_API_KEY
 ```
 
-[Full configuration docs](docs/configuration.md)
+[Full configuration docs](manual_docs/configuration.md)
 
 ## Credits
 
 This software uses the following tools:
-- [Cursor: The AI Code Editor](cursor.com)
+- [Cursor: The AI Code Editor](https://cursor.com)
 - [uv](https://docs.astral.sh/uv/)
 - [prek: Rust-based pre-commit framework](https://github.com/j178/prek)
 - [DSPY: Pytorch for LLM Inference](https://dspy.ai/)
