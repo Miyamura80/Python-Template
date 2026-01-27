@@ -6,7 +6,7 @@ from dspy.signatures import Signature as dspy_Signature
 from dspy.utils.callback import BaseCallback
 from langfuse.client import Langfuse, StatefulGenerationClient  # type: ignore
 from langfuse.decorators import langfuse_context  # type: ignore
-from litellm.cost_calculator import completion_cost  # type: ignore
+from litellm.cost_calculator import completion_cost
 from loguru import logger as log
 from pydantic import BaseModel, Field, ValidationError
 
@@ -138,7 +138,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         parent_observation_id = langfuse_context.get_current_observation_id()
         span_obj: StatefulGenerationClient | None = None
         if trace_id:
-            span_obj = self.langfuse.generation(  # type: ignore (Langfuse fails the type check in this function, grr...)
+            span_obj = self.langfuse.generation(
                 input=user_input,
                 name=model_name,
                 trace_id=trace_id,
@@ -314,7 +314,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                         "total": total_cost,
                         # "cache_read_input_tokens": 0.0, # Optional
                     }
-                    span.update(  # type: ignore[call-arg] # Langfuse typing for update can be tricky
+                    span.update(
                         usage_details=usage_details_update,
                         cost_details=cost_details_update,
                     )
@@ -355,7 +355,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 "status_message": status_message,
             }
             # Langfuse client's `end` method handles None for these specific optional parameters.
-            span.end(**end_args)  # type: ignore[call-arg] # Langfuse typing for end can be tricky
+            span.end(**end_args)
             self.current_span.set(None)
 
         if level == "DEFAULT" and completion_content is not None:

@@ -37,7 +37,7 @@ def test_env_var_loading_precedence(monkeypatch):
 
         # 3. Reload the common module to pick up the new .env file
         importlib.reload(common_module)
-        reloaded_config = common_module.global_config  # type: ignore
+        reloaded_config = common_module.global_config
 
         # 4. Assert that the variables are loaded with the correct precedence
         assert reloaded_config.DEV_ENV == "dotenv", "Should load from .env first"
