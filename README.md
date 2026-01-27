@@ -49,6 +49,7 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 | Auth (WorkOS + API keys) | ❌ | ✅ |
 | Payments (Stripe) | ❌ | ✅ |
 | Referrals + Agent system | ❌ | ✅ |
+| Ralph Wiggum Agent Loop | ✅ | ✅ |
 
 [Full comparison](docs/branch_comparison.md)
 
