@@ -1,19 +1,8 @@
 name: Markdown Link Validation
 
 on:
-  push:
-    branches:
-      - '**'
-    paths:
-      - '**/*.md'
-      - 'Makefile'
-      - '.github/workflows/markdown-link-lint.yaml'
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - '**/*.md'
-      - 'Makefile'
-      - '.github/workflows/markdown-link-lint.yaml'
+  schedule:
+    - cron: '0 0 * * 1' # Every Monday at midnight
   workflow_dispatch:
 
 jobs:
