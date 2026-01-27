@@ -1,0 +1,39 @@
+name: Markdown Link Validation
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - '**/*.md'
+      - 'Makefile'
+      - '.github/workflows/markdown-link-lint.yaml'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**/*.md'
+      - 'Makefile'
+      - '.github/workflows/markdown-link-lint.yaml'
+  workflow_dispatch:
+
+jobs:
+  validate-links:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+
+    - name: Set up Python
+      run: uv python install
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Validate links
+      run: make lint_links
