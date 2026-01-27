@@ -277,7 +277,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                         prompt=current_system_prompt + current_prompt,
                         completion=current_completion_content,
                     )
-                except Exception as cost_calc_exception:
+                except (ValueError, KeyError, TypeError) as cost_calc_exception:
                     log.warning(
                         f"litellm.completion_cost failed for model {current_model_name}: {cost_calc_exception}"
                     )
@@ -318,8 +318,8 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                         usage_details=usage_details_update,
                         cost_details=cost_details_update,
                     )
-            except Exception as e:
-                # This outer try-except catches errors in the token calculation logic itself
+            except (TypeError, ValueError, ZeroDivisionError, AttributeError) as e:
+                # This try-except catches errors in the token calculation logic itself
                 log.warning(f"General failure in usage/cost block: {str(e)}")
                 if level == "DEFAULT":
                     level = "WARNING"
@@ -435,7 +435,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                         output_value = outputs.__dict__
                     else:
                         output_value = str(outputs)
-                except Exception as e:
+                except (TypeError, AttributeError, RecursionError) as e:
                     output_value = {"serialization_error": str(e), "raw": str(outputs)}
 
             tool_span.end(

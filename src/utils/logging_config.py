@@ -95,9 +95,10 @@ def scrub_sensitive_data(record):
             try:
                 # Most standard exceptions accept a single string argument
                 new_value = type_(scrubbed_value_str)
-            except Exception:
+            except TypeError:
                 # Fallback to a generic Exception if type instantiation fails
-                new_value = Exception(scrubbed_value_str)
+                # (e.g., some exceptions require specific constructor arguments)
+                new_value = Exception(f"[{type_.__name__}] {scrubbed_value_str}")
 
             # Preserve traceback and context metadata
             new_value.__traceback__ = tb
