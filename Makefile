@@ -44,10 +44,10 @@ init: ## Initialize project (usage: make init name=my-project description="my de
 		exit 1; \
 	fi
 	@echo "$(YELLOW)🚀 Initializing project $(name)...$(RESET)"
-	@sed -i '' "s/name = \"python-template\"/name = \"$(name)\"/" pyproject.toml
-	@sed -i '' "s/description = \"Add your description here\"/description = \"$(description)\"/" pyproject.toml
-	@sed -i '' "s/# Python-Template/# $(name)/" README.md
-	@sed -i '' "s/<b>Opinionated Python project stack. 🔋 Batteries included. <\/b>/<b>$(description)<\/b>/" README.md
+	@sed -i.bak "s/name = \"python-template\"/name = \"$(name)\"/" pyproject.toml && rm pyproject.toml.bak
+	@sed -i.bak "s/description = \"Add your description here\"/description = \"$(description)\"/" pyproject.toml && rm pyproject.toml.bak
+	@sed -i.bak "s/# Python-Template/# $(name)/" README.md && rm README.md.bak
+	@sed -i.bak "s/<b>Opinionated Python project stack. 🔋 Batteries included. <\/b>/<b>$(description)<\/b>/" README.md && rm README.md.bak
 	@echo "$(GREEN)✅ Updated project name and description.$(RESET)"
 
 banner: check_uv ## Generate project banner image
