@@ -14,23 +14,29 @@ class TestLoggingSecurity(TestTemplate):
         """Test that email addresses are redacted from log messages."""
         record = {"message": "User email is test@example.com", "exception": None}
         scrub_sensitive_data(record)
-        assert "test@example.com" not in record["message"]
-        assert "{{EMAIL}}" in record["message"]
+        message = record["message"]
+        assert isinstance(message, str)
+        assert "test@example.com" not in message
+        assert "{{EMAIL}}" in message
 
     def test_phone_redaction(self):
         """Test that phone numbers are redacted (new capability via scrubadub)."""
         record = {"message": "Call me at 1-800-555-0199", "exception": None}
         scrub_sensitive_data(record)
-        assert "1-800-555-0199" not in record["message"]
-        assert "{{PHONE}}" in record["message"]
+        message = record["message"]
+        assert isinstance(message, str)
+        assert "1-800-555-0199" not in message
+        assert "{{PHONE}}" in message
 
     def test_api_key_redaction(self):
         """Test that OpenAI API keys are redacted from log messages."""
         api_key = "sk-abc123def456ghi789jkl012mno345pqr678stu901"
         record = {"message": f"Using key: {api_key}", "exception": None}
         scrub_sensitive_data(record)
-        assert api_key not in record["message"]
-        assert "[REDACTED_API_KEY]" in record["message"]
+        message = record["message"]
+        assert isinstance(message, str)
+        assert api_key not in message
+        assert "[REDACTED_API_KEY]" in message
 
     def test_multiple_redactions(self):
         """Test redacting multiple sensitive items in a single message."""
@@ -39,10 +45,12 @@ class TestLoggingSecurity(TestTemplate):
             "exception": None,
         }
         scrub_sensitive_data(record)
-        assert "{{EMAIL}}" in record["message"]
-        assert "[REDACTED_API_KEY]" in record["message"]
-        assert "test@example.com" not in record["message"]
-        assert "sk-123456789012345678901234" not in record["message"]
+        message = record["message"]
+        assert isinstance(message, str)
+        assert "{{EMAIL}}" in message
+        assert "[REDACTED_API_KEY]" in message
+        assert "test@example.com" not in message
+        assert "sk-123456789012345678901234" not in message
 
     def test_exception_message_redaction(self):
         """Test that PII is redacted from exception messages."""
@@ -87,8 +95,10 @@ class TestLoggingSecurity(TestTemplate):
         api_key = "sk-ant-api03-abc123def456ghi789jkl012mno345pqr678"
         record = {"message": f"Using Anthropic key: {api_key}", "exception": None}
         scrub_sensitive_data(record)
-        assert api_key not in record["message"]
-        assert "[REDACTED_API_KEY]" in record["message"]
+        message = record["message"]
+        assert isinstance(message, str)
+        assert api_key not in message
+        assert "[REDACTED_API_KEY]" in message
 
     def test_stripe_api_key_redaction(self):
         """Test that Stripe API keys are redacted."""
@@ -100,16 +110,20 @@ class TestLoggingSecurity(TestTemplate):
             key = prefix + suffix
             record = {"message": f"Stripe key: {key}", "exception": None}
             scrub_sensitive_data(record)
-            assert key not in record["message"]
-            assert "[REDACTED_API_KEY]" in record["message"]
+            message = record["message"]
+            assert isinstance(message, str)
+            assert key not in message
+            assert "[REDACTED_API_KEY]" in message
 
     def test_bearer_token_redaction(self):
         """Test that Authorization Bearer tokens are redacted."""
         token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkw"
         record = {"message": f"Authorization: {token}", "exception": None}
         scrub_sensitive_data(record)
-        assert "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" not in record["message"]
-        assert "[REDACTED_BEARER_TOKEN]" in record["message"]
+        message = record["message"]
+        assert isinstance(message, str)
+        assert "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" not in message
+        assert "[REDACTED_BEARER_TOKEN]" in message
 
     def test_generic_api_key_redaction(self):
         """Test that generic api_key patterns are redacted."""
@@ -123,5 +137,7 @@ class TestLoggingSecurity(TestTemplate):
         for pattern in patterns:
             record = {"message": f"Config: {pattern}", "exception": None}
             scrub_sensitive_data(record)
-            assert "abc123def456ghi789jkl012" not in record["message"]
-            assert "[REDACTED_KEY]" in record["message"]
+            message = record["message"]
+            assert isinstance(message, str)
+            assert "abc123def456ghi789jkl012" not in message
+            assert "[REDACTED_KEY]" in message

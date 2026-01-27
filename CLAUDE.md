@@ -24,8 +24,8 @@ make test_nondeterministic # Run nondeterministic tests only
 make fmt            # Run ruff formatter + JSON formatting
 make ruff           # Run ruff linter
 make vulture        # Find dead code
-make ty             # Run typer type checker
-make ci             # Run all CI checks (ruff, vulture, ty)
+make ty             # Run type checker
+make ci             # Run all CI checks (ruff, vulture, ty, import_lint, docs_lint, check_deps)
 
 # Dependencies
 uv sync             # Install dependencies (not pip install)
@@ -46,11 +46,10 @@ uv run pytest path/to/test.py  # Run specific test
   - `<name>.yaml` - Optional split configs (loaded as root key `<name>`)
   - `global_config.py` - Config class (access via `from common import global_config`)
   - `.env` - Secrets/API keys (git-ignored)
-- **src/** - Source code (api/, db/, utils/, stripe/)
+- **src/** - Source code (utils/)
 - **utils/llm/** - LLM inference with DSPY (`dspy_inference.py`) and LangFuse observability
 - **tests/** - pytest tests inheriting from `TestTemplate` in `test_template.py`
 - **init/** - Initialization scripts (banner generation)
-- **alembic/** - Database migrations
 
 ## Code Style
 
