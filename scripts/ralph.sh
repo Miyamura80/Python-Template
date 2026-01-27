@@ -107,10 +107,20 @@ for i in $(seq 1 $MAX_ITERATIONS); do
       exit 1
     fi
   elif [[ "$TOOL" == "amp" ]]; then
-    OUTPUT=$(cat "$RALPH_DIR/prompt.md" | amp --dangerously-allow-all 2>&1 | tee /dev/stderr) || true
+    if [ -f "$RALPH_DIR/prompt.md" ]; then
+      OUTPUT=$(cat "$RALPH_DIR/prompt.md" | amp --dangerously-allow-all 2>&1 | tee /dev/stderr) || true
+    else
+      echo "Error: $RALPH_DIR/prompt.md not found. Create this file or use a different tool."
+      exit 1
+    fi
   else
     # Claude Code: use --dangerously-skip-permissions for autonomous operation, --print for output
-    OUTPUT=$(claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/../CLAUDE.md" 2>&1 | tee /dev/stderr) || true
+    if [ -f "$RALPH_DIR/prompt.md" ]; then
+      OUTPUT=$(claude --dangerously-skip-permissions --print < "$RALPH_DIR/prompt.md" 2>&1 | tee /dev/stderr) || true
+    else
+      echo "Error: $RALPH_DIR/prompt.md not found. Create this file or use a different tool."
+      exit 1
+    fi
   fi
   
   # Check for completion signal
