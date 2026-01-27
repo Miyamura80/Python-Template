@@ -91,21 +91,19 @@ def scrub_sensitive_data(record):
         scrubbed_value_str = _SCRUBBER.scrub(value_str)
 
         if scrubbed_value_str != value_str:
-            # Re-instantiate the exception with the redacted message to preserve loguru formatting
+            # Modify args in-place to preserve exception type and metadata
+            # Most exceptions store their message in args[0]
             try:
-                # Most standard exceptions accept a single string argument
-                new_value = type_(scrubbed_value_str)
-            except TypeError:
-                # Fallback to a generic Exception if type instantiation fails
-                # (e.g., some exceptions require specific constructor arguments)
-                new_value = Exception(f"[{type_.__name__}] {scrubbed_value_str}")
-
-            # Preserve traceback and context metadata
-            new_value.__traceback__ = tb
-            new_value.__cause__ = getattr(value, "__cause__", None)
-            new_value.__context__ = getattr(value, "__context__", None)
-
-            record["exception"] = (type_, new_value, tb)
+                if value.args:
+                    scrubbed_args = tuple(
+                        _SCRUBBER.scrub(str(arg)) if isinstance(arg, str) else arg
+                        for arg in value.args
+                    )
+                    value.args = scrubbed_args
+            except (AttributeError, TypeError):
+                # If args modification fails, leave original exception unchanged
+                # This is safer than creating a mismatched exception type
+                pass
 
     # Scrub extra context if present
     extra = record.get("extra")
