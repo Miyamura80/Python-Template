@@ -122,6 +122,12 @@ docs: ## Run docs with bun
 	@cd docs && bun run dev
 	@echo "$(GREEN)✅ Docs run completed.$(RESET)"
 
+ralph: check_jq ## Run Ralph agent loop
+	@echo "$(GREEN)🤖Starting Ralph Agent...$(RESET)"
+	@chmod +x scripts/ralph.sh
+	@./scripts/ralph.sh $(ARGS)
+	@echo "$(GREEN)✅ Ralph Agent finished.$(RESET)"
+
 
 ########################################################
 # Run Tests

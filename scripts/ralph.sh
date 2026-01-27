@@ -33,11 +33,20 @@ if [[ "$TOOL" != "opencode" && "$TOOL" != "amp" && "$TOOL" != "claude" ]]; then
   echo "Error: Invalid tool '$TOOL'. Must be 'opencode', 'amp' or 'claude'."
   exit 1
 fi
+
+# Check for jq dependency
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: 'jq' is not installed but required by this script."
+  echo "Please install it (e.g., 'brew install jq' or 'sudo apt-get install jq')."
+  exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PRD_FILE="$SCRIPT_DIR/prd.json"
-PROGRESS_FILE="$SCRIPT_DIR/progress.txt"
-ARCHIVE_DIR="$SCRIPT_DIR/archive"
-LAST_BRANCH_FILE="$SCRIPT_DIR/.last-branch"
+RALPH_DIR="$SCRIPT_DIR/ralph"
+PRD_FILE="$RALPH_DIR/prd.json"
+PROGRESS_FILE="$RALPH_DIR/progress.txt"
+ARCHIVE_DIR="$RALPH_DIR/archive"
+LAST_BRANCH_FILE="$RALPH_DIR/.last-branch"
 
 # Archive previous run if branch changed
 if [ -f "$PRD_FILE" ] && [ -f "$LAST_BRANCH_FILE" ]; then
@@ -90,17 +99,18 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # Run the selected tool with the ralph prompt
   if [[ "$TOOL" == "opencode" ]]; then
     # opencode run: use prompt from prompt.md
-    if [ -f "$SCRIPT_DIR/prompt.md" ]; then
-      OUTPUT=$(opencode run "$(cat "$SCRIPT_DIR/prompt.md")" 2>&1 | tee /dev/stderr) || true
+    if [ -f "$RALPH_DIR/prompt.md" ]; then
+      OUTPUT=$(opencode run "$(cat "$RALPH_DIR/prompt.md")" 2>&1 | tee /dev/stderr) || true
     else
-      echo "Error: $SCRIPT_DIR/prompt.md not found. Ralph needs a prompt to work."
+      echo "Error: $RALPH_DIR/prompt.md not found. Create this file or use a different tool."
+      echo "Example: ./ralph.sh --tool claude"
       exit 1
     fi
   elif [[ "$TOOL" == "amp" ]]; then
-    OUTPUT=$(cat "$SCRIPT_DIR/prompt.md" | amp --dangerously-allow-all 2>&1 | tee /dev/stderr) || true
+    OUTPUT=$(cat "$RALPH_DIR/prompt.md" | amp --dangerously-allow-all 2>&1 | tee /dev/stderr) || true
   else
     # Claude Code: use --dangerously-skip-permissions for autonomous operation, --print for output
-    OUTPUT=$(claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" 2>&1 | tee /dev/stderr) || true
+    OUTPUT=$(claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/../CLAUDE.md" 2>&1 | tee /dev/stderr) || true
   fi
   
   # Check for completion signal
