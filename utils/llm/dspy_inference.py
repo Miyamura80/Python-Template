@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 import dspy
-from langfuse.decorators import observe  # type: ignore
+from langfuse import observe
 from litellm.exceptions import RateLimitError, ServiceUnavailableError
 from loguru import logger as log
 from tenacity import (
