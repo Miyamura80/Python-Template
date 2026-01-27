@@ -55,6 +55,7 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 
 ## Quick Start
 
+- `make init name=my-project description="My project description"` - initialize project
 - `make all` - runs `main.py`
 - `make fmt` - runs `ruff format` + JSON formatting
 - `make banner` - create a new banner that makes the README nice 😊

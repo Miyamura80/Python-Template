@@ -32,10 +32,24 @@ help: ## Show this help message
 		}' $(MAKEFILE_LIST)
 
 ########################################################
-# Initialization: Delete later
+# Initialization
 ########################################################
 
 ### Initialization
+.PHONY: init banner logo
+init: ## Initialize project (usage: make init name=my-project description="my description")
+	@if [ -z "$(name)" ] || [ -z "$(description)" ]; then \
+		echo "$(RED)Error: Both 'name' and 'description' parameters are required$(RESET)"; \
+		echo "Usage: make init name=<project_name> description=<project_description>"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)🚀 Initializing project $(name)...$(RESET)"
+	@sed -i.bak "s/name = \"python-template\"/name = \"$(name)\"/" pyproject.toml && rm pyproject.toml.bak
+	@sed -i.bak "s/description = \"Add your description here\"/description = \"$(description)\"/" pyproject.toml && rm pyproject.toml.bak
+	@sed -i.bak "s/# Python-Template/# $(name)/" README.md && rm README.md.bak
+	@sed -i.bak "s/<b>Opinionated Python project stack. 🔋 Batteries included. <\/b>/<b>$(description)<\/b>/" README.md && rm README.md.bak
+	@echo "$(GREEN)✅ Updated project name and description.$(RESET)"
+
 banner: check_uv ## Generate project banner image
 	@echo "$(YELLOW)🔍Generating banner...$(RESET)"
 	@uv run python -m init.generate_banner

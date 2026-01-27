@@ -10,6 +10,7 @@ Super-opinionated Python stack for fast development. Python >= 3.12 required. Us
 
 ```bash
 # Setup & Run
+make init name=... description=... # Initialize project name and description
 make setup          # Create/update .venv and sync dependencies
 make all            # Run main.py with setup
 
