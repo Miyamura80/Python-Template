@@ -123,7 +123,11 @@ docs: ## Run docs with bun
 	@echo "$(GREEN)✅ Docs run completed.$(RESET)"
 
 ralph: check_jq ## Run Ralph agent loop
-	@echo "$(GREEN)🤖Starting Ralph Agent...$(RESET)"
+	@echo "$(RED)⚠️  WARNING: Ralph is an autonomous agent that can modify your codebase.$(RESET)"
+	@echo "$(RED)⚠️  It is HIGHLY RECOMMENDED to run Ralph in a sandboxed environment.$(RESET)"
+	@echo "$(YELLOW)Press Ctrl+C to abort, or wait 3 seconds to continue...$(RESET)"
+	@sleep 3
+	@echo "$(GREEN)🤖 Starting Ralph Agent...$(RESET)"
 	@chmod +x scripts/ralph.sh
 	@./scripts/ralph.sh $(ARGS)
 	@echo "$(GREEN)✅ Ralph Agent finished.$(RESET)"
