@@ -75,6 +75,10 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         for split_file in split_files:
             if split_file.name in reserved_filenames:
                 continue
+            # Security: skip symlinks to prevent loading files outside common/
+            if split_file.is_symlink():
+                logger.warning(f"Skipping symlink config file: {split_file}")
+                continue
             root_key = split_file.stem
             if root_key in config_data:
                 raise KeyError(
