@@ -5,6 +5,12 @@ repos:
       - id: check-added-large-files
   - repo: local
     hooks:
+      - id: lint-links
+        name: Lint markdown links
+        entry: make lint_links
+        language: system
+        pass_filenames: false
+        always_run: true
       - id: make-fmt
         name: Run formatter (make fmt)
         entry: make fmt

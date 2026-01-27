@@ -249,6 +249,11 @@ docs_lint: ## Lint docs links
 	@cd docs && bun run lint:links
 	@echo "$(GREEN)✅Docs linting completed.$(RESET)"
 
+lint_links: ## Lint all markdown links using pytest-check-links
+	@echo "$(YELLOW)🔍Linting all markdown links with pytest-check-links...$(RESET)"
+	@find . -name "*.md" -not -path "./.venv/*" -not -path "./node_modules/*" -not -path "./docs/node_modules/*" | xargs uv run pytest -p no:cov -o "addopts=" --check-links --check-links-ignore "http://localhost:.*"
+	@echo "$(GREEN)✅Link linting completed.$(RESET)"
+
 agents_validate: ## Validate AGENTS.md content
 	@echo "$(YELLOW)🔍Validating AGENTS.md...$(RESET)"
 	@$(PYTHON) scripts/validate_agents_md.py
@@ -259,7 +264,7 @@ check_deps: install_tools ## Check for unused dependencies
 	@uv run deptry .
 	@echo "$(GREEN)✅Dependency check completed.$(RESET)"
 
-ci: ruff vulture import_lint ty docs_lint check_deps ## Run all CI checks (ruff, vulture, import_lint, ty, docs_lint)
+ci: ruff vulture import_lint ty docs_lint lint_links check_deps ## Run all CI checks (ruff, vulture, import_lint, ty, docs_lint, lint_links)
 	@echo "$(GREEN)✅CI checks completed.$(RESET)"
 
 ########################################################

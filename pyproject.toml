@@ -103,3 +103,8 @@ omit = [
 
 [tool.coverage.report]
 show_missing = true
+
+[dependency-groups]
+dev = [
+    "pytest-check-links>=0.9.1",
+]
