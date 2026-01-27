@@ -125,8 +125,7 @@ docs: ## Run docs with bun
 ralph: check_jq ## Run Ralph agent loop
 	@echo "$(RED)⚠️  WARNING: Ralph is an autonomous agent that can modify your codebase.$(RESET)"
 	@echo "$(RED)⚠️  It is HIGHLY RECOMMENDED to run Ralph in a sandboxed environment.$(RESET)"
-	@echo "$(YELLOW)Press Ctrl+C to abort, or wait 3 seconds to continue...$(RESET)"
-	@sleep 3
+	@printf "$(YELLOW)Are you sure you want to continue? [y/N] $(RESET)" && read ans && [ "$$ans" = "y" ] || (echo "$(RED)Aborted.$(RESET)"; exit 1)
 	@echo "$(GREEN)🤖 Starting Ralph Agent...$(RESET)"
 	@chmod +x scripts/ralph.sh
 	@./scripts/ralph.sh $(ARGS)
