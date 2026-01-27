@@ -58,7 +58,8 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 - `make all` - runs `main.py`
 - `make fmt` - runs `ruff format` + JSON formatting
 - `make banner` - create a new banner that makes the README nice 😊
-- `make test` - runs all tests defined by `TEST_TARGETS = tests/folder1 tests/folder2`
+- `make test` - runs all tests in `tests/`
+- `make ci` - runs all CI checks (ruff, vulture, ty, etc.)
 
 
 
