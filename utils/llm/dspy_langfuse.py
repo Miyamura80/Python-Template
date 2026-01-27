@@ -4,8 +4,7 @@ from typing import Any, Literal
 from dspy.adapters import Image as dspy_Image
 from dspy.signatures import Signature as dspy_Signature
 from dspy.utils.callback import BaseCallback
-from langfuse.client import Langfuse, StatefulGenerationClient  # type: ignore
-from langfuse.decorators import langfuse_context  # type: ignore
+from langfuse import Langfuse, LangfuseGeneration, get_client
 from litellm.cost_calculator import completion_cost
 from loguru import logger as log
 from pydantic import BaseModel, Field, ValidationError
@@ -52,7 +51,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         )
         self.current_prompt = contextvars.ContextVar[str]("current_prompt")
         self.current_completion = contextvars.ContextVar[str]("current_completion")
-        self.current_span = contextvars.ContextVar[StatefulGenerationClient | None](
+        self.current_span = contextvars.ContextVar[LangfuseGeneration | None](
             "current_span"
         )
         self.model_name_at_span_creation = contextvars.ContextVar[str | None](
@@ -91,8 +90,8 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         exception: Exception | None = None,  # noqa
     ) -> None:
         metadata = {
-            "existing_trace_id": langfuse_context.get_current_trace_id(),
-            "parent_observation_id": langfuse_context.get_current_observation_id(),
+            "existing_trace_id": get_client().get_current_trace_id(),
+            "parent_observation_id": get_client().get_current_observation_id(),
         }
         outputs_extracted = {}  # Default to empty dict
         if outputs is not None:
@@ -102,7 +101,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 outputs_extracted = {"value": outputs}
             except Exception as e:
                 outputs_extracted = {"error_extracting_module_output": str(e)}
-        langfuse_context.update_current_observation(
+        get_client().update_current_span(
             input=self.input_field_values.get(None) or {},
             output=outputs_extracted,
             metadata=metadata,
@@ -134,9 +133,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.current_system_prompt.set(system_prompt)
         self.current_prompt.set(user_input)
         self.model_name_at_span_creation.set(model_name)
-        trace_id = langfuse_context.get_current_trace_id()
-        parent_observation_id = langfuse_context.get_current_observation_id()
-        span_obj: StatefulGenerationClient | None = None
+        trace_id = get_client().get_current_trace_id()
+        parent_observation_id = get_client().get_current_observation_id()
+        span_obj: LangfuseGeneration | None = None
         if trace_id:
             span_obj = self.langfuse.generation(
                 input=user_input,
@@ -392,8 +391,8 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
 
         log.debug(f"Tool call started: {tool_name} with args: {tool_args}")
 
-        trace_id = langfuse_context.get_current_trace_id()
-        parent_observation_id = langfuse_context.get_current_observation_id()
+        trace_id = get_client().get_current_trace_id()
+        parent_observation_id = get_client().get_current_observation_id()
 
         if trace_id:
             # Create a span for the tool call
