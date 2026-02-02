@@ -5,7 +5,7 @@ from collections.abc import Iterable, Sequence
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 EM_DASH = chr(0x2014)
-SKIP_DIRS = {
+ROOT_SKIP_DIRS = {
     ".git",
     ".venv",
     ".uv_cache",
@@ -13,10 +13,13 @@ SKIP_DIRS = {
     ".uv_tools",
     ".uv-tools",
     ".cache",
-    ".pytest_cache",
-    "__pycache__",
     "node_modules",
     ".next",
+}
+RECURSIVE_SKIP_DIRS = {"__pycache__", ".pytest_cache"}
+SKIP_PATH_PREFIXES = {
+    ("docs", ".next"),
+    ("docs", "node_modules"),
 }
 SKIP_SUFFIXES = {
     ".png",
@@ -52,7 +55,13 @@ def iter_text_files(root: pathlib.Path) -> Iterable[pathlib.Path]:
         if not path.is_file():
             continue
         rel = path.relative_to(root)
-        if any(part in SKIP_DIRS for part in rel.parts):
+        rel_parts = rel.parts
+        if rel_parts and rel_parts[0] in ROOT_SKIP_DIRS:
+            continue
+        if any(rel_parts[: len(prefix)] == prefix for prefix in SKIP_PATH_PREFIXES):
+            continue
+        dir_parts = rel_parts[:-1]
+        if any(part in RECURSIVE_SKIP_DIRS for part in dir_parts):
             continue
         if path.suffix.lower() in SKIP_SUFFIXES:
             continue
