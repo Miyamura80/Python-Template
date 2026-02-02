@@ -137,6 +137,7 @@ Structure as: `init()` → `continue(id)` → `cleanup(id)`
 ## Git Workflow
 - **Protected Branch**: `main` is protected. Do not push directly to `main`. Use PRs.
 - **Merge Strategy**: Squash and merge.
+- **Never force push**: Do not use `git push --force` or `--force-with-lease`. If you hit a git issue, stop and ask the user for guidance.
 
 ## Deprecated
 

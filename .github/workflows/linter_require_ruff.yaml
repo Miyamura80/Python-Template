@@ -34,5 +34,7 @@ jobs:
         run: make tech_debt
       - name: Run duplicate code check
         run: make duplicate_code
+      - name: Run AI writing check
+        run: uv run python scripts/check_ai_writing.py
       - name: Run import-linter
         run: make import_lint

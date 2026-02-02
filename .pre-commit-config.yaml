@@ -41,3 +41,9 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: ai-writing-check
+        name: AI writing check
+        entry: uv run python scripts/check_ai_writing.py
+        language: system
+        pass_filenames: false
+        always_run: true
