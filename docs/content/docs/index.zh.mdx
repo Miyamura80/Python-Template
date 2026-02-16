@@ -1,0 +1,84 @@
+---
+title: 快速入门
+description: 开始使用此 Python 模板
+---
+
+欢迎来到文档！按照以下步骤开始使用此 Python 模板。
+
+## 快速入门
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+<Steps>
+<Step>
+
+### 设置环境
+
+使用 `uv` 创建并激活虚拟环境：
+
+```bash
+make setup
+```
+
+这将创建 `.venv` 目录并同步 `pyproject.toml` 中的所有依赖。
+
+</Step>
+
+<Step>
+
+### 配置设置
+
+复制示例环境文件并添加 API 密钥：
+
+```bash
+cp .env.example .env
+```
+
+编辑 `common/global_config.yaml` 自定义项目配置。
+
+</Step>
+
+<Step>
+
+### 运行应用
+
+执行主应用程序：
+
+```bash
+make all
+```
+
+或直接运行特定 Python 文件：
+
+```bash
+uv run python src/main.py
+```
+
+</Step>
+
+<Step>
+
+### 运行测试
+
+通过运行测试套件验证一切正常：
+
+```bash
+make test
+```
+
+运行代码质量检查：
+
+```bash
+make ci
+```
+
+</Step>
+</Steps>
+
+## 下一步
+
+<Cards>
+  <Card title="了解更多配置信息" href="/docs/test" />
+  <Card title="API 参考" href="/docs/api" />
+  <Card title="了解更多关于 Fumadocs" href="https://fumadocs.dev" />
+</Cards>

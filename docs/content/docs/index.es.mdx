@@ -1,0 +1,84 @@
+---
+title: Inicio Rapido
+description: Comienza con esta plantilla de Python
+---
+
+Bienvenido a la documentacion! Sigue estos pasos para comenzar con esta plantilla de Python.
+
+## Inicio Rapido
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+<Steps>
+<Step>
+
+### Configurar Entorno
+
+Crea y activa tu entorno virtual usando `uv`:
+
+```bash
+make setup
+```
+
+Esto creara un directorio `.venv` y sincronizara todas las dependencias de `pyproject.toml`.
+
+</Step>
+
+<Step>
+
+### Configurar Ajustes
+
+Copia el archivo de entorno de ejemplo y agrega tus claves API:
+
+```bash
+cp .env.example .env
+```
+
+Edita `common/global_config.yaml` para personalizar los valores de configuracion de tu proyecto.
+
+</Step>
+
+<Step>
+
+### Ejecutar la Aplicacion
+
+Ejecuta la aplicacion principal:
+
+```bash
+make all
+```
+
+O ejecuta archivos Python especificos directamente:
+
+```bash
+uv run python src/main.py
+```
+
+</Step>
+
+<Step>
+
+### Ejecutar Pruebas
+
+Verifica que todo funcione ejecutando el conjunto de pruebas:
+
+```bash
+make test
+```
+
+Ejecuta verificaciones de calidad de codigo:
+
+```bash
+make ci
+```
+
+</Step>
+</Steps>
+
+## Proximos Pasos
+
+<Cards>
+  <Card title="Aprende mas sobre Configuracion" href="/docs/test" />
+  <Card title="Referencia API" href="/docs/api" />
+  <Card title="Aprende mas sobre Fumadocs" href="https://fumadocs.dev" />
+</Cards>

@@ -1,7 +1,19 @@
-import { source } from '@/lib/source';
-import { createFromSource } from 'fumadocs-core/search/server';
+import { source } from "@/lib/source";
+import { createFromSource } from "fumadocs-core/search/server";
 
 export const { GET } = createFromSource(source, {
-  // https://docs.orama.com/docs/orama-js/supported-languages
-  language: 'english',
+  localeMap: {
+    zh: {
+      search: {
+        threshold: 0,
+        tolerance: 0,
+      },
+    },
+    ja: {
+      search: {
+        threshold: 0,
+        tolerance: 0,
+      },
+    },
+  },
 });
