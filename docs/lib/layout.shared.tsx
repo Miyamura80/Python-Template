@@ -12,7 +12,7 @@ export function baseOptions(locale: string): BaseLayoutProps {
   const docsLabels: Record<string, string> = {
     en: "Documentation",
     zh: "文档",
-    es: "Documentacion",
+    es: "Documentación",
     ja: "ドキュメント",
   };
 
