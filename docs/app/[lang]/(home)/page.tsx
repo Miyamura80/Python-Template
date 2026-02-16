@@ -17,7 +17,7 @@ const descriptions: Record<string, string> = {
 const docsText: Record<string, string> = {
   en: "and see the documentation.",
   zh: "查看文档。",
-  es: "y ver la documentacion.",
+  es: "y ver la documentación.",
   ja: "でドキュメントを確認できます。",
 };
 
