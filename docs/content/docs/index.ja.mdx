@@ -1,0 +1,84 @@
+---
+title: クイックスタート
+description: この Python テンプレートを始めましょう
+---
+
+ドキュメントへようこそ！以下の手順に従って、この Python テンプレートを使い始めましょう。
+
+## クイックスタート
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+<Steps>
+<Step>
+
+### 環境のセットアップ
+
+`uv` を使用して仮想環境を作成し、有効化します：
+
+```bash
+make setup
+```
+
+これにより `.venv` ディレクトリが作成され、`pyproject.toml` のすべての依存関係が同期されます。
+
+</Step>
+
+<Step>
+
+### 設定の構成
+
+環境ファイルの例をコピーして API キーを追加します：
+
+```bash
+cp .env.example .env
+```
+
+`common/global_config.yaml` を編集してプロジェクトの設定値をカスタマイズします。
+
+</Step>
+
+<Step>
+
+### アプリケーションの実行
+
+メインアプリケーションを実行します：
+
+```bash
+make all
+```
+
+または特定の Python ファイルを直接実行します：
+
+```bash
+uv run python src/main.py
+```
+
+</Step>
+
+<Step>
+
+### テストの実行
+
+テストスイートを実行してすべてが正常に動作することを確認します：
+
+```bash
+make test
+```
+
+コード品質チェックを実行します：
+
+```bash
+make ci
+```
+
+</Step>
+</Steps>
+
+## 次のステップ
+
+<Cards>
+  <Card title="設定について詳しく学ぶ" href="/docs/test" />
+  <Card title="API リファレンス" href="/docs/api" />
+  <Card title="Fumadocs について詳しく学ぶ" href="https://fumadocs.dev" />
+</Cards>
