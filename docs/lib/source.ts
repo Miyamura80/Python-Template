@@ -9,10 +9,14 @@ export const source = loader({
 });
 
 export function getPageImage(page: ReturnType<typeof source.getPage> & {}) {
-  const segments = page.url.split("/").filter(Boolean);
+  const allSegments = page.url.split("/").filter(Boolean);
+  // Strip locale and "docs" prefix for the slug param (they're separate route params)
+  const docSegments = allSegments.filter(
+    (s) => s !== page.locale && s !== "docs",
+  );
   return {
-    url: `/og/${segments.join("/")}/og.png`,
-    segments: [...segments, "og.png"],
+    url: `/og/${allSegments.join("/")}/og.png`,
+    segments: [...docSegments, "og.png"],
   };
 }
 
