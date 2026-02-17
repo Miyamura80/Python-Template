@@ -1,0 +1,334 @@
+# ─────────────────────────────────────────────────────────────────────
+# Jules Translation Sync
+# ─────────────────────────────────────────────────────────────────────
+# When English source docs change on main, create a Jules session that
+# translates all affected pages into every supported locale and opens
+# one mega-PR with the results.
+#
+# To add or remove a locale, edit SUPPORTED_LANGS below (one-line change).
+#
+# Required secrets: JULES_API_KEY
+# ─────────────────────────────────────────────────────────────────────
+name: Jules Translation Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/content/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: jules-translation-sync
+  cancel-in-progress: false
+
+env:
+  # ── One-line locale config ────────────────────────────────────────
+  # Comma-separated ISO 639-1 codes matching the .<lang>.mdx convention.
+  SUPPORTED_LANGS: "es,ja,zh"
+  # ──────────────────────────────────────────────────────────────────
+  JULES_API_BASE: "https://jules.googleapis.com/v1alpha"
+  CHANGED_DOCS_FILE: "changed_english_docs.txt"
+  MAX_POLL_ATTEMPTS: 60
+  POLL_INTERVAL_SECONDS: 30
+
+jobs:
+  sync-translations:
+    name: Sync translated docs via Jules
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # ── 1. Checkout ───────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Find last successful sync commit ─────────────────────
+      - name: Find last successful sync commit
+        id: last-success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Find the most recent successful run of this workflow (excluding current)
+          LAST_SHA=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/jules-sync-translations.yml/runs?status=success&branch=main&per_page=1&exclude_pull_requests=true" \
+            --jq '.workflow_runs[0].head_sha // empty' 2>/dev/null || true)
+
+          if [[ -n "$LAST_SHA" ]] && git cat-file -e "${LAST_SHA}^{commit}" 2>/dev/null; then
+            echo "last_sha=${LAST_SHA}" >> "$GITHUB_OUTPUT"
+            echo "Found last successful sync at ${LAST_SHA}"
+          else
+            echo "last_sha=" >> "$GITHUB_OUTPUT"
+            echo "No previous successful run found - will diff against parent"
+          fi
+
+      # ── 3. Detect changed English source docs ─────────────────────
+      - name: Detect changed English source docs
+        id: detect
+        env:
+          LAST_SUCCESS_SHA: ${{ steps.last-success.outputs.last_sha }}
+        run: |
+          set -euo pipefail
+
+          BEFORE="$LAST_SUCCESS_SHA"
+          SHA="${{ github.sha }}"
+
+          echo "::group::Diff range"
+          echo "before=${BEFORE}"
+          echo "sha=${SHA}"
+
+          if [[ -z "$BEFORE" ]] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            echo "No prior successful run - diffing against parent commit"
+            if git rev-parse --verify "${SHA}^" >/dev/null 2>&1; then
+              CHANGED=$(git diff --name-only "${SHA}^" "$SHA" -- docs/content/ || true)
+            else
+              CHANGED=$(git ls-tree -r --name-only "$SHA" -- docs/content/ || true)
+            fi
+          else
+            CHANGED=$(git diff --name-only "$BEFORE" "$SHA" -- docs/content/ || true)
+          fi
+
+          echo "::endgroup::"
+
+          IFS=',' read -ra LANGS <<< "$SUPPORTED_LANGS"
+          ENGLISH_FILES=()
+
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            [[ "$file" != *.mdx ]] && [[ "$file" != */meta.json ]] && continue
+
+            is_translation=false
+            for lang in "${LANGS[@]}"; do
+              lang="${lang//[[:space:]]/}"
+              if [[ -z "$lang" ]]; then
+                continue
+              fi
+
+              if [[ "$file" == *".${lang}.mdx" ]] || [[ "$file" == */meta.${lang}.json ]]; then
+                is_translation=true
+                break
+              fi
+            done
+
+            if [[ "$is_translation" == "false" ]]; then
+              ENGLISH_FILES+=("$file")
+            fi
+          done <<< "$CHANGED"
+
+          if [[ ${#ENGLISH_FILES[@]} -eq 0 ]]; then
+            echo "No English source doc changes found - nothing to translate."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          printf '%s\n' "${ENGLISH_FILES[@]}" > "${RUNNER_TEMP}/${CHANGED_DOCS_FILE}"
+
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          echo "file_count=${#ENGLISH_FILES[@]}" >> "$GITHUB_OUTPUT"
+
+          echo "::group::Changed English docs (${#ENGLISH_FILES[@]} files)"
+          cat "${RUNNER_TEMP}/${CHANGED_DOCS_FILE}"
+          echo "::endgroup::"
+
+      # ── 4. Create Jules translation session ────────────────────────
+      - name: Create Jules translation session
+        if: steps.detect.outputs.has_changes == 'true'
+        id: jules-create
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${JULES_API_KEY:-}" ]]; then
+            echo "::error::JULES_API_KEY is not configured. Add it in repository Actions secrets."
+            exit 1
+          fi
+
+          REPO="${{ github.repository }}"
+          OWNER="${REPO%%/*}"
+          REPO_NAME="${REPO##*/}"
+          SOURCE="sources/github/${OWNER}/${REPO_NAME}"
+
+          LANGS_DISPLAY=$(echo "$SUPPORTED_LANGS" | tr ',' ', ')
+          FILE_LIST=$(cat "${RUNNER_TEMP}/${CHANGED_DOCS_FILE}")
+
+          PROMPT="IMPORTANT: Before you begin, read the file docs/translation-guide.md in this repository.
+          It contains the glossary of never-translate terms, file naming conventions, and detailed
+          translation rules you must follow strictly.
+
+          You are a professional technical translator for this documentation site.
+
+          The following English documentation files have been updated:
+          ${FILE_LIST}
+
+          For each file listed above, update or create the corresponding translation files for ALL of these locales: ${LANGS_DISPLAY}.
+
+          Translation file naming convention:
+          - English source: path/to/file.mdx
+          - Translation:    path/to/file.<lang>.mdx  (e.g. path/to/file.ja.mdx)
+          - For meta.json:  meta.<lang>.json          (e.g. docs/content/admin-guide/meta.ja.json)
+
+          Strict rules - you MUST follow every one:
+          1. Preserve ALL Markdown / MDX structure exactly: headings, links, tables, code blocks, admonitions, frontmatter (YAML between ---), and JSX/MDX components.
+          2. Preserve every anchor ID, link target, and href value verbatim.
+          3. NEVER translate any of the following - keep them exactly as-is:
+             - Code snippets and fenced code blocks
+             - CLI commands and flags (e.g. --verbose, -p, npm install)
+             - Variable names, function names, class names, configuration keys
+             - URLs, file paths, email addresses
+             - Product names and proper nouns
+             - Technical identifiers, API endpoints, HTTP methods
+          4. If a translation file already exists, update it so its structure and meaning match the current English source.
+          5. If a translation file does NOT exist yet, create it as a complete translation of the English source.
+          6. If content was removed from the English file, remove the corresponding section in every translation file.
+          7. Only modify files matching docs/content/**/*.<lang>.mdx or docs/content/**/meta.<lang>.json for the supported locales. Do NOT touch any English (.mdx without a locale) files or the base meta.json files.
+          8. Do NOT modify any files outside docs/content/.
+          9. In the pull-request description include:
+             - A list of the English pages that changed
+             - Which locales were updated
+             - A note that this is an automated translation and should be reviewed by native speakers
+          10. For meta.json files in each section directory, create or update meta.<lang>.json. Translate the title field but keep the pages array values unchanged (they are file identifiers, not user-facing text)."
+
+          TITLE="docs(i18n): sync translations for updated English docs"
+
+          BODY=$(jq -n \
+            --arg prompt "$PROMPT" \
+            --arg title "$TITLE" \
+            --arg source "$SOURCE" \
+            '{
+              prompt: $prompt,
+              title: $title,
+              automationMode: "AUTO_CREATE_PR",
+              sourceContext: {
+                source: $source,
+                githubRepoContext: {
+                  startingBranch: "main"
+                }
+              }
+            }')
+
+          MAX_RETRIES=3
+          RETRY_DELAY=5
+
+          for attempt in $(seq 1 "$MAX_RETRIES"); do
+            HTTP_CODE=$(curl -s -o /tmp/jules_response.json -w "%{http_code}" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -H "X-Goog-Api-Key: ${JULES_API_KEY}" \
+              -d "$BODY" \
+              "${JULES_API_BASE}/sessions")
+
+            if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+              break
+            elif [[ "$HTTP_CODE" -ge 500 && $attempt -lt $MAX_RETRIES ]]; then
+              echo "::warning::Jules API returned ${HTTP_CODE} - retrying in ${RETRY_DELAY}s (attempt ${attempt}/${MAX_RETRIES})"
+              sleep "$RETRY_DELAY"
+              RETRY_DELAY=$((RETRY_DELAY * 2))
+            else
+              echo "::error::Jules session creation failed with HTTP ${HTTP_CODE}"
+              cat /tmp/jules_response.json
+              exit 1
+            fi
+          done
+
+          SESSION_NAME=$(jq -r '.name' /tmp/jules_response.json)
+          SESSION_URL=$(jq -r '.url // empty' /tmp/jules_response.json)
+
+          if [[ -z "$SESSION_NAME" || "$SESSION_NAME" == "null" ]]; then
+            echo "::error::No session name in Jules response"
+            cat /tmp/jules_response.json
+            exit 1
+          fi
+
+          {
+            echo "session_name<<GHEOF"
+            echo "$SESSION_NAME"
+            echo "GHEOF"
+            echo "session_url<<GHEOF"
+            echo "$SESSION_URL"
+            echo "GHEOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Jules session created: ${SESSION_NAME}"
+          echo "Jules UI: ${SESSION_URL}"
+
+      # ── 5. Poll until Jules finishes ───────────────────────────────
+      - name: Poll Jules session until completion
+        if: steps.detect.outputs.has_changes == 'true'
+        id: jules-poll
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          JULES_SESSION_NAME: ${{ steps.jules-create.outputs.session_name }}
+        run: |
+          set -euo pipefail
+
+          SESSION_NAME="$JULES_SESSION_NAME"
+          MAX_ATTEMPTS="$MAX_POLL_ATTEMPTS"
+          INTERVAL="$POLL_INTERVAL_SECONDS"
+
+          echo "Polling ${SESSION_NAME} (max ${MAX_ATTEMPTS} x ${INTERVAL}s)"
+
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            RETRY_DELAY=5
+            for retry in 1 2 3; do
+              HTTP_CODE=$(curl -s -o /tmp/jules_session.json -w "%{http_code}" \
+                -H "X-Goog-Api-Key: ${JULES_API_KEY}" \
+                "${JULES_API_BASE}/${SESSION_NAME}")
+
+              if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+                break
+              elif [[ $retry -lt 3 ]]; then
+                echo "::warning::Poll returned ${HTTP_CODE} - retry ${retry}/3 in ${RETRY_DELAY}s"
+                sleep "$RETRY_DELAY"
+                RETRY_DELAY=$((RETRY_DELAY * 2))
+              else
+                echo "::error::Failed to poll session after 3 retries (HTTP ${HTTP_CODE})"
+                exit 1
+              fi
+            done
+
+            STATE=$(jq -r '.state // "UNKNOWN"' /tmp/jules_session.json)
+            echo "[${attempt}/${MAX_ATTEMPTS}] state=${STATE}"
+
+            case "$STATE" in
+              COMPLETED)
+                PR_URL=$(jq -r '.outputs[0].pullRequest.url // empty' /tmp/jules_session.json)
+                PR_TITLE=$(jq -r '.outputs[0].pullRequest.title // empty' /tmp/jules_session.json)
+
+                {
+                  echo "jules_state<<GHEOF"
+                  echo "COMPLETED"
+                  echo "GHEOF"
+                  echo "pr_url<<GHEOF"
+                  echo "$PR_URL"
+                  echo "GHEOF"
+                  echo "pr_title<<GHEOF"
+                  echo "$PR_TITLE"
+                  echo "GHEOF"
+                } >> "$GITHUB_OUTPUT"
+
+                echo "Session completed. PR: ${PR_URL}"
+                exit 0
+                ;;
+              FAILED)
+                echo "jules_state=FAILED" >> "$GITHUB_OUTPUT"
+                echo "::error::Jules session ended in FAILED state"
+                jq '.' /tmp/jules_session.json
+                exit 1
+                ;;
+            esac
+
+            sleep "$INTERVAL"
+          done
+
+          echo "jules_state=TIMEOUT" >> "$GITHUB_OUTPUT"
+          echo "::error::Timed out after ${MAX_ATTEMPTS} poll attempts"
+          exit 1
