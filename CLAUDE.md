@@ -142,3 +142,13 @@ Structure as: `init()` → `continue(id)` → `cleanup(id)`
 ## Deprecated
 
 - Don't use `datetime.utcnow()` - use `datetime.now(timezone.utc)`
+
+---
+
+## Automated Translation (Jules Sync)
+
+Docs under `docs/content/` are auto-translated by the **Jules Translation Sync**
+workflow. Do NOT manually translate doc files - edit the English source and the
+workflow will update all locales (`es`, `ja`, `zh`).
+See [`docs/translation-guide.md`](docs/translation-guide.md) for the full
+glossary, file naming conventions, and translation rules.
