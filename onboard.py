@@ -1,12 +1,17 @@
 """Interactive onboarding CLI for project setup."""
 
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import questionary
 import typer
 from rich import print as rprint
+from rich.console import Console
 from rich.panel import Panel
+
+console = Console()
 
 PROJECT_ROOT = Path(__file__).parent
 
@@ -97,7 +102,39 @@ def rename() -> None:
 @app.command()
 def deps() -> None:
     """Step 2: Install project dependencies."""
-    rprint("[yellow]Step 2 (deps) not yet implemented.[/yellow]")
+    if not shutil.which("uv"):
+        rprint(
+            "[red]✗ uv is not installed.[/red]\n"
+            "  Install it from: [link=https://docs.astral.sh/uv]https://docs.astral.sh/uv[/link]"
+        )
+        raise typer.Exit(code=1)
+
+    venv_path = PROJECT_ROOT / ".venv"
+    if not venv_path.is_dir():
+        with console.status("[yellow]Creating virtual environment...[/yellow]"):
+            result = subprocess.run(
+                ["uv", "venv"],
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                rprint(f"[red]✗ Failed to create venv:[/red]\n{result.stderr}")
+                raise typer.Exit(code=1)
+        rprint("[green]✓[/green] Virtual environment created.")
+
+    with console.status("[yellow]Installing dependencies (uv sync)...[/yellow]"):
+        result = subprocess.run(
+            ["uv", "sync"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+        )
+    if result.returncode != 0:
+        rprint(f"[red]✗ uv sync failed:[/red]\n{result.stderr}")
+        raise typer.Exit(code=1)
+
+    rprint("[green]✓ Dependencies installed successfully.[/green]")
 
 
 @app.command()
