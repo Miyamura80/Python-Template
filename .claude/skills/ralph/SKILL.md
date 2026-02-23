@@ -110,6 +110,26 @@ Frontend stories are NOT complete until visually verified. Ralph will use the de
 4. **All stories**: `passes: false` and empty `notes`
 5. **branchName**: Derive from feature name, kebab-case, prefixed with `ralph/`
 6. **Always add**: "Typecheck passes" to every story's acceptance criteria
+7. **Final Story**: Always include a final story for documentation (README, Makefile) and verification.
+
+## The Final Documentation Story
+
+**Every** prd.json must end with a story dedicated to documentation and cleanup.
+
+**Requirements for the final story:**
+- Update `README.md` (if necessary) to document new features
+- Update `Makefile` (if necessary) with new commands
+- Document how to execute and test the new code
+- Verify all tests and typechecks pass
+
+**Example acceptance criteria:**
+```
+"Update README.md with instructions for [feature]",
+"Update Makefile if new build/test steps are needed",
+"Document how to run and test the changes",
+"Typecheck passes",
+"All tests pass"
+```
 
 ## Splitting Large PRDs
 
@@ -205,6 +225,21 @@ Add ability to mark tasks with different statuses.
       "priority": 4,
       "passes": false,
       "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Documentation and Cleanup",
+      "description": "Ensure code is well-documented and buildable.",
+      "acceptanceCriteria": [
+        "Update README.md with status feature instructions",
+        "Update Makefile if necessary",
+        "Document how to test status filtering",
+        "Typecheck passes",
+        "All tests pass"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
     }
   ]
 }
@@ -234,3 +269,4 @@ Before writing prd.json, verify:
 - [ ] UI stories have "Verify in browser using dev-browser skill" as criterion
 - [ ] Acceptance criteria are verifiable (not vague)
 - [ ] No story depends on a later story
+- [ ] Final story covers README, Makefile, and documentation
