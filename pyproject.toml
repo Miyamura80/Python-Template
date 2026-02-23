@@ -32,6 +32,8 @@ dependencies = [
     "scrubadub>=2.0.1",
     "pydantic>=2.10.6",
     "numpy>=2.2.2",
+    "typer",
+    "questionary",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -88,7 +90,8 @@ exclude = [
     "src/utils/logging_config.py",
     "src/utils/context.py",
     "tests/conftest.py",
-    "init/"
+    "init/",
+    "onboard.py"
 ]
 
 [tool.coverage.run]
