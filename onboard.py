@@ -1,13 +1,36 @@
 """Interactive onboarding CLI for project setup."""
 
+import re
+from pathlib import Path
+
+import questionary
 import typer
 from rich import print as rprint
+from rich.panel import Panel
+
+PROJECT_ROOT = Path(__file__).parent
 
 app = typer.Typer(
     name="onboard",
     help="Interactive onboarding CLI for project setup.",
     invoke_without_command=True,
 )
+
+
+def _read_pyproject_name() -> str:
+    """Read the current project name from pyproject.toml."""
+    text = (PROJECT_ROOT / "pyproject.toml").read_text()
+    match = re.search(r'^name\s*=\s*"([^"]*)"', text, re.MULTILINE)
+    return match.group(1) if match else ""
+
+
+def _validate_kebab_case(value: str) -> bool | str:
+    """Validate that the value is kebab-case (lowercase, hyphens, no spaces)."""
+    if not value:
+        return "Project name cannot be empty."
+    if not re.match(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$", value):
+        return "Must be kebab-case (e.g. my-cool-project). Lowercase letters, digits, hyphens only."
+    return True
 
 
 @app.callback(invoke_without_command=True)
@@ -20,7 +43,55 @@ def main(ctx: typer.Context) -> None:
 @app.command()
 def rename() -> None:
     """Step 1: Rename the project and update metadata."""
-    rprint("[yellow]Step 1 (rename) not yet implemented.[/yellow]")
+    current_name = _read_pyproject_name()
+    if current_name != "python-template":
+        rprint(
+            f"[blue]ℹ Project already renamed to '{current_name}'. Skipping rename step.[/blue]"
+        )
+        return
+
+    name = questionary.text(
+        "Project name (kebab-case):",
+        validate=_validate_kebab_case,
+    ).ask()
+    if name is None:
+        raise typer.Abort()
+
+    description = questionary.text("Project description:").ask()
+    if description is None:
+        raise typer.Abort()
+
+    pyproject_path = PROJECT_ROOT / "pyproject.toml"
+    pyproject_text = pyproject_path.read_text()
+    pyproject_text = pyproject_text.replace(
+        'name = "python-template"', f'name = "{name}"'
+    )
+    if description:
+        pyproject_text = pyproject_text.replace(
+            'description = "Add your description here"',
+            f'description = "{description}"',
+        )
+    pyproject_path.write_text(pyproject_text)
+
+    readme_path = PROJECT_ROOT / "README.md"
+    readme_text = readme_path.read_text()
+    readme_text = readme_text.replace("# Python-Template", f"# {name}", 1)
+    if description:
+        readme_text = readme_text.replace(
+            "<b>Opinionated Python project stack. 🔋 Batteries included. </b>",
+            f"<b>{description}</b>",
+            1,
+        )
+    readme_path.write_text(readme_text)
+
+    changes = [f"[green]pyproject.toml[/green] name → {name}"]
+    if description:
+        changes.append(f"[green]pyproject.toml[/green] description → {description}")
+    changes.append(f"[green]README.md[/green] heading → # {name}")
+    if description:
+        changes.append(f"[green]README.md[/green] tagline → {description}")
+
+    rprint(Panel("\n".join(changes), title="✅ Rename Complete", border_style="green"))
 
 
 @app.command()
