@@ -306,7 +306,52 @@ def env() -> None:
 @app.command()
 def hooks() -> None:
     """Step 4: Activate pre-commit hooks."""
-    rprint("[yellow]Step 4 (hooks) not yet implemented.[/yellow]")
+    config_path = PROJECT_ROOT / ".pre-commit-config.yaml"
+    if not config_path.exists():
+        rprint("[red]✗ .pre-commit-config.yaml not found.[/red]")
+        raise typer.Exit(code=1)
+
+    import yaml
+    from rich.table import Table
+
+    config = yaml.safe_load(config_path.read_text())
+
+    table = Table(title="Configured Pre-commit Hooks")
+    table.add_column("Hook ID", style="cyan")
+    table.add_column("Description", style="white")
+
+    for repo in config.get("repos", []):
+        for hook in repo.get("hooks", []):
+            hook_id = hook.get("id", "unknown")
+            hook_name = hook.get("name", hook_id)
+            table.add_row(hook_id, hook_name)
+
+    console.print(table)
+    rprint("")
+
+    activate = questionary.confirm(
+        "Activate pre-commit hooks? (Recommended)",
+        default=True,
+    ).ask()
+    if activate is None:
+        raise typer.Abort()
+
+    if activate:
+        result = subprocess.run(
+            ["git", "config", "core.hooksPath", ".githooks"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            rprint(f"[red]✗ Failed to activate hooks:[/red]\n{result.stderr}")
+            raise typer.Exit(code=1)
+        rprint("[green]✓ Pre-commit hooks activated.[/green]")
+    else:
+        rprint(
+            "[yellow]Skipped.[/yellow] You can activate later with: "
+            "[bold]git config core.hooksPath .githooks[/bold]"
+        )
 
 
 @app.command()
