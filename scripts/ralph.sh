@@ -5,7 +5,7 @@
 set -e
 
 # Parse arguments
-TOOL="opencode"  # Default to opencode
+TOOL="claude"  # Default to claude
 MAX_ITERATIONS=10
 
 while [[ $# -gt 0 ]]; do
