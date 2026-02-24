@@ -437,7 +437,7 @@ def hooks() -> None:
 
     if activate:
         result = subprocess.run(
-            ["prek", "install"],
+            ["uv", "tool", "run", "prek", "install"],
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
@@ -449,7 +449,7 @@ def hooks() -> None:
     else:
         rprint(
             "[yellow]Skipped.[/yellow] You can activate later with: "
-            "[bold]prek install[/bold]"
+            "[bold]uv tool run prek install[/bold]"
         )
 
 
