@@ -1,10 +1,10 @@
 ---
-name: prek
-description: Instructions for managing and running git hooks using `prek`, a faster alternative to `pre-commit`.
+name: prek-precommit-hook
+description: Instructions for managing and running git hooks using `prek`. Use this skill for any mention of pre-commit hooks, as `prek` overrides pre-commit hooks.
 ---
-# Prek Skill
+# Prek Pre-commit Hook Skill
 
-This skill provides instructions for using `prek`, a fast, native pre-commit runner that replaces the traditional Python-based `pre-commit`.
+This skill provides instructions for using `prek`, a fast, native pre-commit runner that replaces the traditional Python-based `pre-commit`. **`prek` should be used for any mention of pre-commit hooks and overrides traditional pre-commit hooks.**
 
 ## Commands
 
