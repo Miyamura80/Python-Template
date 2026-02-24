@@ -38,11 +38,94 @@ def _validate_kebab_case(value: str) -> bool | str:
     return True
 
 
+STEPS: list[tuple[str, str]] = [
+    ("Rename", "rename"),
+    ("Dependencies", "deps"),
+    ("Environment Variables", "env"),
+    ("Pre-commit Hooks", "hooks"),
+    ("Media Generation", "media"),
+]
+
+STEP_FUNCTIONS: dict[str, object] = {}
+
+
+def _run_orchestrator() -> None:
+    """Run the full onboarding flow, executing all steps in sequence."""
+    project_name = _read_pyproject_name()
+    rprint(
+        Panel(
+            f"[bold]{project_name}[/bold]\n\n"
+            "This wizard will guide you through:\n"
+            "  1. Rename - Set project name and description\n"
+            "  2. Dependencies - Install project dependencies\n"
+            "  3. Environment - Configure API keys and secrets\n"
+            "  4. Hooks - Activate pre-commit hooks\n"
+            "  5. Media - Generate banner and logo assets",
+            title="Welcome to Project Onboarding",
+            border_style="blue",
+        )
+    )
+
+    total = len(STEPS)
+    completed: list[str] = []
+    skipped: list[str] = []
+
+    for i, (label, cmd_name) in enumerate(STEPS, 1):
+        rprint(f"\n[bold cyan]--- Step {i}/{total}: {label} ---[/bold cyan]")
+        answer = questionary.select(
+            "Run this step?",
+            choices=["Yes", "Skip"],
+            default="Yes",
+        ).ask()
+        if answer is None:
+            raise typer.Abort()
+
+        if answer == "Skip":
+            skipped.append(label)
+            rprint(f"[yellow]- {label} skipped[/yellow]")
+            continue
+
+        try:
+            step_fn = STEP_FUNCTIONS[cmd_name]
+            step_fn()  # type: ignore[operator]
+            completed.append(label)
+        except (typer.Exit, SystemExit) as exc:
+            code = getattr(exc, "code", getattr(exc, "exit_code", 1))
+            if code and code != 0:
+                rprint(f"[red]✗ {label} failed.[/red]")
+                cont = questionary.confirm(
+                    "Continue with remaining steps?", default=True
+                ).ask()
+                if cont is None or not cont:
+                    raise typer.Abort() from None
+                skipped.append(f"{label} (failed)")
+            else:
+                completed.append(label)
+
+    _print_summary(completed, skipped)
+
+
+def _print_summary(completed: list[str], skipped: list[str]) -> None:
+    """Print the final onboarding summary."""
+    lines: list[str] = []
+    for name in completed:
+        lines.append(f"[green]✓[/green] {name}")
+    for name in skipped:
+        lines.append(f"[yellow]-[/yellow] {name}")
+    lines.append("")
+    lines.append("[bold]Suggested next commands:[/bold]")
+    lines.append("  make test    - Run tests")
+    lines.append("  make ci      - Run CI checks")
+    lines.append("  make all     - Run main application")
+
+    rprint(Panel("\n".join(lines), title="Onboarding Summary", border_style="green"))
+
+
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context) -> None:
     """Run the full onboarding flow, or use a subcommand for a specific step."""
     if ctx.invoked_subcommand is None:
-        rprint("[yellow]Full onboarding flow not yet implemented.[/yellow]")
+        _run_orchestrator()
 
 
 @app.command()
@@ -440,6 +523,17 @@ def media() -> None:
     for f in generated_files:
         rprint(f"  {f}")
 
+
+# Register step functions for the orchestrator
+STEP_FUNCTIONS.update(
+    {
+        "rename": rename,
+        "deps": deps,
+        "env": env,
+        "hooks": hooks,
+        "media": media,
+    }
+)
 
 if __name__ == "__main__":
     app()
