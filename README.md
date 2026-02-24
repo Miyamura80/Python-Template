@@ -1,11 +1,11 @@
-# python-template
+# Python-Template
 
 <p align="center">
   <img src="media/banner.png" alt="2" width="400">
 </p>
 
 <p align="center">
-<b>🐍 Opinionated uv Python template with batteries included. Cursorrules, LLMs, linting, dead code analysis, and a whole lot more.</b>
+<b>Opinionated Python project stack. 🔋 Batteries included. </b>
 </p>
 
 <p align="center">
