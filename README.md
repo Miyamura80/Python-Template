@@ -55,12 +55,22 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 
 ## Quick Start
 
-- `make init name=my-project description="My project description"` - initialize project
-- `make all` - runs `main.py`
+- `make onboard` - interactive onboarding CLI (rename, deps, env, hooks, media)
+- `make all` - sync deps and run `main.py`
 - `make fmt` - runs `ruff format` + JSON formatting
-- `make banner` - create a new banner that makes the README nice 😊
+- `make banner` - create a new banner that makes the README nice
 - `make test` - runs all tests in `tests/`
 - `make ci` - runs all CI checks (ruff, vulture, ty, etc.)
+
+Individual onboarding steps can also be run directly:
+
+```bash
+uv run python onboard.py rename  # Rename project and update metadata
+uv run python onboard.py deps    # Install dependencies
+uv run python onboard.py env     # Configure environment variables
+uv run python onboard.py hooks   # Activate pre-commit hooks
+uv run python onboard.py media   # Generate banner and logo assets
+```
 
 
 

@@ -36,19 +36,9 @@ help: ## Show this help message
 ########################################################
 
 ### Initialization
-.PHONY: init banner logo
-init: ## Initialize project (usage: make init name=my-project description="my description")
-	@if [ -z "$(name)" ] || [ -z "$(description)" ]; then \
-		echo "$(RED)Error: Both 'name' and 'description' parameters are required$(RESET)"; \
-		echo "Usage: make init name=<project_name> description=<project_description>"; \
-		exit 1; \
-	fi
-	@echo "$(YELLOW)🚀 Initializing project $(name)...$(RESET)"
-	@sed -i.bak "s/name = \"python-template\"/name = \"$(name)\"/" pyproject.toml && rm pyproject.toml.bak
-	@sed -i.bak "s/description = \"Add your description here\"/description = \"$(description)\"/" pyproject.toml && rm pyproject.toml.bak
-	@sed -i.bak "s/# Python-Template/# $(name)/" README.md && rm README.md.bak
-	@sed -i.bak "s/<b>Opinionated Python project stack. 🔋 Batteries included. <\/b>/<b>$(description)<\/b>/" README.md && rm README.md.bak
-	@echo "$(GREEN)✅ Updated project name and description.$(RESET)"
+.PHONY: onboard banner logo
+onboard: check_uv ## Run interactive onboarding CLI
+	@$(PYTHON) onboard.py
 
 banner: check_uv ## Generate project banner image
 	@echo "$(YELLOW)🔍Generating banner...$(RESET)"
@@ -85,29 +75,8 @@ check_jq:
 	fi
 
 ########################################################
-# Setup githooks for linting
-########################################################
-setup_githooks:
-	@echo "$(YELLOW)🔨Setting up githooks on post-commit...$(RESET)"
-	chmod +x .githooks/post-commit
-	git config core.hooksPath .githooks
-
-
-########################################################
 # Python dependency-related
 ########################################################
-
-### Setup & Dependencies
-setup: check_uv ## Create venv and sync dependencies
-	@echo "$(YELLOW)🔎Looking for .venv...$(RESET)"
-	@if [ ! -d ".venv" ]; then \
-		echo "$(YELLOW)VS Code is not detected. Creating a new one...$(RESET)"; \
-		uv venv; \
-	else \
-		echo "$(GREEN)✅.venv is detected.$(RESET)"; \
-	fi
-	@echo "$(YELLOW)🔄Updating python dependencies...$(RESET)"
-	@uv sync
 
 view_python_venv_size:
 	@echo "$(YELLOW)🔍Checking python venv size...$(RESET)"
@@ -126,7 +95,8 @@ view_python_venv_size_by_libraries:
 ########################################################
 
 ### Running
-all: setup setup_githooks ## Setup and run main application
+all: check_uv ## Sync dependencies and run main application
+	@uv sync
 	@echo "$(GREEN)🏁Running main application...$(RESET)"
 	@$(PYTHON) main.py
 	@echo "$(GREEN)✅ Main application run completed.$(RESET)"
