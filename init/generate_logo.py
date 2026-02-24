@@ -16,8 +16,8 @@ class WordmarkDescription(dspy.Signature):
     """Generate a creative description for a horizontal wordmark logo with text. The wordmark should be clean, modern, and professional."""
 
     project_name: str = dspy.InputField()
-    suggestion: str = dspy.InputField(
-        desc="Optional suggestion to guide the wordmark description generation"
+    theme: str = dspy.InputField(
+        desc="Optional theme/style suggestion to guide the wordmark description generation"
     )
     wordmark_description: str = dspy.OutputField(
         desc="A creative description for a horizontal wordmark logo that includes the project name as text. Focus on typography, icon placement, and professional branding. The wordmark should be wide and horizontal."
@@ -93,7 +93,7 @@ def invert_colors(img: Image.Image) -> Image.Image:
 
 
 async def generate_logo(
-    project_name: str, suggestion: str | None = None, output_dir: Path | None = None
+    project_name: str, theme: str | None = None, output_dir: Path | None = None
 ) -> dict[str, Image.Image]:
     """Generate logo assets using AI-powered pipeline with consistent branding:
     1. Generate light mode wordmark with greenscreen
@@ -107,7 +107,7 @@ async def generate_logo(
 
     Args:
         project_name: Name of the project
-        suggestion: Optional suggestion to guide the logo generation
+        theme: Optional theme/style suggestion to guide the logo generation
         output_dir: Output directory for the generated images. Defaults to docs/public/
 
     Returns:
@@ -128,7 +128,7 @@ async def generate_logo(
     wordmark_inf = DSPYInference(pred_signature=WordmarkDescription, observe=False)
     wordmark_result = await wordmark_inf.run(
         project_name=project_name,
-        suggestion=suggestion or "",
+        theme=theme or "",
     )
 
     print(f"Wordmark description: {wordmark_result.wordmark_description}")
@@ -264,5 +264,5 @@ async def generate_logo(
 
 if __name__ == "__main__":
     project_name = "Python-Template"
-    suggestion = "incorporate python snake and modern tech aesthetics, simple and clean"
-    asyncio.run(generate_logo(project_name, suggestion))
+    theme = "incorporate python snake and modern tech aesthetics, simple and clean"
+    asyncio.run(generate_logo(project_name, theme))
