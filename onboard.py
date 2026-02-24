@@ -426,7 +426,7 @@ def hooks() -> None:
 
     if activate:
         result = subprocess.run(
-            ["git", "config", "core.hooksPath", ".githooks"],
+            ["pre-commit", "install"],
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
@@ -438,7 +438,7 @@ def hooks() -> None:
     else:
         rprint(
             "[yellow]Skipped.[/yellow] You can activate later with: "
-            "[bold]git config core.hooksPath .githooks[/bold]"
+            "[bold]pre-commit install[/bold]"
         )
 
 
