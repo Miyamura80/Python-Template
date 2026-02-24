@@ -497,6 +497,7 @@ def media() -> None:
 
     project_name = _read_pyproject_name()
 
+    rprint()
     theme = questionary.text(
         "Describe the visual theme/style for your project assets:",
         default="modern, clean, minimalist tech aesthetic",
@@ -506,7 +507,8 @@ def media() -> None:
 
     choice = questionary.select(
         "What would you like to generate?",
-        choices=["Banner only", "Logo only", "Both", "Skip"],
+        choices=["Both", "Banner only", "Logo only", "Skip"],
+        default="Both",
     ).ask()
     if choice is None:
         raise typer.Abort()
