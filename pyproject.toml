@@ -110,6 +110,5 @@ show_missing = true
 
 [dependency-groups]
 dev = [
-    "pre-commit>=4.5.1",
     "pytest-check-links>=0.9.1",
 ]
