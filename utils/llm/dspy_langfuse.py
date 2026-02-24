@@ -62,7 +62,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         )
         self.current_tool_span = contextvars.ContextVar[Any | None]("current_tool_span")
         # Initialize Langfuse client
-        self.langfuse = Langfuse()
+        self.langfuse: Langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
 
     def on_module_start(  # noqa
@@ -137,7 +137,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         parent_observation_id = get_client().get_current_observation_id()
         span_obj: LangfuseGeneration | None = None
         if trace_id:
-            span_obj = self.langfuse.generation(
+            span_obj = self.langfuse.generation(  # type: ignore[attr-defined]
                 input=user_input,
                 name=model_name,
                 trace_id=trace_id,
@@ -396,7 +396,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
 
         if trace_id:
             # Create a span for the tool call
-            tool_span = self.langfuse.span(
+            tool_span = self.langfuse.span(  # type: ignore[attr-defined]
                 name=f"tool:{tool_name}",
                 trace_id=trace_id,
                 parent_observation_id=parent_observation_id,
