@@ -106,5 +106,6 @@ show_missing = true
 
 [dependency-groups]
 dev = [
+    "prek>=0.3.3",
     "pytest-check-links>=0.9.1",
 ]
