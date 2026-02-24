@@ -15,9 +15,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from init.generate_banner import generate_banner as gen_banner
-from init.generate_logo import generate_logo as gen_logo
-
 console = Console()
 
 PROJECT_ROOT = Path(__file__).parent
@@ -457,6 +454,9 @@ def _check_gemini_key() -> bool:
 
 def _run_media_generation(choice: str, project_name: str, theme: str) -> list[str]:
     """Run the selected media generation and return list of generated file paths."""
+    from init.generate_banner import generate_banner as gen_banner
+    from init.generate_logo import generate_logo as gen_logo
+
     generated_files: list[str] = []
 
     if choice in ("Banner only", "Both"):
