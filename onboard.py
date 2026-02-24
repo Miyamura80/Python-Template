@@ -1,5 +1,7 @@
 """Interactive onboarding CLI for project setup."""
 
+import asyncio
+import os
 import re
 import shutil
 import subprocess
@@ -12,6 +14,9 @@ from rich import print as rprint
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
+from init.generate_banner import generate_banner as gen_banner
+from init.generate_logo import generate_logo as gen_logo
 
 console = Console()
 
@@ -439,8 +444,6 @@ def hooks() -> None:
 
 def _check_gemini_key() -> bool:
     """Check if GEMINI_API_KEY is available in .env or environment."""
-    import os
-
     if os.environ.get("GEMINI_API_KEY"):
         return True
     env_path = PROJECT_ROOT / ".env"
@@ -455,11 +458,6 @@ def _check_gemini_key() -> bool:
 
 def _run_media_generation(choice: str, project_name: str, theme: str) -> list[str]:
     """Run the selected media generation and return list of generated file paths."""
-    import asyncio
-
-    from init.generate_banner import generate_banner as gen_banner
-    from init.generate_logo import generate_logo as gen_logo
-
     generated_files: list[str] = []
 
     if choice in ("Banner only", "Both"):
