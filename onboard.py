@@ -333,7 +333,12 @@ def _prompt_env_value(key: str, default: str, current_value: str) -> str:
 
 
 def _write_env_file(entries: list[dict[str, str]], values: dict[str, str]) -> int:
-    """Write .env file preserving group structure. Returns count of skipped keys."""
+    """Write .env file preserving group structure and custom vars. Returns count of skipped keys."""
+    # Load existing env and identify custom variables not in .env.example
+    existing = _load_existing_env()
+    tracked_keys = {entry["key"] for entry in entries}
+    custom_vars = {k: v for k, v in existing.items() if k not in tracked_keys}
+
     lines: list[str] = []
     current_group = ""
     skipped = 0
@@ -351,6 +356,13 @@ def _write_env_file(entries: list[dict[str, str]], values: dict[str, str]) -> in
         else:
             lines.append(f"# {key}={entry['default']}")
             skipped += 1
+
+    # Preserve custom variables not in .env.example
+    if custom_vars:
+        lines.append("")
+        lines.append("# Custom variables")
+        for key, value in custom_vars.items():
+            lines.append(f"{key}={value}")
 
     (PROJECT_ROOT / ".env").write_text("\n".join(lines) + "\n")
     return skipped
