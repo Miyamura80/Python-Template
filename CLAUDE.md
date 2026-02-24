@@ -11,13 +11,6 @@ Super-opinionated Python stack for fast development. Python >= 3.12 required. Us
 ```bash
 # Onboarding & Setup
 make onboard        # Interactive onboarding CLI (rename, deps, env, hooks, media)
-# Or run individual steps:
-uv run python onboard.py rename  # Rename project
-uv run python onboard.py deps    # Install dependencies
-uv run python onboard.py env     # Configure environment variables
-uv run python onboard.py hooks   # Activate pre-commit hooks
-uv run python onboard.py media   # Generate banner/logo assets
-
 make all            # Sync deps and run main.py
 
 # Testing
