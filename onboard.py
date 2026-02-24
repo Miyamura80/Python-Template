@@ -7,9 +7,11 @@ from pathlib import Path
 
 import questionary
 import typer
+import yaml
 from rich import print as rprint
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 
 console = Console()
 
@@ -394,8 +396,6 @@ def hooks() -> None:
         rprint("[red]✗ .pre-commit-config.yaml not found.[/red]")
         raise typer.Exit(code=1)
 
-    import yaml
-    from rich.table import Table
 
     config = yaml.safe_load(config_path.read_text())
 
