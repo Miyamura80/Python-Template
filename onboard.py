@@ -95,7 +95,7 @@ def _run_orchestrator() -> None:
             completed.append(label)
         except (typer.Exit, SystemExit) as exc:
             code = getattr(exc, "code", getattr(exc, "exit_code", 1))
-            if code and code != 0:
+            if code != 0:
                 rprint(f"[red]✗ {label} failed.[/red]")
                 cont = questionary.confirm(
                     "Continue with remaining steps?", default=True
