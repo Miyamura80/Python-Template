@@ -20,7 +20,7 @@ You are an autonomous coding agent working on a software project.
 APPEND to progress.txt (never replace, always append):
 ```
 ## [Date/Time] - [Story ID]
-Session: https://opencode.ai/sessions/[SESSION_ID]
+Session: [SESSION_ID]
 - What was implemented
 - Files changed
 - **Learnings for future iterations:**
@@ -30,7 +30,7 @@ Session: https://opencode.ai/sessions/[SESSION_ID]
 ---
 ```
 
-Find your current Session ID by running `opencode session list` (it should be the first one). Include the session URL so future iterations can reference previous work if needed.
+Find your current Session ID in Claude Code.
 
 The learnings section is critical - it helps future iterations avoid repeating mistakes and understand the codebase better.
 
