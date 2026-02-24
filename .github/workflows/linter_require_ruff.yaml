@@ -25,7 +25,7 @@ jobs:
       - name: Add uv to path
         run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Setup
-        run: make setup
+        run: uv sync && make install_tools
       - name: Run ruff
         run: make ruff
       - name: Run complexity check
