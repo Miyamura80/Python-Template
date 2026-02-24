@@ -48,6 +48,7 @@ STEPS: list[tuple[str, str]] = [
     ("Environment Variables", "env"),
     ("Pre-commit Hooks", "hooks"),
     ("Media Generation", "media"),
+    ("Jules Workflows", "jules"),
 ]
 
 STEP_FUNCTIONS: dict[str, object] = {}
@@ -64,7 +65,8 @@ def _run_orchestrator() -> None:
             "  2. Dependencies - Install project dependencies\n"
             "  3. Environment - Configure API keys and secrets\n"
             "  4. Hooks - Activate pre-commit hooks\n"
-            "  5. Media - Generate banner and logo assets",
+            "  5. Media - Generate banner and logo assets\n"
+            "  6. Jules - Enable/disable automated maintenance workflows",
             title="Welcome to Project Onboarding",
             border_style="blue",
         )
@@ -536,6 +538,106 @@ def media() -> None:
         rprint(f"  {f}")
 
 
+_JULES_WORKFLOWS: list[tuple[str, str]] = [
+    (
+        "jules-prune-unnecessary-code.yml",
+        "Dead code cleanup (Wednesdays 2pm UTC)",
+    ),
+    (
+        "jules-find-outdated-docs.yml",
+        "Documentation drift check (Wednesdays 4pm UTC)",
+    ),
+]
+
+_WORKFLOWS_DIR = PROJECT_ROOT / ".github" / "workflows"
+
+
+def _workflow_enabled(filename: str) -> bool:
+    """Check if a Jules workflow file is enabled (not disabled)."""
+    return (_WORKFLOWS_DIR / filename).exists() and not (
+        _WORKFLOWS_DIR / f"{filename}.disabled"
+    ).exists()
+
+
+def _enable_workflow(filename: str) -> None:
+    """Enable a workflow by renaming .disabled back to .yml."""
+    disabled = _WORKFLOWS_DIR / f"{filename}.disabled"
+    enabled = _WORKFLOWS_DIR / filename
+    if disabled.exists() and not enabled.exists():
+        disabled.rename(enabled)
+
+
+def _disable_workflow(filename: str) -> None:
+    """Disable a workflow by renaming .yml to .yml.disabled."""
+    enabled = _WORKFLOWS_DIR / filename
+    if enabled.exists():
+        enabled.rename(_WORKFLOWS_DIR / f"{filename}.disabled")
+
+
+@app.command()
+def jules() -> None:
+    """Step 6: Enable or disable automated Jules maintenance workflows."""
+    if not _WORKFLOWS_DIR.is_dir():
+        rprint("[red]✗ .github/workflows/ directory not found.[/red]")
+        raise typer.Exit(code=1)
+
+    table = Table(title="Jules Maintenance Workflows")
+    table.add_column("Workflow", style="cyan")
+    table.add_column("Schedule", style="white")
+    table.add_column("Status", style="white")
+
+    for filename, description in _JULES_WORKFLOWS:
+        enabled = _workflow_enabled(filename)
+        status = "[green]enabled[/green]" if enabled else "[yellow]disabled[/yellow]"
+        table.add_row(filename, description, status)
+
+    console.print(table)
+    rprint("")
+
+    choices = []
+    for filename, description in _JULES_WORKFLOWS:
+        enabled = _workflow_enabled(filename)
+        label = f"{description}"
+        if enabled:
+            label += " (enabled)"
+        choices.append(questionary.Choice(title=label, value=filename, checked=enabled))
+
+    selected = questionary.checkbox(
+        "Select which Jules workflows to enable:",
+        choices=choices,
+    ).ask()
+    if selected is None:
+        raise typer.Abort()
+
+    selected_set = set(selected)
+    changes: list[str] = []
+
+    for filename, description in _JULES_WORKFLOWS:
+        was_enabled = _workflow_enabled(filename)
+        should_enable = filename in selected_set
+
+        if should_enable and not was_enabled:
+            _enable_workflow(filename)
+            changes.append(f"[green]✓[/green] Enabled {description}")
+        elif not should_enable and was_enabled:
+            _disable_workflow(filename)
+            changes.append(f"[yellow]-[/yellow] Disabled {description}")
+        elif should_enable:
+            changes.append(f"[blue]·[/blue] {description} (already enabled)")
+        else:
+            changes.append(f"[blue]·[/blue] {description} (already disabled)")
+
+    rprint(
+        Panel(
+            "\n".join(changes)
+            + "\n\n[dim]Note: JULES_API_KEY secret must be configured in "
+            "repository Actions settings.[/dim]",
+            title="Jules Workflows",
+            border_style="green",
+        )
+    )
+
+
 # Register step functions for the orchestrator
 STEP_FUNCTIONS.update(
     {
@@ -544,6 +646,7 @@ STEP_FUNCTIONS.update(
         "env": env,
         "hooks": hooks,
         "media": media,
+        "jules": jules,
     }
 )
 

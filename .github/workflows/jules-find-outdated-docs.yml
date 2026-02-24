@@ -1,0 +1,228 @@
+# ─────────────────────────────────────────────────────────────────────
+# Jules Outdated Documentation Drift Detection
+# ─────────────────────────────────────────────────────────────────────
+# Automated weekly documentation drift check via Jules API. Runs every
+# Wednesday at 4pm UTC and on manual dispatch. Opens a PR with
+# any corrections.
+#
+# Jules reads OUTDATED_DOCUMENTATION_GUIDELINE.md before making changes.
+#
+# Required secrets: JULES_API_KEY
+# ─────────────────────────────────────────────────────────────────────
+name: Jules Find Outdated Docs
+
+on:
+  schedule:
+    - cron: "0 16 * * 3" # Wednesday 4pm UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: jules-find-outdated-docs
+  cancel-in-progress: false
+
+env:
+  JULES_API_BASE: "https://jules.googleapis.com/v1alpha"
+  MAX_POLL_ATTEMPTS: 60
+  POLL_INTERVAL_SECONDS: 30
+
+jobs:
+  find-outdated-docs:
+    name: Detect and fix outdated documentation via Jules
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # ── 1. Checkout ───────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Create Jules documentation drift session ───────────────
+      - name: Create Jules documentation drift session
+        id: jules-create
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${JULES_API_KEY:-}" ]]; then
+            echo "::error::JULES_API_KEY is not configured. Add it in repository Actions secrets."
+            exit 1
+          fi
+
+          REPO="${{ github.repository }}"
+          OWNER="${REPO%%/*}"
+          REPO_NAME="${REPO##*/}"
+          SOURCE="sources/github/${OWNER}/${REPO_NAME}"
+
+          PROMPT="IMPORTANT: Before you begin, read the file OUTDATED_DOCUMENTATION_GUIDELINE.md in the root of this repository.
+          It contains the rules and validation requirements you must follow strictly when detecting
+          and fixing outdated documentation.
+
+          Also read docs/translation-guide.md if it exists, to understand the translation policy.
+          Any documentation changes you make must respect the translation workflow - only edit English
+          source files, never edit translation files directly.
+
+          You are a documentation maintenance assistant for this project.
+
+          Scan the repository for documentation drift including:
+          - README.md sections that no longer match actual project behavior
+          - CLAUDE.md instructions that reference moved, renamed, or deleted files
+          - Docstrings that describe outdated function signatures or behavior
+          - Code examples in docs that use deprecated APIs or patterns
+          - Configuration references that point to renamed or removed settings
+          - Broken internal cross-references between documentation files
+          - Changelog entries that reference incorrect versions or dates
+          - Install/setup instructions that skip required steps or list wrong commands
+
+          Strict rules - you MUST follow every one:
+          1. Follow ALL rules in OUTDATED_DOCUMENTATION_GUIDELINE.md without exception.
+          2. Only fix documentation that is verifiably incorrect by cross-referencing the actual code.
+          3. Do NOT rewrite documentation style, tone, or structure - only fix factual inaccuracies.
+          4. Do NOT add new documentation sections - only update existing content.
+          5. Do NOT modify translation files (*.lang.mdx, meta.lang.json) - only English sources.
+          6. For each fix, include the evidence (file path and line) showing why the doc is wrong.
+          7. Preserve all existing formatting, heading levels, and link structures.
+          8. If a referenced file was moved, update the path. If deleted, note the removal clearly.
+          9. Group related fixes into logical commits with clear messages.
+          10. If no outdated documentation is found, do not create a PR."
+
+          TITLE="docs: fix outdated documentation (automated weekly drift check)"
+
+          BODY=$(jq -n \
+            --arg prompt "$PROMPT" \
+            --arg title "$TITLE" \
+            --arg source "$SOURCE" \
+            '{
+              prompt: $prompt,
+              title: $title,
+              automationMode: "AUTO_CREATE_PR",
+              sourceContext: {
+                source: $source,
+                githubRepoContext: {
+                  startingBranch: "main"
+                }
+              }
+            }')
+
+          MAX_RETRIES=3
+          RETRY_DELAY=5
+
+          for attempt in $(seq 1 "$MAX_RETRIES"); do
+            HTTP_CODE=$(curl -s -o /tmp/jules_response.json -w "%{http_code}" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -H "X-Goog-Api-Key: ${JULES_API_KEY}" \
+              -d "$BODY" \
+              "${JULES_API_BASE}/sessions")
+
+            if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+              break
+            elif [[ "$HTTP_CODE" -ge 500 && $attempt -lt $MAX_RETRIES ]]; then
+              echo "::warning::Jules API returned ${HTTP_CODE} - retrying in ${RETRY_DELAY}s (attempt ${attempt}/${MAX_RETRIES})"
+              sleep "$RETRY_DELAY"
+              RETRY_DELAY=$((RETRY_DELAY * 2))
+            else
+              echo "::error::Jules session creation failed with HTTP ${HTTP_CODE}"
+              cat /tmp/jules_response.json
+              exit 1
+            fi
+          done
+
+          SESSION_NAME=$(jq -r '.name' /tmp/jules_response.json)
+          SESSION_URL=$(jq -r '.url // empty' /tmp/jules_response.json)
+
+          if [[ -z "$SESSION_NAME" || "$SESSION_NAME" == "null" ]]; then
+            echo "::error::No session name in Jules response"
+            cat /tmp/jules_response.json
+            exit 1
+          fi
+
+          {
+            echo "session_name<<GHEOF"
+            echo "$SESSION_NAME"
+            echo "GHEOF"
+            echo "session_url<<GHEOF"
+            echo "$SESSION_URL"
+            echo "GHEOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Jules session created: ${SESSION_NAME}"
+          echo "Jules UI: ${SESSION_URL}"
+
+      # ── 3. Poll until Jules finishes ──────────────────────────────
+      - name: Poll Jules session until completion
+        id: jules-poll
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          JULES_SESSION_NAME: ${{ steps.jules-create.outputs.session_name }}
+        run: |
+          set -euo pipefail
+
+          SESSION_NAME="$JULES_SESSION_NAME"
+          MAX_ATTEMPTS="$MAX_POLL_ATTEMPTS"
+          INTERVAL="$POLL_INTERVAL_SECONDS"
+
+          echo "Polling ${SESSION_NAME} (max ${MAX_ATTEMPTS} x ${INTERVAL}s)"
+
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            RETRY_DELAY=5
+            for retry in 1 2 3; do
+              HTTP_CODE=$(curl -s -o /tmp/jules_session.json -w "%{http_code}" \
+                -H "X-Goog-Api-Key: ${JULES_API_KEY}" \
+                "${JULES_API_BASE}/${SESSION_NAME}")
+
+              if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+                break
+              elif [[ $retry -lt 3 ]]; then
+                echo "::warning::Poll returned ${HTTP_CODE} - retry ${retry}/3 in ${RETRY_DELAY}s"
+                sleep "$RETRY_DELAY"
+                RETRY_DELAY=$((RETRY_DELAY * 2))
+              else
+                echo "::error::Failed to poll session after 3 retries (HTTP ${HTTP_CODE})"
+                exit 1
+              fi
+            done
+
+            STATE=$(jq -r '.state // "UNKNOWN"' /tmp/jules_session.json)
+            echo "[${attempt}/${MAX_ATTEMPTS}] state=${STATE}"
+
+            case "$STATE" in
+              COMPLETED)
+                PR_URL=$(jq -r '.outputs[0].pullRequest.url // empty' /tmp/jules_session.json)
+                PR_TITLE=$(jq -r '.outputs[0].pullRequest.title // empty' /tmp/jules_session.json)
+
+                {
+                  echo "jules_state<<GHEOF"
+                  echo "COMPLETED"
+                  echo "GHEOF"
+                  echo "pr_url<<GHEOF"
+                  echo "$PR_URL"
+                  echo "GHEOF"
+                  echo "pr_title<<GHEOF"
+                  echo "$PR_TITLE"
+                  echo "GHEOF"
+                } >> "$GITHUB_OUTPUT"
+
+                echo "Session completed. PR: ${PR_URL}"
+                exit 0
+                ;;
+              FAILED)
+                echo "jules_state=FAILED" >> "$GITHUB_OUTPUT"
+                echo "::error::Jules session ended in FAILED state"
+                jq '.' /tmp/jules_session.json
+                exit 1
+                ;;
+            esac
+
+            sleep "$INTERVAL"
+          done
+
+          echo "jules_state=TIMEOUT" >> "$GITHUB_OUTPUT"
+          echo "::error::Timed out after ${MAX_ATTEMPTS} poll attempts"
+          exit 1

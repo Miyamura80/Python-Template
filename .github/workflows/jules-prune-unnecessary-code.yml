@@ -1,0 +1,222 @@
+# ─────────────────────────────────────────────────────────────────────
+# Jules Unnecessary Code Cleanup
+# ─────────────────────────────────────────────────────────────────────
+# Automated weekly dead code cleanup via Jules API. Runs every
+# Wednesday at 2pm UTC and on manual dispatch. Opens a PR with
+# any removals.
+#
+# Jules reads UNNECESSARY_CODE_GUIDELINE.md before making changes.
+#
+# Required secrets: JULES_API_KEY
+# ─────────────────────────────────────────────────────────────────────
+name: Jules Prune Unnecessary Code
+
+on:
+  schedule:
+    - cron: "0 14 * * 3" # Wednesday 2pm UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: jules-prune-unnecessary-code
+  cancel-in-progress: false
+
+env:
+  JULES_API_BASE: "https://jules.googleapis.com/v1alpha"
+  MAX_POLL_ATTEMPTS: 60
+  POLL_INTERVAL_SECONDS: 30
+
+jobs:
+  prune-unnecessary-code:
+    name: Find and remove unnecessary code via Jules
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # ── 1. Checkout ───────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Create Jules cleanup session ───────────────────────────
+      - name: Create Jules cleanup session
+        id: jules-create
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${JULES_API_KEY:-}" ]]; then
+            echo "::error::JULES_API_KEY is not configured. Add it in repository Actions secrets."
+            exit 1
+          fi
+
+          REPO="${{ github.repository }}"
+          OWNER="${REPO%%/*}"
+          REPO_NAME="${REPO##*/}"
+          SOURCE="sources/github/${OWNER}/${REPO_NAME}"
+
+          PROMPT="IMPORTANT: Before you begin, read the file UNNECESSARY_CODE_GUIDELINE.md in the root of this repository.
+          It contains the conservative rules and protected patterns you must follow strictly when identifying
+          and removing unnecessary code.
+
+          You are a careful code maintenance assistant for this Python project.
+
+          Scan the codebase for unnecessary code including:
+          - Dead functions, methods, or classes that are never called or referenced
+          - Unused imports
+          - Commented-out code blocks (not explanatory comments)
+          - Unreachable code paths
+          - Unused variables and constants
+          - Deprecated compatibility shims that are no longer needed
+
+          Strict rules - you MUST follow every one:
+          1. Follow ALL rules in UNNECESSARY_CODE_GUIDELINE.md without exception.
+          2. Only remove code you are confident is unused. If in doubt, leave it.
+          3. Do NOT remove any test files, test functions, fixtures, or conftest code.
+          4. Do NOT remove any code referenced in __init__.py exports or __all__ lists.
+          5. Do NOT remove any code decorated with @app, @router, or framework decorators.
+          6. Do NOT remove any code that might be used via dynamic import or reflection.
+          7. Preserve all public API surfaces - only remove clearly internal dead code.
+          8. Each removal must be explained in the PR description with rationale.
+          9. Group related removals into logical commits with clear messages.
+          10. If no unnecessary code is found, do not create a PR."
+
+          TITLE="chore: prune unnecessary code (automated weekly cleanup)"
+
+          BODY=$(jq -n \
+            --arg prompt "$PROMPT" \
+            --arg title "$TITLE" \
+            --arg source "$SOURCE" \
+            '{
+              prompt: $prompt,
+              title: $title,
+              automationMode: "AUTO_CREATE_PR",
+              sourceContext: {
+                source: $source,
+                githubRepoContext: {
+                  startingBranch: "main"
+                }
+              }
+            }')
+
+          MAX_RETRIES=3
+          RETRY_DELAY=5
+
+          for attempt in $(seq 1 "$MAX_RETRIES"); do
+            HTTP_CODE=$(curl -s -o /tmp/jules_response.json -w "%{http_code}" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -H "X-Goog-Api-Key: ${JULES_API_KEY}" \
+              -d "$BODY" \
+              "${JULES_API_BASE}/sessions")
+
+            if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+              break
+            elif [[ "$HTTP_CODE" -ge 500 && $attempt -lt $MAX_RETRIES ]]; then
+              echo "::warning::Jules API returned ${HTTP_CODE} - retrying in ${RETRY_DELAY}s (attempt ${attempt}/${MAX_RETRIES})"
+              sleep "$RETRY_DELAY"
+              RETRY_DELAY=$((RETRY_DELAY * 2))
+            else
+              echo "::error::Jules session creation failed with HTTP ${HTTP_CODE}"
+              cat /tmp/jules_response.json
+              exit 1
+            fi
+          done
+
+          SESSION_NAME=$(jq -r '.name' /tmp/jules_response.json)
+          SESSION_URL=$(jq -r '.url // empty' /tmp/jules_response.json)
+
+          if [[ -z "$SESSION_NAME" || "$SESSION_NAME" == "null" ]]; then
+            echo "::error::No session name in Jules response"
+            cat /tmp/jules_response.json
+            exit 1
+          fi
+
+          {
+            echo "session_name<<GHEOF"
+            echo "$SESSION_NAME"
+            echo "GHEOF"
+            echo "session_url<<GHEOF"
+            echo "$SESSION_URL"
+            echo "GHEOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Jules session created: ${SESSION_NAME}"
+          echo "Jules UI: ${SESSION_URL}"
+
+      # ── 3. Poll until Jules finishes ──────────────────────────────
+      - name: Poll Jules session until completion
+        id: jules-poll
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          JULES_SESSION_NAME: ${{ steps.jules-create.outputs.session_name }}
+        run: |
+          set -euo pipefail
+
+          SESSION_NAME="$JULES_SESSION_NAME"
+          MAX_ATTEMPTS="$MAX_POLL_ATTEMPTS"
+          INTERVAL="$POLL_INTERVAL_SECONDS"
+
+          echo "Polling ${SESSION_NAME} (max ${MAX_ATTEMPTS} x ${INTERVAL}s)"
+
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            RETRY_DELAY=5
+            for retry in 1 2 3; do
+              HTTP_CODE=$(curl -s -o /tmp/jules_session.json -w "%{http_code}" \
+                -H "X-Goog-Api-Key: ${JULES_API_KEY}" \
+                "${JULES_API_BASE}/${SESSION_NAME}")
+
+              if [[ "$HTTP_CODE" -ge 200 && "$HTTP_CODE" -lt 300 ]]; then
+                break
+              elif [[ $retry -lt 3 ]]; then
+                echo "::warning::Poll returned ${HTTP_CODE} - retry ${retry}/3 in ${RETRY_DELAY}s"
+                sleep "$RETRY_DELAY"
+                RETRY_DELAY=$((RETRY_DELAY * 2))
+              else
+                echo "::error::Failed to poll session after 3 retries (HTTP ${HTTP_CODE})"
+                exit 1
+              fi
+            done
+
+            STATE=$(jq -r '.state // "UNKNOWN"' /tmp/jules_session.json)
+            echo "[${attempt}/${MAX_ATTEMPTS}] state=${STATE}"
+
+            case "$STATE" in
+              COMPLETED)
+                PR_URL=$(jq -r '.outputs[0].pullRequest.url // empty' /tmp/jules_session.json)
+                PR_TITLE=$(jq -r '.outputs[0].pullRequest.title // empty' /tmp/jules_session.json)
+
+                {
+                  echo "jules_state<<GHEOF"
+                  echo "COMPLETED"
+                  echo "GHEOF"
+                  echo "pr_url<<GHEOF"
+                  echo "$PR_URL"
+                  echo "GHEOF"
+                  echo "pr_title<<GHEOF"
+                  echo "$PR_TITLE"
+                  echo "GHEOF"
+                } >> "$GITHUB_OUTPUT"
+
+                echo "Session completed. PR: ${PR_URL}"
+                exit 0
+                ;;
+              FAILED)
+                echo "jules_state=FAILED" >> "$GITHUB_OUTPUT"
+                echo "::error::Jules session ended in FAILED state"
+                jq '.' /tmp/jules_session.json
+                exit 1
+                ;;
+            esac
+
+            sleep "$INTERVAL"
+          done
+
+          echo "jules_state=TIMEOUT" >> "$GITHUB_OUTPUT"
+          echo "::error::Timed out after ${MAX_ATTEMPTS} poll attempts"
+          exit 1
