@@ -58,7 +58,6 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 - `make onboard` - interactive onboarding CLI (rename, deps, env, hooks, media)
 - `make all` - sync deps and run `main.py`
 - `make fmt` - runs `ruff format` + JSON formatting
-- `make banner` - create a new banner that makes the README nice
 - `make test` - runs all tests in `tests/`
 - `make ci` - runs all CI checks (ruff, vulture, ty, etc.)
 
