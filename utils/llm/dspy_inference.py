@@ -1,8 +1,8 @@
+import os
 from collections.abc import Callable
 from typing import Any
 
 import dspy
-from langfuse import observe
 from litellm.exceptions import RateLimitError, ServiceUnavailableError
 from loguru import logger as log
 from tenacity import (
@@ -14,7 +14,13 @@ from tenacity import (
 
 from common import global_config
 from common.flags import client
-from utils.llm.dspy_langfuse import LangFuseDSPYCallback
+
+
+def _langfuse_configured() -> bool:
+    """Check if LangFuse credentials are present in environment."""
+    return bool(
+        os.environ.get("LANGFUSE_PUBLIC_KEY") and os.environ.get("LANGFUSE_SECRET_KEY")
+    )
 
 
 class DSPYInference:
@@ -43,12 +49,13 @@ class DSPYInference:
             if self.fallback_model_name is not None
             else None
         )
-        if observe:
-            # Initialize a LangFuseDSPYCallback and configure the LM instance for generation tracing
+        self.dspy_config: dict[str, Any] = {"lm": self.lm}
+        if observe and _langfuse_configured():
+            from utils.llm.dspy_langfuse import LangFuseDSPYCallback
+
             self.callback = LangFuseDSPYCallback(pred_signature)
-            dspy.configure(lm=self.lm, callbacks=[self.callback])
-        else:
-            dspy.configure(lm=self.lm)
+            self.dspy_config["callbacks"] = [self.callback]
+        self._use_langfuse_observe = observe and _langfuse_configured()
 
         # Agent Intiialization
         if len(tools) > 0:
@@ -81,7 +88,9 @@ class DSPYInference:
         lm: dspy.LM,
         **kwargs: Any,
     ) -> Any:
-        return await self.inference_module_async(**kwargs, lm=lm)
+        config = {**self.dspy_config, "lm": lm}
+        with dspy.context(**config):
+            return await self.inference_module_async(**kwargs, lm=lm)
 
     def _build_lm(
         self,
@@ -98,8 +107,7 @@ class DSPYInference:
             max_tokens=max_tokens,
         )
 
-    @observe()
-    async def run(
+    async def _run_inner(
         self,
         **kwargs: Any,
     ) -> Any:
@@ -127,3 +135,13 @@ class DSPYInference:
             log.error(f"Error in run: {str(e)}")
             raise
         return result
+
+    async def run(
+        self,
+        **kwargs: Any,
+    ) -> Any:
+        if self._use_langfuse_observe:
+            from langfuse import observe as langfuse_observe
+
+            return await langfuse_observe()(self._run_inner)(**kwargs)
+        return await self._run_inner(**kwargs)

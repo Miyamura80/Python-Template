@@ -15,8 +15,8 @@ class BannerDescription(dspy.Signature):
     """Generate a creative description of a person/animal/object holding a banner. Go for a japanese style, creative and fun, but make sense."""
 
     title: str = dspy.InputField()
-    suggestion: str = dspy.InputField(
-        desc="Optional suggestion to guide the banner description generation"
+    theme: str = dspy.InputField(
+        desc="Optional theme/style suggestion to guide the banner description generation"
     )
     banner_description: str = dspy.OutputField(
         desc="A creative description of a person/animal/object holding a banner with the given title. Do not mention any colors"
@@ -26,7 +26,13 @@ class BannerDescription(dspy.Signature):
 client = genai.Client(api_key=global_config.GEMINI_API_KEY)
 
 
-async def generate_banner(title: str, suggestion: str | None = None) -> Image.Image:
+async def generate_banner(title: str, theme: str | None = None) -> Image.Image:
+    """Generate a banner image for the project.
+
+    Args:
+        title: The project title to display on the banner.
+        theme: Optional theme/style suggestion to guide image generation.
+    """
     # First, use LLM to generate a creative banner description
     inf_module = DSPYInference(
         pred_signature=BannerDescription,
@@ -35,7 +41,7 @@ async def generate_banner(title: str, suggestion: str | None = None) -> Image.Im
 
     result = await inf_module.run(
         title=title,
-        suggestion=suggestion or "",
+        theme=theme or "",
     )
 
     print(result.banner_description)
@@ -72,5 +78,5 @@ async def generate_banner(title: str, suggestion: str | None = None) -> Image.Im
 
 if __name__ == "__main__":
     title = "Python-Template"
-    suggestion = "use a snake in the image"
-    asyncio.run(generate_banner(title, suggestion))
+    theme = "use a snake in the image"
+    asyncio.run(generate_banner(title, theme))

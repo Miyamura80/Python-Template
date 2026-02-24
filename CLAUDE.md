@@ -9,10 +9,9 @@ Super-opinionated Python stack for fast development. Python >= 3.12 required. Us
 ## Common Commands
 
 ```bash
-# Setup & Run
-make init name=... description=... # Initialize project name and description
-make setup          # Create/update .venv and sync dependencies
-make all            # Run main.py with setup
+# Onboarding & Setup
+make onboard        # Interactive onboarding CLI (rename, deps, env, hooks, media)
+make all            # Sync deps and run main.py
 
 # Testing
 make test           # Run pytest on tests/
@@ -138,6 +137,7 @@ Structure as: `init()` → `continue(id)` → `cleanup(id)`
 - **Protected Branch**: `main` is protected. Do not push directly to `main`. Use PRs.
 - **Merge Strategy**: Squash and merge.
 - **Never force push**: Do not use `git push --force` or `--force-with-lease`. If you hit a git issue, stop and ask the user for guidance.
+- **Pre-commit CI gate**: Always run `make ci` before committing any changes. Ensure it passes with zero errors. Do not commit if `make ci` fails - fix all issues first, then commit.
 
 ## Deprecated
 
