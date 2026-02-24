@@ -401,7 +401,6 @@ def hooks() -> None:
         rprint("[red]✗ .pre-commit-config.yaml not found.[/red]")
         raise typer.Exit(code=1)
 
-
     config = yaml.safe_load(config_path.read_text())
 
     table = Table(title="Configured Pre-commit Hooks")
@@ -426,7 +425,7 @@ def hooks() -> None:
 
     if activate:
         result = subprocess.run(
-            ["pre-commit", "install"],
+            ["uv", "run", "pre-commit", "install"],
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
