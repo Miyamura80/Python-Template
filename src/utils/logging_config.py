@@ -1,4 +1,3 @@
-import asyncio
 import os
 import re
 import sys
@@ -129,22 +128,6 @@ def _should_show_location(level: str) -> bool:
     }
 
     return level_map.get(level, True)  # Default to True for unknown levels
-
-
-def _get_task_name() -> str:
-    """Get the current asyncio task name if it exists"""
-    try:
-        task = asyncio.current_task()
-        if task:
-            # Get task name, fallback to a shorter task ID format
-            name = getattr(task, "name", None)
-            if name:
-                return name
-            return "main"  # Default to 'main' if no name set
-        return "main"
-    except RuntimeError:
-        # If called from outside asyncio event loop
-        return "main"
 
 
 def _get_replica_id() -> str:
