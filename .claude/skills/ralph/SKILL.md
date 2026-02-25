@@ -25,7 +25,7 @@ Take a PRD (markdown file or text) and convert it to `prd.json` in your ralph di
       "acceptanceCriteria": [
         "Criterion 1",
         "Criterion 2",
-        "Typecheck passes"
+        "Lint/Static analysis passes"
       ],
       "priority": 1,
       "passes": false,
@@ -76,7 +76,7 @@ Each criterion must be something Ralph can CHECK, not something vague.
 - "Add `status` column to tasks table with default 'pending'"
 - "Filter dropdown has options: All, Active, Completed"
 - "Clicking delete shows confirmation dialog"
-- "Typecheck passes"
+- "Lint/Static analysis passes"
 - "Tests pass"
 
 ### Bad criteria (vague):
@@ -87,20 +87,19 @@ Each criterion must be something Ralph can CHECK, not something vague.
 
 ### Always include as final criterion:
 ```
-"Typecheck passes"
+"Lint/Static analysis passes"
 ```
 
-For stories with testable logic, also include:
+For stories with testable logic, include:
 ```
 "Tests pass"
 ```
 
-### For stories that change UI, also include:
+For code quality, include:
 ```
-"Verify in browser using dev-browser skill"
+"Lint/Static analysis passes"
 ```
 
-Frontend stories are NOT complete until visually verified. Ralph will use the dev-browser skill to navigate to the page, interact with the UI, and confirm changes work.
 
 ## Conversion Rules
 
@@ -109,8 +108,8 @@ Frontend stories are NOT complete until visually verified. Ralph will use the de
 3. **Priority**: Based on dependency order, then document order
 4. **All stories**: `passes: false` and empty `notes`
 5. **branchName**: Derive from feature name, kebab-case, prefixed with `ralph/`
-6. **Always add**: "Typecheck passes" to every story's acceptance criteria
-7. **Final Story**: Always include a final story for documentation (README, Makefile) and verification.
+6. **Always add**: "Lint/Static analysis passes" to every story's acceptance criteria
+7. **Final Story**: Always include a final story for documentation (README, build configuration) and verification.
 
 ## The Final Documentation Story
 
@@ -118,16 +117,16 @@ Frontend stories are NOT complete until visually verified. Ralph will use the de
 
 **Requirements for the final story:**
 - Update `README.md` (if necessary) to document new features
-- Update `Makefile` (if necessary) with new commands
+- Update build/test configuration (if necessary) with new commands
 - Document how to execute and test the new code
 - Verify all tests and typechecks pass
 
 **Example acceptance criteria:**
 ```
 "Update README.md with instructions for [feature]",
-"Update Makefile if new build/test steps are needed",
+"Update build/test configuration if needed",
 "Document how to run and test the changes",
-"Typecheck passes",
+"Lint/Static analysis passes",
 "All tests pass"
 ```
 
@@ -177,7 +176,7 @@ Add ability to mark tasks with different statuses.
       "acceptanceCriteria": [
         "Add status column: 'pending' | 'in_progress' | 'done' (default 'pending')",
         "Generate and run migration successfully",
-        "Typecheck passes"
+        "Lint/Static analysis passes"
       ],
       "priority": 1,
       "passes": false,
@@ -190,8 +189,7 @@ Add ability to mark tasks with different statuses.
       "acceptanceCriteria": [
         "Each task card shows colored status badge",
         "Badge colors: gray=pending, blue=in_progress, green=done",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Lint/Static analysis passes"
       ],
       "priority": 2,
       "passes": false,
@@ -205,8 +203,7 @@ Add ability to mark tasks with different statuses.
         "Each row has status dropdown or toggle",
         "Changing status saves immediately",
         "UI updates without page refresh",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Lint/Static analysis passes"
       ],
       "priority": 3,
       "passes": false,
@@ -219,8 +216,7 @@ Add ability to mark tasks with different statuses.
       "acceptanceCriteria": [
         "Filter dropdown: All | Pending | In Progress | Done",
         "Filter persists in URL params",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Lint/Static analysis passes"
       ],
       "priority": 4,
       "passes": false,
@@ -232,9 +228,9 @@ Add ability to mark tasks with different statuses.
       "description": "Ensure code is well-documented and buildable.",
       "acceptanceCriteria": [
         "Update README.md with status feature instructions",
-        "Update Makefile if necessary",
+        "Update build configuration if necessary",
         "Document how to test status filtering",
-        "Typecheck passes",
+        "Lint/Static analysis passes",
         "All tests pass"
       ],
       "priority": 5,
@@ -265,8 +261,7 @@ Before writing prd.json, verify:
 - [ ] **Previous run archived** (if prd.json exists with different branchName, archive it first)
 - [ ] Each story is completable in one iteration (small enough)
 - [ ] Stories are ordered by dependency (schema to backend to UI)
-- [ ] Every story has "Typecheck passes" as criterion
-- [ ] UI stories have "Verify in browser using dev-browser skill" as criterion
+- [ ] Every story has "Lint/Static analysis passes" as criterion
 - [ ] Acceptance criteria are verifiable (not vague)
 - [ ] No story depends on a later story
-- [ ] Final story covers README, Makefile, and documentation
+- [ ] Final story covers README, build configuration, and documentation
