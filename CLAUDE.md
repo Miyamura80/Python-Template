@@ -67,7 +67,7 @@ from common import global_config
 
 # Access config values
 global_config.example_parent.example_child
-global_config.llm_config.default_model
+global_config.default_llm.default_model
 
 # Access secrets from .env
 global_config.OPENAI_API_KEY

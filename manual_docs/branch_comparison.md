@@ -45,7 +45,7 @@ This document provides a detailed comparison of features available in the `main`
 |---------|:------:|:------:|-------|
 | pytest framework | ✅ | ✅ | Python testing |
 | TestTemplate base class | ✅ | ✅ | Shared test utilities |
-| pytest-asyncio | ✅ | ✅ | Async test support |
+| pytest-asyncio | ❌ | ✅ | Async test support |
 | E2E test structure | ❌ | ✅ | End-to-end testing patterns |
 
 ### Web Framework

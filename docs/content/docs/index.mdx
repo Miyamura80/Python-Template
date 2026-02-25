@@ -17,7 +17,7 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 Create and activate your virtual environment using `uv`:
 
 ```bash
-make setup
+uv sync
 ```
 
 This will create a `.venv` directory and sync all dependencies from `pyproject.toml`.
@@ -51,7 +51,7 @@ make all
 Or run specific Python files directly:
 
 ```bash
-uv run python src/main.py
+uv run python main.py
 ```
 
 </Step>
