@@ -17,7 +17,7 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 使用 `uv` 创建并激活虚拟环境：
 
 ```bash
-make setup
+uv sync
 ```
 
 这将创建 `.venv` 目录并同步 `pyproject.toml` 中的所有依赖。
@@ -51,7 +51,7 @@ make all
 或直接运行特定 Python 文件：
 
 ```bash
-uv run python src/main.py
+uv run python main.py
 ```
 
 </Step>
