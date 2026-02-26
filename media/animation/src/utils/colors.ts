@@ -1,0 +1,13 @@
+export const COLORS = {
+  BG_PRIMARY: "#0d1117",
+  BG_SECONDARY: "#161b22",
+  ACCENT_GREEN: "#3fb950",
+  ACCENT_GREEN_LIGHT: "#56d364",
+  ACCENT_BLUE: "#58a6ff",
+  ACCENT_YELLOW: "#d29922",
+  ACCENT_YELLOW_BRIGHT: "#e3b341",
+  ACCENT_RED: "#f85149",
+  TEXT_PRIMARY: "#e6edf3",
+  TEXT_SECONDARY: "#8b949e",
+  BORDER: "#30363d",
+} as const;

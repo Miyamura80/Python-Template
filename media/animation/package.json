@@ -1,0 +1,22 @@
+{
+  "name": "python-template-animation",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render PythonTemplateAnimation --codec=gif --output=../promo_animation.gif --every-nth-frame=2"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.265",
+    "@remotion/google-fonts": "4.0.265",
+    "@remotion/transitions": "4.0.265",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.265",
+    "typescript": "^5.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}
