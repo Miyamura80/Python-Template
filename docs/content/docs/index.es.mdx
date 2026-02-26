@@ -1,11 +1,11 @@
 ---
-title: Inicio Rapido
+title: Inicio Rápido
 description: Comienza con esta plantilla de Python
 ---
 
-Bienvenido a la documentacion! Sigue estos pasos para comenzar con esta plantilla de Python.
+¡Bienvenido a la documentación! Sigue estos pasos para comenzar con esta plantilla de Python.
 
-## Inicio Rapido
+## Inicio Rápido
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
@@ -17,10 +17,10 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 Crea y activa tu entorno virtual usando `uv`:
 
 ```bash
-make setup
+uv sync
 ```
 
-Esto creara un directorio `.venv` y sincronizara todas las dependencias de `pyproject.toml`.
+Esto creará un directorio `.venv` y sincronizará todas las dependencias de `pyproject.toml`.
 
 </Step>
 
@@ -34,24 +34,24 @@ Copia el archivo de entorno de ejemplo y agrega tus claves API:
 cp .env.example .env
 ```
 
-Edita `common/global_config.yaml` para personalizar los valores de configuracion de tu proyecto.
+Edita `common/global_config.yaml` para personalizar los valores de configuración de tu proyecto.
 
 </Step>
 
 <Step>
 
-### Ejecutar la Aplicacion
+### Ejecutar la Aplicación
 
-Ejecuta la aplicacion principal:
+Ejecuta la aplicación principal:
 
 ```bash
 make all
 ```
 
-O ejecuta archivos Python especificos directamente:
+O ejecuta archivos Python específicos directamente:
 
 ```bash
-uv run python src/main.py
+uv run python main.py
 ```
 
 </Step>
@@ -66,7 +66,7 @@ Verifica que todo funcione ejecutando el conjunto de pruebas:
 make test
 ```
 
-Ejecuta verificaciones de calidad de codigo:
+Ejecuta verificaciones de calidad de código:
 
 ```bash
 make ci
@@ -75,10 +75,10 @@ make ci
 </Step>
 </Steps>
 
-## Proximos Pasos
+## Próximos Pasos
 
 <Cards>
-  <Card title="Aprende mas sobre Configuracion" href="/docs/test" />
+  <Card title="Aprende más sobre Configuración" href="/docs/test" />
   <Card title="Referencia API" href="/docs/api" />
-  <Card title="Aprende mas sobre Fumadocs" href="https://fumadocs.dev" />
+  <Card title="Aprende más sobre Fumadocs" href="https://fumadocs.dev" />
 </Cards>
