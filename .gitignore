@@ -1,9 +1,6 @@
 # macOS
 .DS_Store
 
-# Remotion animation source (only rendered GIF is tracked)
-media/animation/
-
 old_scripts/
 
 # Agent session files
