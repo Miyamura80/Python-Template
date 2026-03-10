@@ -91,7 +91,7 @@ result = await inf_module.run(input_field="value")
 
 ```python
 from tests.test_template import TestTemplate
-from tests.conftest import slow_test, nondeterministic_test
+from tests.test_template import slow_test, nondeterministic_test
 
 class TestMyFeature(TestTemplate):
     def test_something(self):
