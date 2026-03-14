@@ -1,0 +1,53 @@
+---
+description: General pattern for handling with databases
+globs: 
+alwaysApply: false
+---
+## Database transaction helpers.
+
+This module centralises the small helper context-managers we use for
+database IO so that route / service code stays concise and safe:
+
+• scoped_session() –  hands out a *short-lived* SQLAlchemy session and
+  closes it automatically.  Ideal for ad-hoc reads or when you need a
+  session but don't already have one (think background tasks, tools
+  functions, etc.).
+
+  Example:
+
+  ```python
+  from src.utils.db.db_transaction import scoped_session
+
+  with scoped_session() as db:
+      user = db.query(Users).first()
+  ```
+
+• db_transaction(db) – wraps one or more *write* operations in a
+  transaction.  Commits on success, rolls back on any exception, and
+  aborts long-running transactions after ``timeout_seconds`` (defaults
+  to 5 min).
+
+  ```python
+  from src.utils.db.db_transaction import db_transaction
+
+  with scoped_session() as db:
+      with db_transaction(db):
+          db.add(new_model)
+  ```
+
+• read_db_transaction(db) – lightweight sibling for *read-only*
+  operations.  It doesn't start an explicit transaction but provides
+  the same error handling semantics so failures are still converted to
+  HTTP 500s.
+
+  ```python
+  from src.utils.db.db_transaction import scoped_session, read_db_transaction
+
+  with scoped_session() as db:
+      with read_db_transaction(db):
+          rows = db.execute(sql).all()
+  ```
+
+These helpers are the canonical way to touch the DB throughout the
+code-base.  If you need a session *quickly*, reach for
+``scoped_session``; if you need a write, wrap it in ``db_transaction``.

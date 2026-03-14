@@ -11,6 +11,8 @@ example_parent:
 default_llm:
   default_model: gemini/gemini-3-flash-preview
   fallback_model: gemini/gemini-2.5-flash-preview
+  fast_model: gemini/gemini-2.5-flash
+  cheap_model: gemini/gemini-2.5-flash
   default_temperature: 0.5
   default_max_tokens: 100000
 
@@ -20,6 +22,25 @@ llm_config:
     max_attempts: 3
     min_wait_seconds: 1
     max_wait_seconds: 5
+  timeout:
+    # API request timeout (seconds) - how long to wait for LLM API response
+    api_timeout_seconds: 120
+    # Connection timeout (seconds) - how long to wait to establish connection
+    connect_timeout_seconds: 10
+
+########################################################
+# Agent chat
+########################################################
+agent_chat:
+  history_message_limit: 20
+  # Streaming configuration
+  streaming:
+    # Send heartbeat comments every N seconds to prevent client timeout
+    heartbeat_interval_seconds: 15
+    # Maximum time to wait for first token from LLM (seconds)
+    first_token_timeout_seconds: 60
+    # Maximum time for entire streaming operation (seconds)
+    max_streaming_duration_seconds: 300
 
 ########################################################
 # Debugging
@@ -46,7 +67,7 @@ logging:
       show_for_warning: true
       show_for_error: true
   levels:
-    debug: false  # Suppress all debug logs
+    debug: false  # Disable debug logs
     info: true    # Show info logs
     warning: true # Show warning logs
     error: true   # Show error logs
@@ -71,4 +92,41 @@ logging:
         regex: "(?i:(?:api[_-]?key|project[_-]?key|secret[_-]?key)[=:\\s]+['\"]?[a-zA-Z0-9_\\-]{16,}['\"]?)"
         placeholder: "[REDACTED_KEY]"
 
+########################################################
+# Subscription
+########################################################
+subscription:
+  stripe:
+    price_ids:
+      test: price_1SaeJ4Kugya9tlosOgMWuJfi
+      prod: ""  # TODO: Set production price ID
+  metered:
+    included_units: 1000
+    overage_unit_amount: 1  # $0.01 per unit
+    unit_label: "units"
+  trial_period_days: 7
+  payment_retry:
+    max_attempts: 3
 
+########################################################
+# Stripe
+########################################################
+stripe:
+  api_version: "2024-11-20.acacia"
+  webhook:
+    url: "https://python-saas-template-dev.up.railway.app"
+
+########################################################
+# Telegram
+########################################################
+telegram:
+  chat_ids:
+    admin_alerts: "1560836485"
+    test: "1560836485"
+
+########################################################
+# Server
+########################################################
+server:
+  allowed_origins:
+    - "http://localhost:8080"

@@ -1,0 +1,7 @@
+tier_limits:
+  free_tier:
+    daily_chat: 5
+  plus_tier:
+    daily_chat: 25
+default_tier: free_tier
+

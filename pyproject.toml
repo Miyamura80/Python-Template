@@ -35,6 +35,18 @@ dependencies = [
     "typer",
     "questionary",
     "rich>=14.3.1",
+    # SaaS-specific dependencies
+    "psycopg2-binary>=2.9.10",
+    "sqlalchemy>=2.0.42",
+    "requests>=2.32.4",
+    "pytest-asyncio>=1.2.0",
+    "fastapi>=0.118.0",
+    "PyJWT>=2.8.0",
+    "uvicorn>=0.37.0",
+    "itsdangerous>=2.2.0",
+    "stripe>=13.0.1",
+    "workos>=4.0.0",
+    "httpx>=0.27.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -86,13 +98,28 @@ exclude = [
     "tests/test_logging_security.py",
     "tests/test_logging_thread_safety.py",
     "tests/test_template.py",
+    "tests/e2e/e2e_test_base.py",
+    "tests/e2e/payments/test_stripe.py",
+    "tests/e2e/agent/tools/test_alert_admin.py",
     "utils/llm/",
     "common/",
     "src/utils/logging_config.py",
     "src/utils/context.py",
     "tests/conftest.py",
     "init/",
-    "onboard.py"
+    "onboard.py",
+    "alembic/",
+    "src/db/",
+    "src/api/routes/",
+    "src/api/auth/",
+    "src/utils/integration/",
+    "src/stripe/",
+    "scripts/"
+]
+ignore_names = [
+    "apply_referral",
+    "referral_count",
+    "get_or_create_referral_code"
 ]
 
 [tool.coverage.run]

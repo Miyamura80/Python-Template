@@ -16,11 +16,16 @@ from pydantic_settings import (
 
 # Import configuration models
 from .config_models import (
+    AgentChatConfig,
     DefaultLlm,
     ExampleParent,
     FeaturesConfig,
     LlmConfig,
     LoggingConfig,
+    ServerConfig,
+    StripeConfig,
+    SubscriptionConfig,
+    TelegramConfig,
 )
 
 # Get the path to the root directory (one level up from common)
@@ -167,7 +172,7 @@ class Config(BaseSettings):
         extra="allow",
     )
 
-    # Top-level fields
+    # Top-level YAML fields
     model_name: str
     dot_global_config_health_check: bool
     example_parent: ExampleParent
@@ -176,6 +181,13 @@ class Config(BaseSettings):
     logging: LoggingConfig
     features: FeaturesConfig = Field(default_factory=lambda: FeaturesConfig())
 
+    # SaaS-specific YAML fields (optional for non-SaaS usage)
+    agent_chat: AgentChatConfig | None = None
+    subscription: SubscriptionConfig | None = None
+    stripe: StripeConfig | None = None
+    telegram: TelegramConfig | None = None
+    server: ServerConfig | None = None
+
     # Environment variables
     DEV_ENV: str
     OPENAI_API_KEY: str | None = None
@@ -183,6 +195,19 @@ class Config(BaseSettings):
     GROQ_API_KEY: str | None = None
     PERPLEXITY_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None
+    CEREBRAS_API_KEY: str | None = None
+    BACKEND_DB_URI: str | None = None
+    TELEGRAM_BOT_TOKEN: str | None = None
+    STRIPE_TEST_SECRET_KEY: str | None = None
+    STRIPE_TEST_WEBHOOK_SECRET: str | None = None
+    STRIPE_SECRET_KEY: str | None = None
+    STRIPE_WEBHOOK_SECRET: str | None = None
+    TEST_USER_EMAIL: str | None = None
+    TEST_USER_PASSWORD: str | None = None
+    WORKOS_API_KEY: str | None = None
+    WORKOS_CLIENT_ID: str | None = None
+    SESSION_SECRET_KEY: str | None = None
+    RAILWAY_PRIVATE_DOMAIN: str | None = None
 
     # Runtime environment (computed via default_factory)
     is_local: bool = Field(
@@ -193,6 +218,30 @@ class Config(BaseSettings):
             "🖥️  local" if os.getenv("GITHUB_ACTIONS") != "true" else "☁️  CI"
         )
     )
+    database_uri: str = Field(default="")
+
+    def model_post_init(self, _context: Any) -> None:
+        """Post-initialization to set computed fields that depend on other fields."""
+        if self.BACKEND_DB_URI:
+            try:
+                from common.db_uri_resolver import resolve_db_uri
+
+                railway_domain = os.environ.get("RAILWAY_PRIVATE_DOMAIN")
+                resolved_uri = resolve_db_uri(self.BACKEND_DB_URI, railway_domain)
+                object.__setattr__(self, "database_uri", resolved_uri)
+                object.__setattr__(self, "RAILWAY_PRIVATE_DOMAIN", railway_domain)
+                if railway_domain:
+                    if resolved_uri == self.BACKEND_DB_URI:
+                        logger.warning(
+                            "RAILWAY_PRIVATE_DOMAIN provided but invalid; using BACKEND_DB_URI"
+                        )
+                    else:
+                        logger.info(
+                            "Using RAILWAY_PRIVATE_DOMAIN for database connections: "
+                            f"{railway_domain}"
+                        )
+            except ImportError:
+                object.__setattr__(self, "database_uri", self.BACKEND_DB_URI)
 
     @classmethod
     def settings_customise_sources(
@@ -225,6 +274,8 @@ class Config(BaseSettings):
     def _identify_provider(self, model_name: str) -> str:
         """Identify the LLM provider from a model name string."""
         name_lower = model_name.lower()
+        if "cerebras" in name_lower:
+            return "cerebras"
         if "gpt" in name_lower or re.match(OPENAI_O_SERIES_PATTERN, name_lower):
             return "openai"
         if "claude" in name_lower or "anthropic" in name_lower:
@@ -247,6 +298,7 @@ class Config(BaseSettings):
             "groq": self.GROQ_API_KEY,
             "perplexity": self.PERPLEXITY_API_KEY,
             "gemini": self.GEMINI_API_KEY,
+            "cerebras": self.CEREBRAS_API_KEY,
         }
         if provider in api_keys:
             key = api_keys[provider]
@@ -257,6 +309,24 @@ class Config(BaseSettings):
                 )
             return key
         raise ValueError(f"No API key configured for model: {model_identifier}")
+
+    def api_base(self, model_name: str) -> str:
+        """Returns the provider base URL for the model."""
+        model_lower = model_name.lower()
+
+        if "cerebras" in model_lower:
+            return "https://api.cerebras.ai/v1"
+        if "groq" in model_lower:
+            return "https://api.groq.com/openai/v1"
+        if "perplexity" in model_lower:
+            return "https://api.perplexity.ai"
+        if "gemini" in model_lower:
+            return "https://generativelanguage.googleapis.com/v1beta/openai/"
+        if "gpt" in model_lower or re.match(OPENAI_O_SERIES_PATTERN, model_lower):
+            return "https://api.openai.com/v1"
+
+        logger.error(f"Provider API base not found for model: {model_name}")
+        return ""
 
 
 # Load .env files before creating the config instance

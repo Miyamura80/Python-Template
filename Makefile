@@ -117,6 +117,16 @@ ralph: check_jq ## Run Ralph agent loop
 
 
 ########################################################
+# Run Server
+########################################################
+
+server: check_uv ## Start the server with uvicorn
+	@echo "$(GREEN)🚀Starting server...$(RESET)"
+	@PYTHONWARNINGS="ignore::DeprecationWarning:pydantic" uv run uvicorn src.server:app --host 0.0.0.0 --port $${PORT:-8000}
+	@echo "$(GREEN)✅Server stopped.$(RESET)"
+
+
+########################################################
 # Run Tests
 ########################################################
 
@@ -259,3 +269,54 @@ requirements:
 	@echo "$(YELLOW)🔍Checking requirements...$(RESET)"
 	@cp requirements-dev.lock requirements.txt
 	@echo "$(GREEN)✅Requirements checked.$(RESET)"
+
+########################################################
+# Database & Migrations
+########################################################
+
+db_test: check_uv ## Test database connection and validate it's remote
+	@echo "$(YELLOW)🔍Testing database connection...$(RESET)"
+	@uv run python -c "from common import global_config; from urllib.parse import urlparse; \
+	    db_uri = str(global_config.database_uri); \
+	    assert db_uri, f'Invalid database: {db_uri}'; \
+	    parsed = urlparse(db_uri); \
+	    host = parsed.hostname or 'Unknown'; \
+	    print(f'✅ Remote database configured: {host}')"
+	@uv run alembic current >/dev/null 2>&1 && echo "$(GREEN)✅Database connection successful$(RESET)" || echo "$(RED)❌Database connection failed$(RESET)"
+
+db_migrate: check_uv ## Run pending database migrations
+	@echo "$(YELLOW)🔄Running database migrations...$(RESET)"
+	@uv run alembic upgrade head
+	@echo "$(GREEN)✅Database migrations completed.$(RESET)"
+
+db_validate: check_uv ## Validate database models and dependencies before migration
+	@echo "$(YELLOW)🔍Validating database models and dependencies...$(RESET)"
+	@uv run python scripts/validate_models.py
+	@echo "$(GREEN)✅Database validation completed.$(RESET)"
+
+db_migration: check_uv db_validate ## Create new database migration (requires msg='message')
+	@echo "$(YELLOW)📝Creating new migration...$(RESET)"
+	@if [ -z '$(msg)' ]; then \
+		echo "$(RED)❌ Please provide a message: make db_migration msg='your migration message'$(RESET)"; \
+		exit 1; \
+	fi
+	@uv run alembic revision --autogenerate -m '$(msg)'
+	@echo "$(GREEN)✅Migration created successfully.$(RESET)"
+
+db_downgrade: check_uv ## Downgrade database by one revision
+	@echo "$(YELLOW)⬇️ Downgrading database by 1 revision...$(RESET)"
+	@uv run alembic downgrade -1
+	@echo "$(GREEN)✅Database downgraded.$(RESET)"
+
+db_status: check_uv ## Show database migration status
+	@echo "$(YELLOW)📊Checking database migration status...$(RESET)"
+	@uv run alembic current
+	@uv run alembic history --verbose
+	@echo "$(GREEN)✅Database status check completed.$(RESET)"
+
+db_reset: check_uv ## Reset database (WARNING: destructive operation)
+	@echo "$(RED)🗑️ WARNING: This will drop all database tables!$(RESET)"
+	@read -p "Are you sure? (y/N): " confirm && [ "$$confirm" = "y" ] || exit 1
+	@uv run alembic downgrade base
+	@uv run alembic upgrade head
+	@echo "$(GREEN)✅Database reset completed.$(RESET)"
