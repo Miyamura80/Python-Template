@@ -43,11 +43,13 @@ init: ## Initialize project (usage: make init name=my-project description="my de
 		echo "Usage: make init name=<project_name> description=<project_description>"; \
 		exit 1; \
 	fi
-	@echo "$(YELLOW)🚀 Initializing project $(name)...$(RESET)"
-	@sed -i.bak "s/name = \"python-template\"/name = \"$(name)\"/" pyproject.toml && rm pyproject.toml.bak
-	@sed -i.bak "s/description = \"Add your description here\"/description = \"$(description)\"/" pyproject.toml && rm pyproject.toml.bak
-	@sed -i.bak "s/# Python-Template/# $(name)/" README.md && rm README.md.bak
-	@sed -i.bak "s/<b>Opinionated Python project stack. 🔋 Batteries included. <\/b>/<b>$(description)<\/b>/" README.md && rm README.md.bak
+	@CURRENT_NAME=$$(sed -n 's/^name = "\(.*\)"/\1/p' pyproject.toml | head -1); \
+	CURRENT_DESC=$$(sed -n 's/^description = "\(.*\)"/\1/p' pyproject.toml | head -1); \
+	echo "$(YELLOW)🚀 Initializing project $(name)...$(RESET)"; \
+	sed -i.bak "s/name = \"$$CURRENT_NAME\"/name = \"$(name)\"/" pyproject.toml && rm pyproject.toml.bak; \
+	sed -i.bak "s/description = \"$$CURRENT_DESC\"/description = \"$(description)\"/" pyproject.toml && rm pyproject.toml.bak; \
+	sed -i.bak "1s/^# .*/# $(name)/" README.md && rm README.md.bak; \
+	sed -i.bak "s|<b>.*</b>|<b>$(description)</b>|" README.md && rm README.md.bak
 	@echo "$(GREEN)✅ Updated project name and description.$(RESET)"
 
 banner: check_uv ## Generate project banner image

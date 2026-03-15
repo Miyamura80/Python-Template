@@ -189,9 +189,9 @@ class Config(BaseSettings):
         default_factory=lambda: os.getenv("GITHUB_ACTIONS") != "true"
     )
     running_on: str = Field(
-        default_factory=lambda: "🖥️  local"
-        if os.getenv("GITHUB_ACTIONS") != "true"
-        else "☁️  CI"
+        default_factory=lambda: (
+            "🖥️  local" if os.getenv("GITHUB_ACTIONS") != "true" else "☁️  CI"
+        )
     )
 
     @classmethod
