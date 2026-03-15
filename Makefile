@@ -48,7 +48,7 @@ init: ## Initialize project (usage: make init name=my-project description="my de
 	ESC_NAME=$$(printf '%s\n' "$$CURRENT_NAME" | sed 's/[.[\*^$$\/]/\\&/g'); \
 	ESC_DESC=$$(printf '%s\n' "$$CURRENT_DESC" | sed 's/[.[\*^$$\/]/\\&/g'); \
 	ESC_NEW_NAME=$$(printf '%s\n' "$(name)" | sed 's/[&/\\]/\\&/g'); \
-	ESC_NEW_DESC=$$(printf '%s\n' "$(description)" | sed 's/[&|\\]/\\&/g'); \
+	ESC_NEW_DESC=$$(printf '%s\n' "$(description)" | sed 's/[&/|\\]/\\&/g'); \
 	echo "$(YELLOW)🚀 Initializing project $(name)...$(RESET)"; \
 	sed -i.bak "s/name = \"$$ESC_NAME\"/name = \"$$ESC_NEW_NAME\"/" pyproject.toml && rm pyproject.toml.bak; \
 	sed -i.bak "s/description = \"$$ESC_DESC\"/description = \"$$ESC_NEW_DESC\"/" pyproject.toml && rm pyproject.toml.bak; \
