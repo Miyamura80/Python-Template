@@ -9,7 +9,8 @@ INPUT=$(cat)
 COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
 
 # Block direct invocation of the AI writing check script
-if [[ "$COMMAND" == *"check_ai_writing"* ]]; then
+# Match only actual script execution (uv run python / python), not mentions in strings
+if [[ "$COMMAND" =~ (uv\ run\ python|python3?|\./).*check_ai_writing\.py ]]; then
   jq -n '{
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
