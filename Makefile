@@ -47,11 +47,13 @@ init: ## Initialize project (usage: make init name=my-project description="my de
 	CURRENT_DESC=$$(sed -n 's/^description = "\(.*\)"/\1/p' pyproject.toml | head -1); \
 	ESC_NAME=$$(printf '%s\n' "$$CURRENT_NAME" | sed 's/[.[\*^$$\/]/\\&/g'); \
 	ESC_DESC=$$(printf '%s\n' "$$CURRENT_DESC" | sed 's/[.[\*^$$\/]/\\&/g'); \
+	ESC_NEW_NAME=$$(printf '%s\n' "$(name)" | sed 's/[&/\\]/\\&/g'); \
+	ESC_NEW_DESC=$$(printf '%s\n' "$(description)" | sed 's/[&|\\]/\\&/g'); \
 	echo "$(YELLOW)🚀 Initializing project $(name)...$(RESET)"; \
-	sed -i.bak "s/name = \"$$ESC_NAME\"/name = \"$(name)\"/" pyproject.toml && rm pyproject.toml.bak; \
-	sed -i.bak "s/description = \"$$ESC_DESC\"/description = \"$(description)\"/" pyproject.toml && rm pyproject.toml.bak; \
-	sed -i.bak "1s/^# .*/# $(name)/" README.md && rm README.md.bak; \
-	sed -i.bak "1,10s|<b>.*</b>|<b>$(description)</b>|" README.md && rm README.md.bak
+	sed -i.bak "s/name = \"$$ESC_NAME\"/name = \"$$ESC_NEW_NAME\"/" pyproject.toml && rm pyproject.toml.bak; \
+	sed -i.bak "s/description = \"$$ESC_DESC\"/description = \"$$ESC_NEW_DESC\"/" pyproject.toml && rm pyproject.toml.bak; \
+	sed -i.bak "1s/^# .*/# $$ESC_NEW_NAME/" README.md && rm README.md.bak; \
+	sed -i.bak "1,10s|<b>.*</b>|<b>$$ESC_NEW_DESC</b>|" README.md && rm README.md.bak
 	@echo "$(GREEN)✅ Updated project name and description.$(RESET)"
 
 banner: check_uv ## Generate project banner image
