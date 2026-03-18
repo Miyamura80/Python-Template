@@ -85,7 +85,7 @@ def scrub_sensitive_data(record):
     # Scrub exception if present
     exception = record.get("exception")
     if exception:
-        type_, value, tb = exception
+        _, value, _ = exception
         value_str = str(value)
         scrubbed_value_str = _SCRUBBER.scrub(value_str)
 
