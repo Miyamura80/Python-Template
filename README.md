@@ -59,7 +59,7 @@ Opinionated Python stack for fast development. The `saas` branch extends `main` 
 - `make all` - sync deps and run `main.py`
 - `make fmt` - runs `ruff format` + JSON formatting
 - `make test` - runs all tests in `tests/`
-- `make ci` - runs all CI checks (ruff, vulture, ty, etc.)
+- `make ci` - runs all CI checks (ruff, vulture, import_lint, ty, docs_lint, lint_links, check_deps)
 
 
 
