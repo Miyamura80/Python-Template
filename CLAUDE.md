@@ -139,10 +139,6 @@ Structure as: `init()` → `continue(id)` → `cleanup(id)`
 - **Never force push**: Do not use `git push --force` or `--force-with-lease`. If you hit a git issue, stop and ask the user for guidance.
 - **Pre-commit CI gate**: Always run `make ci` before committing any changes. Ensure it passes with zero errors. Do not commit if `make ci` fails - fix all issues first, then commit.
 
-## Security
-
-- **LiteLLM supply chain attack (v1.82.7, v1.82.8)**: These versions contain a malicious payload that steals credentials (SSH keys, cloud creds, env vars) and exfiltrates them. `litellm` is pinned to `<=1.82.6` in `pyproject.toml`. Do not raise this upper bound without verifying the issue is resolved. See: https://github.com/BerriAI/litellm/issues/24512
-
 ## Deprecated
 
 - Don't use `datetime.utcnow()` - use `datetime.now(timezone.utc)`
