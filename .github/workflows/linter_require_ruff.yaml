@@ -38,3 +38,5 @@ jobs:
         run: uv run python scripts/check_ai_writing.py
       - name: Run import-linter
         run: make import_lint
+      - name: Run file length check
+        run: uv run python scripts/check_file_length.py

@@ -248,7 +248,12 @@ check_deps: install_tools ## Check for unused dependencies
 	@uv run deptry .
 	@echo "$(GREEN)✅Dependency check completed.$(RESET)"
 
-ci: ruff vulture import_lint ty docs_lint lint_links check_deps ## Run all CI checks (ruff, vulture, import_lint, ty, docs_lint, lint_links)
+file_len_check: check_uv ## Check Python files don't exceed max line count
+	@echo "$(YELLOW)🔍Checking file lengths...$(RESET)"
+	@uv run python scripts/check_file_length.py
+	@echo "$(GREEN)✅File length check completed.$(RESET)"
+
+ci: ruff vulture import_lint ty docs_lint lint_links check_deps file_len_check ## Run all CI checks (ruff, vulture, import_lint, ty, docs_lint, lint_links, file_len_check)
 	@echo "$(GREEN)✅CI checks completed.$(RESET)"
 
 ########################################################

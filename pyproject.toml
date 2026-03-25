@@ -95,6 +95,12 @@ exclude = [
     "onboard.py"
 ]
 
+[tool.file_length]
+max_lines = 500
+exclude = [
+    "onboard.py",
+]
+
 [tool.coverage.run]
 branch = true
 source = ["src", "common", "utils"]
