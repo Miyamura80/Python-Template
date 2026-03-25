@@ -30,7 +30,7 @@ def load_config() -> tuple[int, set[str]]:
 
 def main() -> int:
     max_lines, exclude = load_config()
-    violations: list[tuple[pathlib.PurePosixPath, int]] = []
+    violations: list[tuple[pathlib.Path, int]] = []
 
     for path in REPO_ROOT.rglob("*.py"):
         rel = path.relative_to(REPO_ROOT)
@@ -39,7 +39,7 @@ def main() -> int:
             continue
         if any(part in RECURSIVE_SKIP_DIRS for part in parts[:-1]):
             continue
-        if str(rel) in exclude:
+        if rel.as_posix() in exclude:
             continue
         line_count = len(path.read_text(encoding="utf-8", errors="ignore").splitlines())
         if line_count > max_lines:
