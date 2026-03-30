@@ -4,7 +4,7 @@ from typing import Any, Literal
 from dspy.adapters import Image as dspy_Image
 from dspy.signatures import Signature as dspy_Signature
 from dspy.utils.callback import BaseCallback
-from langfuse import Langfuse, LangfuseGeneration, LangfuseSpan, get_client
+from langfuse import Langfuse, LangfuseGeneration, LangfuseTool, get_client
 from langfuse.types import TraceContext
 from litellm.cost_calculator import completion_cost
 from loguru import logger as log
@@ -61,7 +61,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.input_field_values = contextvars.ContextVar[dict[str, Any]](
             "input_field_values"
         )
-        self.current_tool_span = contextvars.ContextVar[LangfuseSpan | None]("current_tool_span")
+        self.current_tool_span = contextvars.ContextVar[LangfuseTool | None]("current_tool_span")
         # Initialize Langfuse client
         self.langfuse: Langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()
@@ -404,7 +404,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 trace_context["parent_span_id"] = parent_observation_id
             tool_span = self.langfuse.start_observation(
                 name=f"tool:{tool_name}",
-                as_type="span",
+                as_type="tool",
                 input=tool_args,
                 trace_context=trace_context,
                 metadata={
