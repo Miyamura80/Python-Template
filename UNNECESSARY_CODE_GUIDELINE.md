@@ -50,7 +50,7 @@ static analysis:
 11. **Migration files**: Database migration scripts.
 12. **Protocol/ABC implementations**: Methods implementing an abstract base
     class or Protocol interface.
-13. **Vulture whitelist entries**: Anything referenced in
+13. **Vulture exclusions**: Anything referenced in
     `pyproject.toml [tool.vulture]` exclusions.
 
 ## Validation Before Removal
