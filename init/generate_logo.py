@@ -61,17 +61,6 @@ def remove_greenscreen(img: Image.Image, tolerance: int = 60) -> Image.Image:
     return Image.fromarray(data)
 
 
-def reduce_color_variance(img: Image.Image, colors: int = 8) -> Image.Image:
-    """Reduce color variance by quantizing to a limited palette."""
-    if img.mode != "RGBA":
-        img = img.convert("RGBA")
-
-    # Quantize to reduce color variance
-    # This will unify similar colors
-    quantized = img.quantize(colors=colors, method=2)
-    return quantized.convert("RGBA")
-
-
 def invert_colors(img: Image.Image) -> Image.Image:
     """Invert colors while preserving alpha channel."""
     if img.mode != "RGBA":

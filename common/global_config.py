@@ -137,11 +137,6 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
         return config_data
 
-    def get_field_value(self, field: Any, field_name: str) -> tuple[Any, str, bool]:
-        """Get field value from YAML data."""
-        field_value = self.yaml_data.get(field_name)
-        return field_value, field_name, False
-
     def __call__(self) -> dict[str, Any]:
         """Return the complete YAML configuration."""
         return self.yaml_data
