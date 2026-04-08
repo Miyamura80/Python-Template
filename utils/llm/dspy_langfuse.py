@@ -61,7 +61,9 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
         self.input_field_values = contextvars.ContextVar[dict[str, Any]](
             "input_field_values"
         )
-        self.current_tool_span = contextvars.ContextVar[LangfuseTool | None]("current_tool_span")
+        self.current_tool_span = contextvars.ContextVar[LangfuseTool | None](
+            "current_tool_span"
+        )
         # Initialize Langfuse client
         self.langfuse: Langfuse = Langfuse()
         self.input_field_names = signature.input_fields.keys()

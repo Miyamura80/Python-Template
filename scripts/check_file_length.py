@@ -46,7 +46,9 @@ def main() -> int:
             violations.append((rel, line_count))
 
     if violations:
-        print(f"File length check failed: {len(violations)} file(s) exceed {max_lines} lines")
+        print(
+            f"File length check failed: {len(violations)} file(s) exceed {max_lines} lines"
+        )
         for rel_path, count in sorted(violations):
             print(f"  {rel_path}: {count} lines")
         print(
