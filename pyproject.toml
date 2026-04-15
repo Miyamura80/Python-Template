@@ -35,6 +35,7 @@ dependencies = [
     "typer",
     "questionary",
     "rich>=14.3.1",
+    "tomli-w>=1.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -61,6 +62,9 @@ ignore = ["E501", "UP015", "B008"]
 max-complexity = 10
 
 [tool.ty]
+
+[tool.ty.src]
+exclude = ["scripts/sync_agent_config.py"]
 
 [tool.ty.rules]
 possibly-unresolved-reference = "error"
