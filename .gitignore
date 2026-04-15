@@ -5,6 +5,7 @@ old_scripts/
 
 # Agent session files
 session-*.md
+.claude/scheduled_tasks.lock
 
 # Overwrite global config
 .global_config.yaml
