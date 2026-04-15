@@ -167,7 +167,7 @@ def sync_skill_symlinks() -> list[str]:
             changes.append(change)
 
     # If .agents/skills/ was missing entirely (sparse checkout, manual rm) and we
-    # just created it empty, refuse to prune — otherwise we'd silently delete every
+    # just created it empty, refuse to prune - otherwise we'd silently delete every
     # Claude symlink. User-created symlinks elsewhere are unaffected either way.
     if not shared_existed and not wanted:
         return changes
