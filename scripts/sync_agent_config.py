@@ -1,5 +1,5 @@
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.12"
 # dependencies = ["pyyaml>=6.0", "tomli_w>=1.0"]
 # ///
 """Sync Claude ↔ Codex skills and subagents.
@@ -51,6 +51,10 @@ def parse_md(path: Path) -> tuple[dict, str]:
     if not m:
         raise SystemExit(f"{path}: missing YAML frontmatter")
     meta = yaml.safe_load(m.group(1)) or {}
+    if not isinstance(meta, dict):
+        raise SystemExit(
+            f"{path}: frontmatter must be a YAML mapping, got {type(meta).__name__}"
+        )
     return meta, re.sub(r"^(?:\r?\n)+", "", m.group(2))
 
 
@@ -147,7 +151,14 @@ def _materialize_symlink(name: str) -> str | None:
             f"ERROR: name collision - .claude/skills/{name} is a real directory (Claude-only skill) "
             f"but .agents/skills/{name} also exists (shared skill). Resolve by removing one of them."
         )
-    link.symlink_to(target)
+    try:
+        link.symlink_to(target)
+    except (OSError, NotImplementedError) as e:
+        raise SystemExit(
+            f"ERROR: could not create symlink {link.relative_to(REPO)} -> {target}: {e}. "
+            "If you're on Windows, enable Developer Mode or run your shell as Administrator "
+            "so Python can create symlinks."
+        ) from e
     return f"symlinked {link.relative_to(REPO)}"
 
 
