@@ -106,6 +106,10 @@ docs: ## Run docs with bun
 	@cd docs && bun run dev
 	@echo "$(GREEN)✅ Docs run completed.$(RESET)"
 
+.PHONY: sync-agent-config
+sync-agent-config: ## Sync Claude ↔ Codex skills & subagents (regenerates symlinks and .codex/agents/*.toml)
+	@uv run scripts/sync_agent_config.py
+
 ralph: check_jq ## Run Ralph agent loop
 	@echo "$(RED)⚠️  WARNING: Ralph is an autonomous agent that can modify your codebase.$(RESET)"
 	@echo "$(RED)⚠️  It is HIGHLY RECOMMENDED to run Ralph in a sandboxed environment.$(RESET)"

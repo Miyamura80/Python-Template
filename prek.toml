@@ -15,4 +15,5 @@ hooks = [
     { id = "ruff-tech-debt", name = "Check TODO/FIXME markers", entry = "uv run ruff check --select FIX", language = "system", pass_filenames = false, always_run = true },
     { id = "pylint-duplicate-code", name = "Detect duplicate code", entry = "uv run pylint --disable=all --enable=R0801 src common utils", language = "system", pass_filenames = false, always_run = true },
     { id = "ai-writing-check", name = "AI writing check", entry = "uv run python scripts/check_ai_writing.py", language = "system", pass_filenames = false, always_run = true },
+    { id = "sync-agent-config", name = "sync Claude ↔ Codex skills & subagents; fail if drift was fixed", entry = "uv run scripts/sync_agent_config.py --check", language = "system", pass_filenames = false, always_run = true },
 ]
