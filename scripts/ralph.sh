@@ -1,6 +1,6 @@
 #!/bin/bash
 # Ralph Wiggum - Long-running AI agent loop
-# Usage: ./ralph.sh [--tool opencode|amp|claude] [max_iterations]
+# Usage: ./ralph.sh [--tool amp|claude] [max_iterations]
 
 set -e
 
@@ -29,8 +29,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate tool choice
-if [[ "$TOOL" != "opencode" && "$TOOL" != "amp" && "$TOOL" != "claude" ]]; then
-  echo "Error: Invalid tool '$TOOL'. Must be 'opencode', 'amp' or 'claude'."
+if [[ "$TOOL" != "amp" && "$TOOL" != "claude" ]]; then
+  echo "Error: Invalid tool '$TOOL'. Must be 'amp' or 'claude'."
   exit 1
 fi
 
@@ -97,16 +97,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   echo "==============================================================="
 
   # Run the selected tool with the ralph prompt
-  if [[ "$TOOL" == "opencode" ]]; then
-    # opencode run: use prompt from prompt.md
-    if [ -f "$RALPH_DIR/prompt.md" ]; then
-      OUTPUT=$(opencode run "$(cat "$RALPH_DIR/prompt.md")" 2>&1 | tee /dev/stderr) || true
-    else
-      echo "Error: $RALPH_DIR/prompt.md not found. Create this file or use a different tool."
-      echo "Example: ./ralph.sh --tool claude"
-      exit 1
-    fi
-  elif [[ "$TOOL" == "amp" ]]; then
+  if [[ "$TOOL" == "amp" ]]; then
     if [ -f "$RALPH_DIR/prompt.md" ]; then
       OUTPUT=$(cat "$RALPH_DIR/prompt.md" | amp --dangerously-allow-all 2>&1 | tee /dev/stderr) || true
     else
