@@ -1,0 +1,30 @@
+name: Large File Check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '**.py'
+
+jobs:
+  check-file-sizes:
+    name: Source File Line Limit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for large source files
+        run: |
+          if [ -n "${{ github.event.pull_request.base.sha }}" ]; then
+            mapfile -t files < <(git diff --name-only --diff-filter=d "${{ github.event.pull_request.base.sha }}...HEAD" -- '*.py')
+            if [ "${#files[@]}" -eq 0 ]; then
+              echo "No source files changed."
+              exit 0
+            fi
+            scripts/check_large_files.sh "${files[@]}"
+          else
+            scripts/check_large_files.sh --all
+          fi

@@ -17,3 +17,21 @@ hooks = [
     { id = "ai-writing-check", name = "AI writing check", entry = "uv run python scripts/check_ai_writing.py", language = "system", pass_filenames = false, always_run = true },
     { id = "sync-agent-config", name = "sync Claude ↔ Codex skills & subagents; fail if drift was fixed", entry = "uv run scripts/sync_agent_config.py --check", language = "system", pass_filenames = false, always_run = true },
 ]
+
+# ── Source-size guardrails (mirror GitHub Actions) ────────────────
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "check-large-files"
+name = "fail if any source file exceeds the line-count error threshold"
+language = "system"
+entry = "scripts/check_large_files.sh"
+files = "\\.(py)$"
+
+[[repos.hooks]]
+id = "check-folder-sizes"
+name = "fail if any source folder exceeds the file-count error threshold"
+language = "system"
+entry = "scripts/check_folder_sizes.sh"
+files = "\\.(py)$"
