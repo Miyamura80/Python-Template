@@ -1,0 +1,30 @@
+name: Folder Size Check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '**.py'
+
+jobs:
+  check-folder-sizes:
+    name: Folder File Count Limit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for oversized folders
+        run: |
+          if [ -n "${{ github.event.pull_request.base.sha }}" ]; then
+            mapfile -t files < <(git diff --name-only --diff-filter=d "${{ github.event.pull_request.base.sha }}...HEAD" -- '*.py')
+            if [ "${#files[@]}" -eq 0 ]; then
+              echo "No source files changed."
+              exit 0
+            fi
+            scripts/check_folder_sizes.sh "${files[@]}"
+          else
+            scripts/check_folder_sizes.sh --all
+          fi
