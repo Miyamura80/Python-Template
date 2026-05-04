@@ -48,7 +48,7 @@ uv run pytest path/to/test.py  # Run specific test
   - `global_config.yaml` - Base hyperparameters and config values
   - `<name>.yaml` - Optional split configs (loaded as root key `<name>`)
   - `global_config.py` - Config class (access via `from common import global_config`)
-  - `.env` - Secrets/API keys (git-ignored)
+- **.env** - Secrets/API keys (git-ignored, located in root)
 - **src/** - Source code (utils/)
 - **utils/llm/** - LLM inference with DSPY (`dspy_inference.py`) and LangFuse observability
 - **tests/** - pytest tests inheriting from `TestTemplate` in `test_template.py`
