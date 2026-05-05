@@ -2,13 +2,16 @@
 # requires-python = ">=3.12"
 # dependencies = ["pyyaml>=6.0", "tomli_w>=1.0"]
 # ///
-"""Sync Claude ↔ Codex skills and subagents.
+"""Sync Claude ↔ Codex skills, rules, and subagents.
 
 - Symlinks `.claude/skills/<name>` → `../../.agents/skills/<name>` for every
   directory under `.agents/skills/`.
+- Symlinks `.agents/rules/<name>.md` → `../../.claude/rules/<name>.md` for every
+  non-symlink `.md` file under `.claude/rules/`.
 - Regenerates `.codex/agents/<name>.toml` from each `.claude/agents/<name>.md`.
 - Auto-prunes dangling symlinks and orphaned TOMLs silently.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -25,13 +28,29 @@ SHARED_SKILLS = REPO / ".agents" / "skills"
 CLAUDE_SKILLS = REPO / ".claude" / "skills"
 CLAUDE_AGENTS = REPO / ".claude" / "agents"
 CODEX_AGENTS = REPO / ".codex" / "agents"
+SHARED_RULES = REPO / ".agents" / "rules"
+CLAUDE_RULES = REPO / ".claude" / "rules"
 
 FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?(.*)$", re.DOTALL)
-CLAUDE_ONLY_KEYS = {"tools", "model", "color", "allowed-tools", "disable-model-invocation"}
+CLAUDE_ONLY_KEYS = {
+    "tools",
+    "model",
+    "color",
+    "allowed-tools",
+    "disable-model-invocation",
+}
 
 SHARED_SKILL_FORBIDDEN_KEYS = {
-    "allowed-tools", "disable-model-invocation", "user-invocable",
-    "context", "agent", "model", "effort", "hooks", "paths", "shell",
+    "allowed-tools",
+    "disable-model-invocation",
+    "user-invocable",
+    "context",
+    "agent",
+    "model",
+    "effort",
+    "hooks",
+    "paths",
+    "shell",
     "argument-hint",
 }
 SHARED_SKILL_FORBIDDEN_BODY_PATTERNS = [
@@ -77,7 +96,9 @@ def render_toml(meta: dict, body: str, source: Path | None = None) -> str:
 
 
 def _strip_code(text: str) -> str:
-    text = re.sub(r"^[ ]{0,3}(`{3,}).*?^[ ]{0,3}\1`*", "", text, flags=re.DOTALL | re.MULTILINE)
+    text = re.sub(
+        r"^[ ]{0,3}(`{3,}).*?^[ ]{0,3}\1`*", "", text, flags=re.DOTALL | re.MULTILINE
+    )
     out: list[str] = []
     i, n = 0, len(text)
     while i < n:
@@ -87,7 +108,9 @@ def _strip_code(text: str) -> str:
             while i + run < n and text[i + run] == "`":
                 run += 1
             close = text.find("`" * run, i + run)
-            if close == -1 or any(text[i + run + k] == "\n" for k in range(close - i - run)):
+            if close == -1 or any(
+                text[i + run + k] == "\n" for k in range(close - i - run)
+            ):
                 out.append(text[i : i + run])
                 i += run
             elif preceded_by_bang and run == 1:
@@ -114,18 +137,26 @@ def validate_shared_skill(skill_dir: Path) -> list[str]:
     errs: list[str] = []
     bad_keys = SHARED_SKILL_FORBIDDEN_KEYS & set(meta.keys())
     if bad_keys:
-        errs.append(f"{skill_md.relative_to(REPO)}: Claude-only frontmatter keys in shared skill: {sorted(bad_keys)}")
+        errs.append(
+            f"{skill_md.relative_to(REPO)}: Claude-only frontmatter keys in shared skill: {sorted(bad_keys)}"
+        )
     for pat, label in SHARED_SKILL_RAW_BODY_PATTERNS:
         if pat.search(body):
-            errs.append(f"{skill_md.relative_to(REPO)}: body uses Claude-only feature: {label}")
+            errs.append(
+                f"{skill_md.relative_to(REPO)}: body uses Claude-only feature: {label}"
+            )
     scan_body = _strip_code(body)
     for pat, label in SHARED_SKILL_FORBIDDEN_BODY_PATTERNS:
         if pat.search(scan_body):
-            errs.append(f"{skill_md.relative_to(REPO)}: body uses Claude-only feature: {label}")
+            errs.append(
+                f"{skill_md.relative_to(REPO)}: body uses Claude-only feature: {label}"
+            )
     if not meta.get("name"):
         errs.append(f"{skill_md.relative_to(REPO)}: missing `name` in frontmatter")
     if not meta.get("description"):
-        errs.append(f"{skill_md.relative_to(REPO)}: missing `description` in frontmatter")
+        errs.append(
+            f"{skill_md.relative_to(REPO)}: missing `description` in frontmatter"
+        )
     return errs
 
 
@@ -190,6 +221,50 @@ def sync_skill_symlinks() -> list[str]:
     return changes
 
 
+def sync_rule_symlinks() -> list[str]:
+    """Create symlinks from .agents/rules/<name>.md → ../../.claude/rules/<name>.md."""
+    changes: list[str] = []
+    rules_existed = CLAUDE_RULES.exists()
+    SHARED_RULES.mkdir(parents=True, exist_ok=True)
+    CLAUDE_RULES.mkdir(parents=True, exist_ok=True)
+
+    wanted: set[str] = set()
+    for rule in CLAUDE_RULES.iterdir():
+        if rule.is_symlink() or not rule.is_file() or rule.suffix != ".md":
+            continue
+        wanted.add(rule.name)
+        link = SHARED_RULES / rule.name
+        target = Path("..") / ".." / ".claude" / "rules" / rule.name
+        if link.is_symlink():
+            if os.path.normpath(os.readlink(link)) == os.path.normpath(str(target)):
+                continue
+            link.unlink()
+        elif link.exists():
+            raise SystemExit(
+                f"ERROR: name collision - .agents/rules/{rule.name} is a real file "
+                f"but .claude/rules/{rule.name} also exists. The .claude/rules/ version is the "
+                "source of truth; remove the .agents/rules/ copy."
+            )
+        try:
+            link.symlink_to(target)
+        except (OSError, NotImplementedError) as e:
+            raise SystemExit(
+                f"ERROR: could not create symlink {link.relative_to(REPO)} -> {target}: {e}. "
+                "If you're on Windows, enable Developer Mode or run your shell as Administrator "
+                "so Python can create symlinks."
+            ) from e
+        changes.append(f"symlinked {link.relative_to(REPO)}")
+
+    if not rules_existed and not wanted:
+        return changes
+
+    for link in SHARED_RULES.iterdir():
+        if link.is_symlink() and link.name not in wanted:
+            link.unlink()
+            changes.append(f"pruned dangling {link.relative_to(REPO)}")
+    return changes
+
+
 def sync_agents() -> list[str]:
     changes: list[str] = []
     CODEX_AGENTS.mkdir(parents=True, exist_ok=True)
@@ -221,7 +296,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    changes = sync_skill_symlinks() + sync_agents()
+    changes = sync_skill_symlinks() + sync_rule_symlinks() + sync_agents()
     for c in changes:
         print(c)
     if args.check and changes:
