@@ -224,6 +224,7 @@ def sync_skill_symlinks() -> list[str]:
 def sync_rule_symlinks() -> list[str]:
     """Create symlinks from .agents/rules/<name>.md → ../../.claude/rules/<name>.md."""
     changes: list[str] = []
+    rules_existed = CLAUDE_RULES.exists()
     SHARED_RULES.mkdir(parents=True, exist_ok=True)
     CLAUDE_RULES.mkdir(parents=True, exist_ok=True)
 
@@ -244,8 +245,18 @@ def sync_rule_symlinks() -> list[str]:
                 f"but .claude/rules/{rule.name} also exists. The .claude/rules/ version is the "
                 "source of truth; remove the .agents/rules/ copy."
             )
-        link.symlink_to(target)
+        try:
+            link.symlink_to(target)
+        except (OSError, NotImplementedError) as e:
+            raise SystemExit(
+                f"ERROR: could not create symlink {link.relative_to(REPO)} -> {target}: {e}. "
+                "If you're on Windows, enable Developer Mode or run your shell as Administrator "
+                "so Python can create symlinks."
+            ) from e
         changes.append(f"symlinked {link.relative_to(REPO)}")
+
+    if not rules_existed and not wanted:
+        return changes
 
     for link in SHARED_RULES.iterdir():
         if link.is_symlink() and link.name not in wanted:

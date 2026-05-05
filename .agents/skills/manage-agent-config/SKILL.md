@@ -1,6 +1,6 @@
 ---
 name: manage-agent-config
-description: Use whenever creating, editing, renaming, or deleting any file under .claude/skills/, .claude/agents/, .claude/rules/, .agents/skills/, .agents/rules/, or .codex/agents/. Teaches the dual-tool Claude/Codex layout and reminds to run 'make sync-agent-config'.
+description: Manage files under .claude/{skills,agents,rules}/, .agents/{skills,rules}/, or .codex/agents/. Covers dual-tool Claude/Codex layout and reminds to run make sync-agent-config.
 ---
 
 # Managing Claude ↔ Codex skills and subagents in this repo
