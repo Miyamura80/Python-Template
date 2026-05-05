@@ -1,6 +1,6 @@
 ---
 name: manage-agent-config
-description: Use whenever creating, editing, renaming, or deleting any file under .claude/skills/, .claude/agents/, .agents/skills/, or .codex/agents/. Teaches the dual-tool Claude/Codex layout and reminds to run `make sync-agent-config`.
+description: Use whenever creating, editing, renaming, or deleting any file under .claude/skills/, .claude/agents/, .claude/rules/, .agents/skills/, .agents/rules/, or .codex/agents/. Teaches the dual-tool Claude/Codex layout and reminds to run 'make sync-agent-config'.
 ---
 
 # Managing Claude ↔ Codex skills and subagents in this repo
@@ -21,9 +21,15 @@ This repo is dual-tool. Before you create or edit anything under `.claude/`, `.a
 - `.codex/agents/<name>.toml` is **generated** - never hand-edit.
 - Run `make sync-agent-config` - the TOML appears.
 
+**Creating a new path-scoped rule?**
+
+- `.claude/rules/<name>.md` is the **source of truth**. Use `globs:` frontmatter (not `paths:`).
+- `.agents/rules/<name>.md` is a symlink mirror, created by `make sync-agent-config`.
+- Read the `new-agent-rule` skill before writing your first rule.
+
 **Renaming or deleting?**
 
-- Rename or delete the source file (under `.agents/skills/` or `.claude/agents/`).
+- Rename or delete the source file (under `.agents/skills/`, `.claude/agents/`, or `.claude/rules/`).
 - Run `make sync-agent-config` - stale symlinks and orphaned TOMLs are pruned automatically.
 
 ## Frontmatter rules for shared skills
