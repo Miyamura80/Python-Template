@@ -9,6 +9,7 @@
 - Regenerates `.codex/agents/<name>.toml` from each `.claude/agents/<name>.md`.
 - Auto-prunes dangling symlinks and orphaned TOMLs silently.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -27,11 +28,25 @@ CLAUDE_AGENTS = REPO / ".claude" / "agents"
 CODEX_AGENTS = REPO / ".codex" / "agents"
 
 FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?(.*)$", re.DOTALL)
-CLAUDE_ONLY_KEYS = {"tools", "model", "color", "allowed-tools", "disable-model-invocation"}
+CLAUDE_ONLY_KEYS = {
+    "tools",
+    "model",
+    "color",
+    "allowed-tools",
+    "disable-model-invocation",
+}
 
 SHARED_SKILL_FORBIDDEN_KEYS = {
-    "allowed-tools", "disable-model-invocation", "user-invocable",
-    "context", "agent", "model", "effort", "hooks", "paths", "shell",
+    "allowed-tools",
+    "disable-model-invocation",
+    "user-invocable",
+    "context",
+    "agent",
+    "model",
+    "effort",
+    "hooks",
+    "paths",
+    "shell",
     "argument-hint",
 }
 SHARED_SKILL_FORBIDDEN_BODY_PATTERNS = [
@@ -77,7 +92,9 @@ def render_toml(meta: dict, body: str, source: Path | None = None) -> str:
 
 
 def _strip_code(text: str) -> str:
-    text = re.sub(r"^[ ]{0,3}(`{3,}).*?^[ ]{0,3}\1`*", "", text, flags=re.DOTALL | re.MULTILINE)
+    text = re.sub(
+        r"^[ ]{0,3}(`{3,}).*?^[ ]{0,3}\1`*", "", text, flags=re.DOTALL | re.MULTILINE
+    )
     out: list[str] = []
     i, n = 0, len(text)
     while i < n:
@@ -87,7 +104,9 @@ def _strip_code(text: str) -> str:
             while i + run < n and text[i + run] == "`":
                 run += 1
             close = text.find("`" * run, i + run)
-            if close == -1 or any(text[i + run + k] == "\n" for k in range(close - i - run)):
+            if close == -1 or any(
+                text[i + run + k] == "\n" for k in range(close - i - run)
+            ):
                 out.append(text[i : i + run])
                 i += run
             elif preceded_by_bang and run == 1:
@@ -114,18 +133,26 @@ def validate_shared_skill(skill_dir: Path) -> list[str]:
     errs: list[str] = []
     bad_keys = SHARED_SKILL_FORBIDDEN_KEYS & set(meta.keys())
     if bad_keys:
-        errs.append(f"{skill_md.relative_to(REPO)}: Claude-only frontmatter keys in shared skill: {sorted(bad_keys)}")
+        errs.append(
+            f"{skill_md.relative_to(REPO)}: Claude-only frontmatter keys in shared skill: {sorted(bad_keys)}"
+        )
     for pat, label in SHARED_SKILL_RAW_BODY_PATTERNS:
         if pat.search(body):
-            errs.append(f"{skill_md.relative_to(REPO)}: body uses Claude-only feature: {label}")
+            errs.append(
+                f"{skill_md.relative_to(REPO)}: body uses Claude-only feature: {label}"
+            )
     scan_body = _strip_code(body)
     for pat, label in SHARED_SKILL_FORBIDDEN_BODY_PATTERNS:
         if pat.search(scan_body):
-            errs.append(f"{skill_md.relative_to(REPO)}: body uses Claude-only feature: {label}")
+            errs.append(
+                f"{skill_md.relative_to(REPO)}: body uses Claude-only feature: {label}"
+            )
     if not meta.get("name"):
         errs.append(f"{skill_md.relative_to(REPO)}: missing `name` in frontmatter")
     if not meta.get("description"):
-        errs.append(f"{skill_md.relative_to(REPO)}: missing `description` in frontmatter")
+        errs.append(
+            f"{skill_md.relative_to(REPO)}: missing `description` in frontmatter"
+        )
     return errs
 
 
