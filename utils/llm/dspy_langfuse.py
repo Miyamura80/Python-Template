@@ -102,7 +102,7 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 outputs_extracted = dict(outputs.items())
             except AttributeError:
                 outputs_extracted = {"value": outputs}
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - observability fallback must never raise
                 outputs_extracted = {"error_extracting_module_output": str(e)}
         get_client().update_current_span(
             input=self.input_field_values.get(None) or {},
