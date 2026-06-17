@@ -116,7 +116,7 @@ Detect package manager and sync:
 - If `uv.lock` exists: `uv sync`
 - Else if `bun.lockb` exists: `bun install`
 - Else if `package-lock.json` exists: `npm install`
-- Else if `requirements.txt` exists: `pip install -r requirements.txt`
+- Else if `requirements.txt` exists: `uv pip install -r requirements.txt`
 - Else: Skip dependency sync
 
 ### 11. Git garbage collection
