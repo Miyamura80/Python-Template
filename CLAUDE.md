@@ -44,11 +44,11 @@ uv run pytest path/to/test.py  # Run specific test
 
 ## Architecture
 
+- **.env** - Secrets/API keys located at the root of the repo (git-ignored)
 - **common/** - Global configuration via pydantic-settings
   - `global_config.yaml` - Base hyperparameters and config values
   - `<name>.yaml` - Optional split configs (loaded as root key `<name>`)
   - `global_config.py` - Config class (access via `from common import global_config`)
-  - `.env` - Secrets/API keys (git-ignored)
 - **src/** - Source code (utils/)
 - **utils/llm/** - LLM inference with DSPY (`dspy_inference.py`) and LangFuse observability
 - **tests/** - pytest tests inheriting from `TestTemplate` in `test_template.py`
