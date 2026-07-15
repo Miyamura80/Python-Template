@@ -349,7 +349,6 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 log.warning(
                     f"Missing required information for full usage/cost calculation: {', '.join(missing_info_elements)}"
                 )
-                # status_message = (status_message + "; " if status_message else "") + f"Missing info for cost calc: { ', '.join(missing_info_elements)}"
 
         # --- Finalize Span ---
         if span:
