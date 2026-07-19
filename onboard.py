@@ -544,10 +544,6 @@ _JULES_WORKFLOWS: list[tuple[str, str]] = [
         "jules-prune-unnecessary-code.yml",
         "Dead code cleanup (Wednesdays 2pm UTC)",
     ),
-    (
-        "jules-find-outdated-docs.yml",
-        "Documentation drift check (Wednesdays 4pm UTC)",
-    ),
 ]
 
 _WORKFLOWS_DIR = PROJECT_ROOT / ".github" / "workflows"
