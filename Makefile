@@ -110,16 +110,6 @@ docs: ## Run docs with bun
 sync-agent-config: ## Sync Claude ↔ Codex skills & subagents (regenerates symlinks and .codex/agents/*.toml)
 	@uv run scripts/sync_agent_config.py
 
-ralph: check_jq ## Run Ralph agent loop
-	@echo "$(RED)⚠️  WARNING: Ralph is an autonomous agent that can modify your codebase.$(RESET)"
-	@echo "$(RED)⚠️  It is HIGHLY RECOMMENDED to run Ralph in a sandboxed environment.$(RESET)"
-	@printf "$(YELLOW)Are you sure you want to continue? [y/N] $(RESET)" && read ans && [ "$$ans" = "y" ] || (echo "$(RED)Aborted.$(RESET)"; exit 1)
-	@echo "$(GREEN)🤖 Starting Ralph Agent...$(RESET)"
-	@chmod +x scripts/ralph.sh
-	@./scripts/ralph.sh $(ARGS)
-	@echo "$(GREEN)✅ Ralph Agent finished.$(RESET)"
-
-
 ########################################################
 # Run Tests
 ########################################################
