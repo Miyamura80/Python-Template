@@ -300,7 +300,6 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                         "input": final_prompt_tokens,
                         "output": final_completion_tokens,
                         "total": final_total_tokens,
-                        # "cache_read_input_tokens": 0, # Optional: if you track this
                     }
                     cost_details_update = {
                         "input": (
@@ -317,7 +316,6 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                             else 0.0
                         ),
                         "total": total_cost,
-                        # "cache_read_input_tokens": 0.0, # Optional
                     }
                     span.update(
                         usage_details=usage_details_update,
@@ -349,7 +347,6 @@ class LangFuseDSPYCallback(BaseCallback):  # noqa
                 log.warning(
                     f"Missing required information for full usage/cost calculation: {', '.join(missing_info_elements)}"
                 )
-                # status_message = (status_message + "; " if status_message else "") + f"Missing info for cost calc: { ', '.join(missing_info_elements)}"
 
         # --- Finalize Span ---
         if span:
